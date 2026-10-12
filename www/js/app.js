@@ -1,8 +1,8 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.2.0";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.2.0";
+import { setupQuran } from "./quran.js?v=1.2.1";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.2.1";
 
-const VERSION = "1.2.0";
+const VERSION = "1.2.1";
 
 // ---------- storage ----------
 const LS = {
@@ -427,12 +427,22 @@ function registerSW() {
     navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
     return;
   }
+  // Updates apply by themselves: the new worker activates right away and the page reloads once.
+  // Only reload when an older version was in control, so a first visit never reloads.
+  const hadController = !!navigator.serviceWorker.controller;
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || refreshing) return;
+    refreshing = true; toast(t("common.updateAvailable")); setTimeout(() => location.reload(), 300);
+  });
   navigator.serviceWorker.register("sw.js").then(reg => {
-    reg.addEventListener("updatefound", () => { const nw = reg.installing; nw?.addEventListener("statechange", () => {
-      if (nw.state === "installed" && navigator.serviceWorker.controller) toast(t("common.updateAvailable"), { label: t("common.update"), fn: () => nw.postMessage("SKIP_WAITING") });
-    }); });
+    // An installed app on a phone can stay open for days: look for a new version whenever it comes back to the screen.
+    const check = () => reg.update().catch(() => {});
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") check(); });
+    setInterval(check, 60 * 60 * 1000);
+    // A version from before 1.2.1 may be installed and waiting: activate it now.
+    if (reg.waiting && hadController) reg.waiting.postMessage("SKIP_WAITING");
   }).catch(() => {});
-  let refreshing = false; navigator.serviceWorker.addEventListener("controllerchange", () => { if (!refreshing) { refreshing = true; location.reload(); } });
 }
 
 // ---------- boot ----------
