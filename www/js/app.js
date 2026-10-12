@@ -1,8 +1,8 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.2.1";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.2.1";
+import { setupQuran } from "./quran.js?v=1.3.0";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.3.0";
 
-const VERSION = "1.2.1";
+const VERSION = "1.3.0";
 
 // ---------- storage ----------
 const LS = {
@@ -132,6 +132,7 @@ const shareText = (title, text) => share(title, `${text}\n\n— ${title} | ${t("
 // ---------- Mushaf / listening / radios ----------
 const Q = setupQuran({
   view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, LS, copyText, share,
+  adhkarAudio: () => ({ items: DB.categories.flatMap(c => c.items.map(i => i.audio)).filter(Boolean), chapters: DB.categories.map(c => c.audio).filter(Boolean) }),
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
 
@@ -175,6 +176,7 @@ function route() {
     case "quran": return Q.quran(parts.slice(1), params);
     case "listen": return Q.listen(parts.slice(1), params);
     case "radio": return Q.radio();
+    case "offline": return Q.offline();
     case "search": return renderHome(params.get("q") || "");
     default: location.hash = "#/";
   }
@@ -361,6 +363,9 @@ function renderSettings() {
     ${!standalone ? `<div class="card"><div class="setting"><span class="ic">${icon("install")}</span><div class="lbl">${T("settings.install")}<small>${T(installPrompt ? "settings.installHint" : "settings.installManual")}</small></div>${installPrompt ? `<button class="btn" id="install">${T("settings.installBtn")}</button>` : ""}</div></div>` : ""}
     <div class="card">
       <div class="setting"><span class="ic">${icon("globe")}</span><div class="lbl">${T("common.language")}<small>${T("settings.languageHint")}</small></div><button class="btn ghost" id="lang-btn">${esc(curLang?.name || getLang())}</button></div>
+    </div>
+    <div class="card">
+      <a class="setting" href="#/offline"><span class="ic">${icon("download")}</span><div class="lbl">${T("offline.manage")}<small>${T("offline.manageHint")}</small></div>${icon("back", "chev")}</a>
     </div>
     <h2 class="section-title">${T("settings.appearance")}</h2>
     <div class="card">

@@ -351,4 +351,26 @@ html[dir="ltr"] #btn-back svg, html[dir="ltr"] #pl-prev svg, html[dir="ltr"] #pl
 .ar-name { font-family: var(--font-text); color: var(--muted); font-weight: 400; margin-inline-start: 6px; }
 .about.note { background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 12px; margin: 8px 12px 0; }
 .lbl .sub[dir="auto"] { unicode-bidi: plaintext; }
+
+/* ===== المحتوى دون اتصال ===== */
+.btn.small { height: 36px; padding-inline: 12px; font-size: .85rem; border-radius: 10px; gap: 6px; flex: none; }
+.btn.small svg { width: 18px; height: 18px; }
+.setting .btn.small + .btn.small { margin-inline-start: 4px; }
+.card .setting { flex-wrap: wrap; row-gap: 8px; }
+.card .setting .lbl { min-width: 11rem; }
+a.setting { color: inherit; }
+a.setting:active { background: var(--surface-2); }
+.link.inline { display: inline-flex; margin: 0; padding: 0 4px; font-size: inherit; vertical-align: baseline; }
+.link.inline svg { width: 16px; height: 16px; }
+.link.light { color: #fff; text-decoration: underline; }
+.list .row.split { padding: 0; gap: 0; }
+.list .row.split .row-main { flex: 1; display: flex; align-items: center; gap: 12px; padding: 14px 16px; min-height: 56px; text-align: start; color: inherit; background: none; }
+.list .row.split .row-main:active { background: var(--surface-2); }
+.list .row.split.on { background: color-mix(in srgb, var(--primary) 12%, var(--surface)); }
+.list .row.split .dl-btn { color: var(--muted); margin-inline-end: 6px; }
+.list .row.split .dl-btn[data-saved="1"] { color: var(--danger); }
+.saved-flag { color: var(--primary) !important; }
+.saved-flag svg { width: 14px; height: 14px; vertical-align: -2px; }
+.dl-status { margin-top: 10px; font-size: .85rem; opacity: .95; min-height: 1.2em; }
+.setting .progress { margin-top: 6px; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "data/hisn.json", "data/hisn.en.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg"])
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
 
@@ -14,7 +14,7 @@ const ids = new Set(db.categories.map(c => c.id));
 if (ids.size !== db.categories.length) fail("duplicate category ids");
 db.sections.flatMap(s => s.cats).forEach(id => { if (!ids.has(id)) fail("section references unknown cat " + id); });
 const used = new Set(db.sections.flatMap(s => s.cats)); ids.forEach(id => { if (!used.has(id)) fail("cat not in any section " + id); });
-db.categories.forEach(c => c.items.forEach(i => { if (!i.text || !(i.repeat >= 1)) fail(`bad item ${c.id}:${i.id}`); }));
+db.categories.forEach(c => c.items.forEach(i => { if (!i.text || !(i.repeat >= 1)) fail(`bad item ${c.id}:${i.id}`); if (i.audio && !/\/[^/]+\.mp3$/.test(i.audio)) fail(`bad audio url ${c.id}:${i.id}`); }));
 
 // Mushaf: every riwayah file + font exists and verse counts match the index
 const qi = readJson("quran/index.json"); let ayat = 0;
@@ -41,7 +41,7 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/i18n.js", "sw.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "sw.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }

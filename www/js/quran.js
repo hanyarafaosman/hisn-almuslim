@@ -3,6 +3,8 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
+import * as off from "./offline.js?v=1.3.0";
+
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
 const ch = (...cps) => String.fromCodePoint(...cps);
@@ -23,7 +25,7 @@ const MP3Q_LANG = { ar: "ar", en: "eng", fr: "fr", ru: "ru", de: "de", es: "es",
 const KUFI_AYAT = 6236; // QuranEnc numbering follows the Kufan count (Hafs, Shuʿbah)
 
 export function setupQuran(ctx) {
-  const { view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, setHeader, setNav, LS, copyText, share } = ctx;
+  const { view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, setHeader, setNav, LS, copyText, share, adhkarAudio } = ctx;
   const state = Object.assign({ riwayah: "hafs", last: null, bookmark: null, reciters: {}, tab: "surahs" }, LS.get("quran", {}));
   const save = () => LS.set("quran", state);
   const stale = hash => location.hash !== hash; // user navigated away while we were loading
@@ -60,7 +62,13 @@ export function setupQuran(ctx) {
   async function isCached(meta) { try { return !!(await caches.match(meta.data)); } catch { return false; } }
 
   const loading = (msg = t("common.loading")) => `<div class="empty"><div class="spinner"></div><div>${esc(msg)}</div></div>`;
-  const failed = (err, retry) => { view.innerHTML = `<div class="empty">${esc(t("common.loadFailed"))}<br><small>${esc(err.message || err)}</small><br><br><button class="btn" id="retry">${esc(t("common.retry"))}</button></div>`; $("#retry").onclick = retry; };
+  const failed = (err, retry) => {
+    const offline = !navigator.onLine || err instanceof TypeError; // fetch() rejects with TypeError when there is no connection
+    view.innerHTML = offline
+      ? `<div class="empty">${icon("download")}<div>${esc(t("offline.needOnce"))}</div><br><button class="btn" id="retry">${esc(t("common.retry"))}</button> <a class="btn ghost" href="#/offline">${esc(t("offline.title"))}</a></div>`
+      : `<div class="empty">${esc(t("common.loadFailed"))}<br><small>${esc(err.message || err)}</small><br><br><button class="btn" id="retry">${esc(t("common.retry"))}</button></div>`;
+    $("#retry").onclick = retry;
+  };
 
   // ---------- bottom sheet ----------
   function sheet(title, bodyHtml) {
@@ -77,10 +85,10 @@ export function setupQuran(ctx) {
 
   // ---------- remote JSON (memory cache, last copy kept in storage for offline listing) ----------
   const remote = new Map();
-  function getJSON(url) {
+  function getJSON(url, { keep = true } = {}) {
     if (remote.has(url)) return remote.get(url);
     const p = fetch(url).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-      .then(j => { LS.set("api:" + url, j); return j; })
+      .then(j => { if (keep) LS.set("api:" + url, j); return j; })
       .catch(err => { remote.delete(url); const old = LS.get("api:" + url, null); if (old) return old; throw err; });
     remote.set(url, p); return p;
   }
@@ -94,9 +102,12 @@ export function setupQuran(ctx) {
   // ---------- translations of meanings (QuranEnc) ----------
   const getTrList = () => getJSON(`${QE}/translations/list?localization=${isAr() ? "ar" : "en"}`).then(j => j.translations || []);
   const trCache = new Map();
+  const trUrl = (key, s) => `${QE}/translation/sura/${key}/${s}`;
+  // Older versions copied every translated surah into localStorage, which can fill it up: clean that once.
+  try { Object.keys(localStorage).filter(k => k.startsWith("api:" + QE + "/translation/sura/")).forEach(k => localStorage.removeItem(k)); } catch { /* storage unavailable */ }
   function getTrSura(key, s) {
     const k = key + ":" + s;
-    if (!trCache.has(k)) trCache.set(k, getJSON(`${QE}/translation/sura/${key}/${s}`).then(j => j.result || []).catch(e => { trCache.delete(k); throw e; }));
+    if (!trCache.has(k)) trCache.set(k, getJSON(trUrl(key, s), { keep: false }).then(j => j.result || []).catch(e => { trCache.delete(k); throw e; }));
     return trCache.get(k);
   }
   function defaultTr(list) {
@@ -197,7 +208,7 @@ export function setupQuran(ctx) {
   // ---------- Mushaf home ----------
   let homeQuery = "";
   async function renderHome() {
-    setNav("quran"); setHeader(t("quran.title"), { actions: `<button class="icon-btn" id="q-tr-pick" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><a class="icon-btn" href="#/listen" aria-label="${esc(t("listen.title"))}">${icon("headphones")}</a>` });
+    setNav("quran"); setHeader(t("quran.title"), { actions: `<button class="icon-btn" id="q-tr-pick" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><a class="icon-btn" href="#/offline" aria-label="${esc(t("offline.title"))}">${icon("download")}</a>` });
     const hash = location.hash; view.innerHTML = loading();
     try { await loadIndex(); } catch (e) { return failed(e, renderHome); }
     if (stale(hash)) return;
@@ -213,7 +224,13 @@ export function setupQuran(ctx) {
       <div class="searchbox">${icon("search")}<input id="qq" type="search" placeholder="${esc(t("quran.searchPlaceholder"))}" value="${esc(homeQuery)}" autocomplete="off" enterkeyhint="search"></div>
       <div class="tabs-row"><div class="segmented" id="qtabs"><button data-t="surahs" class="${state.tab === "surahs" ? "on" : ""}">${esc(t("quran.surahs"))}</button><button data-t="juz" class="${state.tab === "juz" ? "on" : ""}">${esc(t("quran.juzs"))}</button></div></div>
       <div id="qlist"></div>`;
-    isCached(meta).then(c => { const x = document.getElementById("cached"); if (x && c) x.innerHTML = `${sep()}${icon("check")} ${esc(t("quran.savedOffline"))}`; });
+    const showSaved = () => { const x = document.getElementById("cached"); if (x) x.innerHTML = `${sep()}${icon("check")} ${esc(t("quran.savedOffline"))}`; };
+    isCached(meta).then(c => {
+      if (c) return showSaved();
+      const x = document.getElementById("cached"); if (!x || !off.isSupported()) return;
+      x.innerHTML = ` <button class="link inline" id="save-riw">${icon("download")} ${esc(t("offline.save"))}</button>`;
+      $("#save-riw").onclick = async () => { $("#save-riw").textContent = t("offline.saving"); try { await saveRiwayah(meta); showSaved(); toast(t("offline.done")); } catch { toast(t("offline.needOnce")); } };
+    });
     view.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { state.riwayah = b.dataset.r; save(); renderHome(); });
     view.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { state.tab = b.dataset.t; save(); view.querySelectorAll("[data-t]").forEach(x => x.classList.toggle("on", x === b)); drawList(); });
     const input = $("#qq"); let timer;
@@ -378,7 +395,7 @@ export function setupQuran(ctx) {
     loadIndex().catch(() => {});
     if (parts[0] === "r") return renderRewaya(Number(parts[1]), hash);
     if (parts[0] === "m") return renderMoshaf(Number(parts[1]), Number(parts[2]), hash);
-    setHeader(t("listen.title")); view.innerHTML = listenTabs("rec") + loading();
+    setHeader(t("listen.title"), { actions: `<a class="icon-btn" href="#/offline" aria-label="${esc(t("offline.title"))}">${icon("download")}</a>` }); view.innerHTML = listenTabs("rec") + loading();
     let list; try { list = await getRiwayatList(); } catch (e) { return failed(e, () => renderListen(parts)); }
     if (stale(hash)) return;
     await loadIndex().catch(() => {});
@@ -405,11 +422,133 @@ export function setupQuran(ctx) {
     if (!m) { view.innerHTML = `<div class="empty">${esc(t("listen.notFound"))}</div>`; return; }
     setHeader(rec.name, { back: true });
     const list = surahList({ list: m.surah_list }); const sub = `${rec.name}${sep()}${m.name}`;
-    view.innerHTML = `<div class="hero slim"><h2 dir="auto">${esc(rec.name)}</h2><p dir="auto">${esc(m.name)}${sep()}${esc(t("count.surahs", { n: list.length }))}</p><div class="hero-actions"><button class="btn light" id="play-all">${icon("play")} ${esc(t("listen.playFromStart"))}</button></div></div>
-      <div class="list" id="slist">${list.map(n => `<button class="row" data-n="${n}" data-playing="surah:${esc(m.server)}:${n}"><div class="num">${num(n)}</div><div class="lbl">${esc(t("quran.surah", { name: surahName(n) }))}</div>${icon("play", "chev-play")}</button>`).join("")}</div>`;
+    const urls = list.map(n => surahUrl(m.server, n)); const jobId = "rec:" + m.server;
+    view.innerHTML = `<div class="hero slim"><h2 dir="auto">${esc(rec.name)}</h2><p dir="auto">${esc(m.name)}${sep()}${esc(t("count.surahs", { n: list.length }))}</p>
+        <div class="hero-actions"><button class="btn light" id="play-all">${icon("play")} ${esc(t("listen.playFromStart"))}</button>${off.isSupported() ? ` <button class="btn light" id="dl-all">${icon("download")} ${esc(t("offline.downloadAll"))}</button>` : ""}</div>
+        <div class="dl-status" id="dl-status"></div></div>
+      <div class="list" id="slist">${list.map(n => `<div class="row split" data-n="${n}" data-playing="surah:${esc(m.server)}:${n}"><button class="row-main" data-play="${n}"><div class="num">${num(n)}</div><div class="lbl">${esc(t("quran.surah", { name: surahName(n) }))}<span class="sub saved-flag" hidden>${icon("check")} ${esc(t("offline.surahSaved"))}</span></div>${icon("play", "chev-play")}</button>${off.isSupported() ? `<button class="icon-btn dl-btn" data-dl="${n}" aria-label="${esc(t("offline.download"))}">${icon("download")}</button>` : ""}</div>`).join("")}</div>`;
     $("#play-all").onclick = () => player.surahs({ server: m.server, list, start: list[0], sub });
-    $("#slist").onclick = e => { const b = e.target.closest("[data-n]"); if (b) player.surahs({ server: m.server, list, start: Number(b.dataset.n), sub }); };
+    const meta = { name: rec.name, moshaf: m.name, rewaya, moshafId: m.id, server: m.server, list: m.surah_list };
+    const remember = () => { const recs = LS.get("offline:recs", {}); recs[m.server] = meta; LS.set("offline:recs", recs); };
+    const refreshSaved = async () => {
+      const saved = await off.savedSet(off.STORES.AUDIO, urls); if (stale(hash)) return;
+      view.querySelectorAll("#slist [data-n]").forEach(row => {
+        const on = saved.has(surahUrl(m.server, Number(row.dataset.n)));
+        row.querySelector(".saved-flag").hidden = !on;
+        const b = row.querySelector(".dl-btn"); if (b) { b.innerHTML = icon(on ? "trash" : "download"); b.setAttribute("aria-label", t(on ? "offline.delete" : "offline.download")); b.dataset.saved = on ? "1" : ""; }
+      });
+      if (!off.currentJob() || off.currentJob().id !== jobId) $("#dl-status").textContent = saved.size ? t("offline.reciterSaved", { done: saved.size, total: list.length, size: off.fmtSize(await off.savedBytes(off.STORES.AUDIO, urls.filter(u => saved.has(u))), getLang()) }) : "";
+    };
+    const showJob = j => { const st = $("#dl-status"); if (!st || !j || j.id !== jobId) return; st.innerHTML = `${esc(t("offline.progressSize", { done: j.done, total: j.total, size: off.fmtSize(j.bytes, getLang()) }))} <button class="link inline light" id="dl-cancel">${esc(t("offline.cancel"))}</button>`; $("#dl-cancel").onclick = () => off.cancel(); };
+    const onProgress = e => { if (stale(hash)) return window.removeEventListener("offline-progress", onProgress); if (e.detail) showJob(e.detail); else refreshSaved(); };
+    window.addEventListener("offline-progress", onProgress);
+    showJob(off.currentJob()); refreshSaved();
+    const run = async (todo, confirmSize) => {
+      if (off.currentJob()) return toast(t("offline.busy"));
+      if (confirmSize) {
+        $("#dl-status").textContent = t("offline.measuring");
+        const size = await off.remoteSize(todo); if (stale(hash)) return;
+        if (!confirm(t("offline.confirmSize", { size: off.fmtSize(size, getLang()) }))) return refreshSaved();
+      }
+      remember();
+      reportJob(await off.download({ id: jobId, urls: todo, store: off.STORES.AUDIO, concurrency: 2 }));
+    };
+    const dlAll = $("#dl-all");
+    if (dlAll) dlAll.onclick = async () => { const saved = await off.savedSet(off.STORES.AUDIO, urls); run(urls.filter(u => !saved.has(u)), true); };
+    $("#slist").onclick = async e => {
+      const dl = e.target.closest("[data-dl]");
+      if (dl) {
+        const u = surahUrl(m.server, Number(dl.dataset.dl));
+        if (dl.dataset.saved) { if (confirm(t("offline.confirmDelete"))) { await off.remove(off.STORES.AUDIO, [u]); toast(t("offline.deleted")); refreshSaved(); } }
+        else run([u], false);
+        return;
+      }
+      const b = e.target.closest("[data-play]"); if (b) player.surahs({ server: m.server, list, start: Number(b.dataset.play), sub });
+    };
     player.refresh();
+  }
+  const surahUrl = (server, n) => `${server}${String(n).padStart(3, "0")}.mp3`;
+  function reportJob(r) {
+    if (r.busy) return toast(t("offline.busy"));
+    if (r.noSpace) return toast(t("offline.noSpace"));
+    if (r.cancelled) return toast(t("offline.cancelled"));
+    toast(r.failed ? t("offline.failed", { n: r.failed }) : t("offline.done"));
+  }
+  async function saveRiwayah(meta) { const c = await caches.open(off.STORES.QURAN); await c.addAll([meta.data, meta.font]); }
+
+  // ---------- offline content manager ----------
+  let sizes = null;
+  async function renderOffline() {
+    setNav("settings"); setHeader(t("offline.title"), { back: true }); const hash = location.hash;
+    if (!off.isSupported()) { view.innerHTML = `<div class="empty">${esc(t("offline.needOnce"))}</div>`; return; }
+    view.innerHTML = loading();
+    try { await loadIndex(); } catch (e) { return failed(e, renderOffline); }
+    sizes ||= await fetch("data/audio-sizes.json").then(r => r.json()).catch(() => null);
+    const lang = getLang(); const fmt = b => off.fmtSize(b, lang);
+    const audio = adhkarAudio();
+    const trKey = await currentTr(); const tm = await trMeta(trKey);
+    const trUrls = trKey ? Array.from({ length: 114 }, (_, i) => trUrl(trKey, i + 1)) : [];
+    const recs = LS.get("offline:recs", {});
+    const [storage, riwSaved, trSaved, itemsSaved, chSaved, recRows] = await Promise.all([
+      off.storageInfo(),
+      Promise.all(INDEX.riwayat.map(async r => (await off.savedSet(off.STORES.QURAN, [r.data, r.font])).size === 2)),
+      off.savedSet(off.STORES.TR, trUrls),
+      off.savedSet(off.STORES.AUDIO, audio.items),
+      off.savedSet(off.STORES.AUDIO, audio.chapters),
+      Promise.all(Object.values(recs).map(async x => { const us = surahList(x).map(n => surahUrl(x.server, n)); const s = await off.savedSet(off.STORES.AUDIO, us); return { x, us, saved: [...s], bytes: await off.savedBytes(off.STORES.AUDIO, [...s]) }; })),
+    ]);
+    if (stale(hash)) return;
+    const btn = (act, label, ic, cls = "ghost") => `<button class="btn ${cls} small" data-act="${act}">${icon(ic)} ${esc(t(label))}</button>`;
+    const row = (title, subText, act, saved, extra = "") => `<div class="setting"><div class="lbl">${esc(title)}<small>${subText}</small></div>${extra}${saved ? btn("del:" + act, "offline.delete", "trash", "danger") : ""}${saved !== "full" ? btn("save:" + act, "offline.save", "download", "") : ""}</div>`;
+    const part = (done, total) => done === 0 ? false : done === total ? "full" : "part";
+    view.innerHTML = `
+      <p class="riwayah-note">${esc(t("offline.intro"))}</p>
+      <div class="card"><div class="about">${esc(t("offline.storage", { used: fmt(storage.usage), quota: fmt(storage.quota) }))}<br><small>${esc(t(storage.persisted ? "offline.persisted" : "offline.notPersisted"))}</small></div><div id="job"></div></div>
+      <h2 class="section-title">${esc(t("offline.mushaf"))}</h2>
+      <div class="card">${INDEX.riwayat.map((r, i) => row(rName(r), esc(t(riwSaved[i] ? "offline.saved" : "offline.notSaved")), "riw:" + r.id, riwSaved[i] ? "full" : false)).join("")}
+        ${riwSaved.some(x => !x) ? `<div class="setting"><div class="lbl"></div>${btn("save:riw:all", "offline.saveAll", "download", "")}</div>` : ""}</div>
+      <h2 class="section-title">${esc(t("offline.translation"))}</h2>
+      <div class="card">${trKey
+        ? row(tm ? trLabel(tm) : trKey, esc(t("offline.progress", { done: trSaved.size, total: 114 })), "tr", part(trSaved.size, 114))
+        : `<div class="setting"><div class="lbl">${esc(t("offline.noTranslation"))}</div><button class="btn ghost small" id="pick-tr">${icon("translate")} ${esc(t("quran.chooseTranslation"))}</button></div>`}</div>
+      <h2 class="section-title">${esc(t("offline.adhkarAudio"))}</h2>
+      <div class="card">
+        ${row(t("offline.itemsAudio"), esc(t("offline.progress", { done: itemsSaved.size, total: audio.items.length })) + (sizes ? `${sep()}${esc(t("offline.size", { size: fmt(sizes.items.bytes) }))}` : ""), "items", part(itemsSaved.size, audio.items.length))}
+        ${row(t("offline.chaptersAudio"), esc(t("offline.progress", { done: chSaved.size, total: audio.chapters.length })) + (sizes ? `${sep()}${esc(t("offline.size", { size: fmt(sizes.chapters.bytes) }))}` : ""), "chapters", part(chSaved.size, audio.chapters.length))}
+      </div>
+      <h2 class="section-title">${esc(t("offline.recitations"))}</h2>
+      <div class="card">${recRows.filter(r => r.saved.length).map(({ x, us, saved, bytes }) => `<div class="setting"><div class="lbl" dir="auto">${esc(x.name)}<small dir="auto">${esc(x.moshaf)}${sep()}${esc(t("offline.reciterSaved", { done: saved.length, total: us.length, size: fmt(bytes) }))}</small></div><a class="btn ghost small" href="#/listen/m/${x.rewaya}/${x.moshafId}">${esc(t("offline.open"))}</a>${btn("del:rec:" + x.server, "offline.delete", "trash", "danger")}</div>`).join("") || `<div class="about">${esc(t("offline.noRecitations"))}</div>`}</div>`;
+
+    const showJob = j => { const box = $("#job"); if (!box) return; box.innerHTML = j ? `<div class="setting"><div class="lbl">${esc(t("offline.saving"))}<small>${esc(t("offline.progressSize", { done: j.done, total: j.total, size: fmt(j.bytes) }))}</small><div class="progress"><div style="width:${Math.round(j.done / Math.max(j.total, 1) * 100)}%"></div></div></div><button class="btn ghost small" id="job-cancel">${esc(t("offline.cancel"))}</button></div>` : ""; const c = $("#job-cancel"); if (c) c.onclick = () => off.cancel(); };
+    const onProgress = e => { if (stale(hash)) return window.removeEventListener("offline-progress", onProgress); if (e.detail) showJob(e.detail); else renderOffline(); };
+    window.addEventListener("offline-progress", onProgress);
+    showJob(off.currentJob());
+    $("#pick-tr")?.addEventListener("click", () => pickTranslation(renderOffline));
+
+    const targets = {
+      tr: [off.STORES.TR, trUrls], items: [off.STORES.AUDIO, audio.items], chapters: [off.STORES.AUDIO, audio.chapters],
+    };
+    view.querySelectorAll("[data-act]").forEach(b => b.onclick = async () => {
+      // data-act is "<save|del>:<kind>[:<id>]"; the id may itself contain ":" (reciter server URLs).
+      const [act, kind, ...rest] = b.dataset.act.split(":"); const id = rest.join(":");
+      if (act === "del" && !confirm(t("offline.confirmDelete"))) return;
+      if (kind === "riw") {
+        const list = id === "all" ? INDEX.riwayat : [riw(id)];
+        if (act === "del") { await off.remove(off.STORES.QURAN, list.flatMap(r => [r.data, r.font])); list.forEach(r => dataCache.delete(r.id)); toast(t("offline.deleted")); return renderOffline(); }
+        b.disabled = true; b.textContent = t("offline.saving");
+        try { for (const r of list) await saveRiwayah(r); toast(t("offline.done")); } catch { toast(t("offline.needOnce")); }
+        return renderOffline();
+      }
+      if (kind === "rec") {
+        const x = recs[id]; if (!x) return;
+        await off.remove(off.STORES.AUDIO, surahList(x).map(n => surahUrl(x.server, n)));
+        delete recs[id]; LS.set("offline:recs", recs); toast(t("offline.deleted")); return renderOffline();
+      }
+      const [store, urls] = targets[kind] || [];
+      if (!store) return;
+      if (act === "del") { await off.remove(store, urls); toast(t("offline.deleted")); return renderOffline(); }
+      reportJob(await off.download({ id: "off:" + kind, urls, store, concurrency: kind === "tr" ? 4 : 3 }));
+    });
   }
 
   // ---------- radios ----------
@@ -440,7 +579,7 @@ export function setupQuran(ctx) {
 
   return {
     quran(parts, params) { return parts.length ? renderReader(parts[0], Number(parts[1]), params) : renderHome(); },
-    listen: renderListen, radio: renderRadio, player, sheet, closeSheet,
+    listen: renderListen, radio: renderRadio, offline: renderOffline, player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
   };
 }
