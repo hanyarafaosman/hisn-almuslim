@@ -111,7 +111,8 @@ h2.section-title { font-size: 1rem; color: var(--muted); margin: 18px 4px 8px; f
 .list .num { width: 30px; height: 30px; border-radius: 50%; background: var(--surface-2); color: var(--primary); display: grid; place-items: center; font-size: .85rem; font-weight: 700; flex: none; }
 .list .lbl { flex: 1; font-weight: 600; }
 .list .sub { color: var(--muted); font-size: .8rem; font-weight: 400; display: block; }
-.list .chev { color: var(--muted); transform: scaleX(-1); }
+.list .chev { color: var(--muted); }
+html[dir="rtl"] .list .chev { transform: scaleX(-1); }
 .empty { text-align: center; color: var(--muted); padding: 48px 16px; }
 .empty svg { width: 48px; height: 48px; opacity: .5; margin-bottom: 8px; }
 
@@ -187,6 +188,7 @@ h2.section-title { font-size: 1rem; color: var(--muted); margin: 18px 4px 8px; f
 .switch::after { content: ""; position: absolute; top: 3px; inset-inline-start: 3px; width: 22px; height: 22px; border-radius: 50%; background: #fff; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
 .switch.on { background: var(--primary); }
 .switch.on::after { transform: translateX(-20px); }
+html[dir="ltr"] .switch.on::after { transform: translateX(20px); }
 .range { width: 140px; accent-color: var(--primary); }
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; padding-inline: 18px; border-radius: 12px; font-weight: 700; background: var(--primary); color: var(--on-primary); }
 .btn.ghost { background: var(--surface-2); color: var(--primary); }
@@ -229,7 +231,7 @@ h2.section-title { font-size: 1rem; color: var(--muted); margin: 18px 4px 8px; f
 
 .spinner { width: 34px; height: 34px; margin: 0 auto 12px; border-radius: 50%; border: 3px solid var(--border); border-top-color: var(--primary); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
-.flip { transform: scaleX(-1); }
+html[dir="rtl"] .flip, html[dir="ltr"] .dir { transform: scaleX(-1); }
 .center { text-align: center; }
 .no-scroll { overflow: hidden; }
 
@@ -327,4 +329,26 @@ body.has-player .toast { bottom: calc(var(--nav-h) + var(--sab) + 76px); }
   body.has-player { padding-bottom: 86px; }
   body.has-player .toast { bottom: 80px; }
 }
+
+/* ===== اللغات والترجمة ===== */
+html:not([lang="ar"]):not([lang="fa"]):not([lang="ur"]):not([lang="ps"]) { --font-ui: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif; }
+html[lang="fa"], html[lang="ur"], html[lang="ps"] { --font-ui: "Noto Naskh Arabic", Tahoma, system-ui, sans-serif; }
+html[dir="ltr"] #btn-back svg, html[dir="ltr"] #pl-prev svg, html[dir="ltr"] #pl-next svg { transform: scaleX(-1); }
+.hero .verse { font-family: var(--font-text); font-size: 1.1rem; }
+.hero .verse-ref { font-size: .8rem; opacity: .75; margin-top: 2px; }
+.dhikr-tr { margin: 0 18px 10px; padding: 10px 12px; border-radius: 12px; background: var(--surface-2); font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; font-size: calc(.95rem * var(--scale)); line-height: 1.6; text-align: start; }
+.dhikr-tr p { margin: 0; }
+.dhikr-tr p + p { margin-top: 6px; }
+.dhikr-tr .translit { color: var(--muted); font-style: italic; }
+.dhikr.done .dhikr-tr { background: color-mix(in srgb, var(--surface) 60%, transparent); }
+.aya-tr { margin-top: 6px; padding-top: 8px; border-top: 1px dotted var(--border); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; font-size: calc(1rem * var(--scale)); line-height: 1.75; color: var(--text); text-align: start; }
+.aya-tr[dir="rtl"] { font-family: "Noto Naskh Arabic", Tahoma, sans-serif; }
+.aya-tr .fn { margin-top: 6px; font-size: .85em; color: var(--muted); }
+.aya-tr .fn summary { cursor: pointer; color: var(--primary); font-weight: 600; }
+.info { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; border-radius: 14px; background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); font-size: .9rem; }
+.info svg { color: var(--accent); flex: none; }
+.info a { color: var(--primary); font-weight: 700; }
+.ar-name { font-family: var(--font-text); color: var(--muted); font-weight: 400; margin-inline-start: 6px; }
+.about.note { background: color-mix(in srgb, var(--accent) 10%, transparent); border-radius: 12px; margin: 8px 12px 0; }
+.lbl .sub[dir="auto"] { unicode-bidi: plaintext; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

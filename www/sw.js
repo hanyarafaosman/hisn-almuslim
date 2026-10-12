@@ -1,15 +1,18 @@
 /* Service worker: offline-first app shell for حصن المسلم */
-const VERSION = "hisn-v1.1.1";
+const VERSION = "hisn-v1.2.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./css/app.css", "./js/app.js", "./js/quran.js", "./data/hisn.json", "./data/radios.json", "./quran/index.json",
+  "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./data/hisn.json", "./data/hisn.en.json", "./data/radios.json", "./quran/index.json",
+  "./i18n/ar.json", "./i18n/en.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png", "./icons/favicon.svg"
 ];
 const FONT_CACHE = "hisn-fonts-v1";
 const AUDIO_CACHE = "hisn-audio-v1";
 // Mushaf text + fonts (~1.5 MB per riwayah). Kept across app updates; bump only when quran/ data changes.
 const QURAN_CACHE = "hisn-quran-v1";
-const KEEP = [VERSION, FONT_CACHE, AUDIO_CACHE, QURAN_CACHE];
+// Translations of meanings from QuranEnc.com, kept for offline reading of surahs already opened.
+const TR_CACHE = "hisn-tr-v1";
+const KEEP = [VERSION, FONT_CACHE, AUDIO_CACHE, QURAN_CACHE, TR_CACHE];
 
 self.addEventListener("install", e => {
   // cache: "reload" bypasses the browser HTTP cache (GitHub Pages sends max-age=600), so a new version never stores stale files.
@@ -28,6 +31,7 @@ self.addEventListener("fetch", e => {
     e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : VERSION));
     return;
   }
+  if (url.hostname === "quranenc.com" && url.pathname.startsWith("/api/v1/translation")) { e.respondWith(staleWhileRevalidate(req, TR_CACHE)); return; }
   if (url.hostname.endsWith("gstatic.com") || url.hostname.endsWith("googleapis.com")) { e.respondWith(staleWhileRevalidate(req, FONT_CACHE)); return; }
   // Only the short Hisn al-Muslim clips are cached. Quran recitations and live radio streams pass through untouched.
   if (url.hostname.endsWith("hisnmuslim.com") && url.pathname.endsWith(".mp3")) { e.respondWith(cacheFirst(req, AUDIO_CACHE, true)); return; }

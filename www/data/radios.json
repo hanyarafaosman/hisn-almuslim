@@ -2,12 +2,62 @@
   "checked": "2026-10-12",
   "note": "Live Quran radio stations. Each stream was verified to play from an HTTPS page on the date above. Re-check with: npm run check:radios",
   "live": [
-    { "id": "eg-cairo", "name": "إذاعة القرآن الكريم من القاهرة", "country": "مصر", "flag": "🇪🇬", "url": "https://stream.radiojar.com/8s5u5tpdtwzuv" },
-    { "id": "sa-quran", "name": "إذاعة القرآن الكريم", "country": "السعودية", "flag": "🇸🇦", "url": "https://stream.radiojar.com/0tpy1h0kxtzuv" },
-    { "id": "ae-sharjah", "name": "إذاعة القرآن الكريم من الشارقة", "country": "الإمارات", "flag": "🇦🇪", "url": "https://l3.itworkscdn.net/smcquranlive/quranradiolive/icecast.audio" },
-    { "id": "dz-coran", "name": "إذاعة القرآن الكريم", "country": "الجزائر", "flag": "🇩🇿", "url": "https://webradio1.tda.dz:8001/Coran_64K.mp3" },
-    { "id": "tn-zitouna", "name": "إذاعة الزيتونة للقرآن الكريم", "country": "تونس", "flag": "🇹🇳", "url": "https://radio.radiotunisienne.tn/radiozaitouna" },
-    { "id": "om-quran", "name": "إذاعة القرآن الكريم", "country": "عُمان", "flag": "🇴🇲", "url": "https://partwota.cdn.mgmlcdn.com/quranrdoorg/quranrdo.stream_aac/chunklist.m3u8", "hls": true },
-    { "id": "mp3quran-mix", "name": "إذاعة mp3quran المنوّعة", "country": "تلاوات متنوعة", "flag": "📻", "url": "https://qurango.net/radio/mix" }
+    {
+      "id": "eg-cairo",
+      "name": "إذاعة القرآن الكريم من القاهرة",
+      "cc": "EG",
+      "url": "https://stream.radiojar.com/8s5u5tpdtwzuv",
+      "flag": "🇪🇬",
+      "country": "مصر"
+    },
+    {
+      "id": "sa-quran",
+      "name": "إذاعة القرآن الكريم",
+      "cc": "SA",
+      "url": "https://stream.radiojar.com/0tpy1h0kxtzuv",
+      "flag": "🇸🇦",
+      "country": "السعودية"
+    },
+    {
+      "id": "ae-sharjah",
+      "name": "إذاعة القرآن الكريم من الشارقة",
+      "cc": "AE",
+      "url": "https://l3.itworkscdn.net/smcquranlive/quranradiolive/icecast.audio",
+      "flag": "🇦🇪",
+      "country": "الإمارات"
+    },
+    {
+      "id": "dz-coran",
+      "name": "إذاعة القرآن الكريم",
+      "cc": "DZ",
+      "url": "https://webradio1.tda.dz:8001/Coran_64K.mp3",
+      "flag": "🇩🇿",
+      "country": "الجزائر"
+    },
+    {
+      "id": "tn-zitouna",
+      "name": "إذاعة الزيتونة للقرآن الكريم",
+      "cc": "TN",
+      "url": "https://radio.radiotunisienne.tn/radiozaitouna",
+      "flag": "🇹🇳",
+      "country": "تونس"
+    },
+    {
+      "id": "om-quran",
+      "name": "إذاعة القرآن الكريم",
+      "cc": "OM",
+      "url": "https://partwota.cdn.mgmlcdn.com/quranrdoorg/quranrdo.stream_aac/chunklist.m3u8",
+      "hls": true,
+      "flag": "🇴🇲",
+      "country": "عُمان"
+    },
+    {
+      "id": "mp3quran-mix",
+      "name": "إذاعة mp3quran المنوّعة",
+      "cc": null,
+      "url": "https://qurango.net/radio/mix",
+      "flag": "📻",
+      "country": "تلاوات متنوعة"
+    }
   ]
 }

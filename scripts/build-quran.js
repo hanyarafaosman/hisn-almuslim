@@ -75,7 +75,7 @@ const AYA_NUM = /[\s ]*[٠-٩]+[\s ]*$/; // trailing aya number (rendered as t
     const so = x => x.sura_no ?? x.sora_no ?? x.sora;
     const surahs = Array.from({ length: 114 }, () => []);
     const emlaey = Array.from({ length: 114 }, () => []);
-    const names = Array(114).fill(null);
+    const names = Array(114).fill(null); const namesEn = Array(114).fill(null);
     const juzStart = {};
     for (const x of rows) {
       const s = so(x), i = s - 1;
@@ -85,6 +85,7 @@ const AYA_NUM = /[\s ]*[٠-٩]+[\s ]*$/; // trailing aya number (rendered as t
       surahs[i].push([x.aya_text, page, x.jozz]);
       if (x.aya_text_emlaey != null) emlaey[i].push(x.aya_text_emlaey);
       names[i] = names[i] || String(x.sura_name_ar ?? x.sora_name_ar).trim();
+      namesEn[i] = namesEn[i] || String(x.sura_name_en ?? x.sora_name_en ?? "").trim();
       if (!juzStart[x.jozz]) juzStart[x.jozz] = [s, x.aya_no];
     }
     if (surahs.some(a => !a.length)) throw new Error(`missing surah in ${r.id}`);
@@ -106,7 +107,7 @@ const AYA_NUM = /[\s ]*[٠-٩]+[\s ]*$/; // trailing aya number (rendered as t
       id: r.id, name: r.name, short: r.short, version: r.version, audio: r.audio,
       font: `quran/fonts/${r.id}.woff2`, data: `quran/${r.id}.json`,
       ayat: rows.length, basmala, basmalaIsAya,
-      surahs: surahs.map((a, i) => [names[i], a.length, a[0][1]]),
+      surahs: surahs.map((a, i) => [names[i], a.length, a[0][1], namesEn[i]]),
       juz: Array.from({ length: 30 }, (_, j) => juzStart[j + 1]),
       sha256: { data: r.data[1], font: r.font[1] },
     });

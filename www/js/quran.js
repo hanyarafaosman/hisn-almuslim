@@ -1,26 +1,34 @@
-/* ===== المصحف بالروايات + الاستماع + الإذاعات ===== */
+/* ===== المصحف بالروايات + ترجمة المعاني + الاستماع + الإذاعات ===== */
 // Quran text and fonts: King Fahd Glorious Quran Printing Complex (KFGQPC), shown verbatim.
+// Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
 const API = "https://www.mp3quran.net/api/v3";
-const AYA_NUM = /[\s ]*[٠-٩]+[\s ]*$/;
-const MARKS = /[ؐ-ًؚ-ٟۖ-ۭـ࣓-ࣿ]/g;
+const QE = "https://quranenc.com/api/v1";
+const ch = (...cps) => String.fromCodePoint(...cps);
+const range = (a, b) => ch(a) + "-" + ch(b);
+const AYA_NUM = new RegExp("[\\s" + ch(0xA0) + "]*[" + range(0x660, 0x669) + "]+[\\s" + ch(0xA0) + "]*$");
+const MARKS = new RegExp("[" + range(0x610, 0x61A) + range(0x64B, 0x65F) + range(0x6D6, 0x6ED) + ch(0x640) + range(0x8D3, 0x8FF) + "]", "g");
+const DAGGER = ch(0x670);
 
 // Search key: ignores diacritics, Uthmani spelling of alef (dagger alef, alef after waw) and spaces.
 export const quranKey = s => s.normalize("NFC").replace(AYA_NUM, "")
-  .replace(/وٰ/g, "ا").replace(/ىٰ/g, "ى").replace(/ٰ/g, "ا").replace(/ۧ/g, "ي").replace(MARKS, "")
+  .split(ch(0x648) + DAGGER).join("ا").split(ch(0x649) + DAGGER).join("ى").split(DAGGER).join("ا").split(ch(0x6E7)).join("ي")
+  .replace(MARKS, "")
   .replace(/[ٱأإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/ؤ/g, "و").replace(/ئ/g, "ي")
   .replace(/[^ء-ي]/g, "").replace(/ا/g, "");
 
-
-// Arabic counted noun: 1 سورة، 2 سورتان، 3-10 سور، 11+ سورة
-const plural = (n, one, two, few) => n === 2 ? two : n >= 3 && n <= 10 ? few : one;
+// mp3quran.net localises reciter and riwayah names in these languages; everything else uses English.
+const MP3Q_LANG = { ar: "ar", en: "eng", fr: "fr", ru: "ru", de: "de", es: "es", tr: "tr", zh: "cn", ur: "ur", bn: "bn", bs: "bs", fa: "fa", id: "id", pt: "pt", ha: "ha", sw: "sw" };
+const KUFI_AYAT = 6236; // QuranEnc numbering follows the Kufan count (Hafs, Shuʿbah)
 
 export function setupQuran(ctx) {
-  const { view, $, esc, icon, toast, ar, setHeader, setNav, LS, copyText, share } = ctx;
+  const { view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, setHeader, setNav, LS, copyText, share } = ctx;
   const state = Object.assign({ riwayah: "hafs", last: null, bookmark: null, reciters: {}, tab: "surahs" }, LS.get("quran", {}));
   const save = () => LS.set("quran", state);
   const stale = hash => location.hash !== hash; // user navigated away while we were loading
+  const isAr = () => getLang() === "ar";
+  const lower = s => String(s).toLocaleLowerCase();
 
   // ---------- data ----------
   let INDEX = null; const dataCache = new Map(); const fontsReady = new Map(); const searchIdx = new Map();
@@ -29,11 +37,16 @@ export function setupQuran(ctx) {
     return INDEX;
   }
   const riw = id => INDEX.riwayat.find(r => r.id === id) || INDEX.riwayat[0];
-  const surahName = n => INDEX ? INDEX.riwayat[0].surahs[n - 1][0] : `سورة ${ar(n)}`;
+  const rName = meta => t("riwayah." + meta.id);
+  const rShort = meta => t("riwayahShort." + meta.id);
+  const surahName = (n, meta) => {
+    const s = (meta || INDEX?.riwayat[0])?.surahs[n - 1];
+    return !s ? String(n) : isAr() ? s[0] : (s[3] || s[0]);
+  };
   function loadFont(meta) {
     if (!fontsReady.has(meta.id)) {
       const ff = new FontFace(`kfgqpc-${meta.id}`, `url(${meta.font}) format("woff2")`, { display: "block" });
-      fontsReady.set(meta.id, ff.load().then(f => { document.fonts.add(f); }).catch(() => { fontsReady.delete(meta.id); toast("تعذّر تحميل خط المصحف، يُعرض بخط بديل"); }));
+      fontsReady.set(meta.id, ff.load().then(f => { document.fonts.add(f); }).catch(() => { fontsReady.delete(meta.id); toast(t("quran.fontFailed")); }));
     }
     return fontsReady.get(meta.id);
   }
@@ -46,14 +59,14 @@ export function setupQuran(ctx) {
   }
   async function isCached(meta) { try { return !!(await caches.match(meta.data)); } catch { return false; } }
 
-  const loading = (msg = "جارٍ التحميل…") => `<div class="empty"><div class="spinner"></div><div>${msg}</div></div>`;
-  const failed = (err, retry) => { view.innerHTML = `<div class="empty">تعذّر التحميل.<br><small>${esc(err.message || err)}</small><br><br><button class="btn" id="retry">إعادة المحاولة</button></div>`; $("#retry").onclick = retry; };
+  const loading = (msg = t("common.loading")) => `<div class="empty"><div class="spinner"></div><div>${esc(msg)}</div></div>`;
+  const failed = (err, retry) => { view.innerHTML = `<div class="empty">${esc(t("common.loadFailed"))}<br><small>${esc(err.message || err)}</small><br><br><button class="btn" id="retry">${esc(t("common.retry"))}</button></div>`; $("#retry").onclick = retry; };
 
   // ---------- bottom sheet ----------
   function sheet(title, bodyHtml) {
     closeSheet();
     const wrap = document.createElement("div"); wrap.className = "sheet-backdrop"; wrap.id = "sheet";
-    wrap.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sheet-head"><h3>${esc(title)}</h3><button class="icon-btn" data-close aria-label="إغلاق">${icon("close")}</button></div><div class="sheet-body">${bodyHtml}</div></div>`;
+    wrap.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sheet-head"><h3>${esc(title)}</h3><button class="icon-btn" data-close aria-label="${esc(t("common.close"))}">${icon("close")}</button></div><div class="sheet-body">${bodyHtml}</div></div>`;
     wrap.addEventListener("click", e => { if (e.target === wrap || e.target.closest("[data-close]")) closeSheet(); });
     document.body.appendChild(wrap); document.body.classList.add("no-scroll");
     return $(".sheet-body", wrap);
@@ -62,20 +75,57 @@ export function setupQuran(ctx) {
   document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
   window.addEventListener("hashchange", closeSheet);
 
-  // ---------- mp3quran API (cached in memory, last copy kept for offline listing) ----------
-  const apiCache = new Map();
-  async function api(path) {
-    if (apiCache.has(path)) return apiCache.get(path);
-    const p = fetch(API + path).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
-      .then(j => { LS.set("api:" + path, j); return j; })
-      .catch(err => { apiCache.delete(path); const old = LS.get("api:" + path, null); if (old) return old; throw err; });
-    apiCache.set(path, p); return p;
+  // ---------- remote JSON (memory cache, last copy kept in storage for offline listing) ----------
+  const remote = new Map();
+  function getJSON(url) {
+    if (remote.has(url)) return remote.get(url);
+    const p = fetch(url).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(j => { LS.set("api:" + url, j); return j; })
+      .catch(err => { remote.delete(url); const old = LS.get("api:" + url, null); if (old) return old; throw err; });
+    remote.set(url, p); return p;
   }
-  const getRiwayatList = () => api("/riwayat?language=ar").then(j => j.riwayat);
-  const getReciters = rewaya => api(`/reciters?language=ar&rewaya=${rewaya}`).then(j => j.reciters);
-  const getReciterRadios = () => api("/radios?language=ar").then(j => j.radios);
+  const mp3Lang = () => MP3Q_LANG[getLang()] || "eng";
+  const getRiwayatList = () => getJSON(`${API}/riwayat?language=${mp3Lang()}`).then(j => j.riwayat);
+  const getReciters = rewaya => getJSON(`${API}/reciters?language=${mp3Lang()}&rewaya=${rewaya}`).then(j => j.reciters);
+  const getReciterRadios = () => getJSON(`${API}/radios?language=${mp3Lang()}`).then(j => j.radios);
   let liveRadios = null;
   const getLiveRadios = async () => liveRadios || (liveRadios = await fetch("data/radios.json").then(r => r.json()).then(j => j.live));
+
+  // ---------- translations of meanings (QuranEnc) ----------
+  const getTrList = () => getJSON(`${QE}/translations/list?localization=${isAr() ? "ar" : "en"}`).then(j => j.translations || []);
+  const trCache = new Map();
+  function getTrSura(key, s) {
+    const k = key + ":" + s;
+    if (!trCache.has(k)) trCache.set(k, getJSON(`${QE}/translation/sura/${key}/${s}`).then(j => j.result || []).catch(e => { trCache.delete(k); throw e; }));
+    return trCache.get(k);
+  }
+  function defaultTr(list) {
+    const lang = getLang(); if (lang === "ar") return "";
+    const mine = list.find(x => x.language_iso_code === lang);
+    return mine ? mine.key : (list.find(x => x.key === "english_rwwad") || list.find(x => x.language_iso_code === "en"))?.key || "";
+  }
+  async function currentTr() {
+    if (state.trChosen) return state.tr || ""; // the user picked one (or none) explicitly
+    try { return defaultTr(await getTrList()); } catch { return ""; }
+  }
+  async function trMeta(key) { if (!key) return null; try { return (await getTrList()).find(x => x.key === key) || null; } catch { return null; } }
+  const trLabel = x => x ? `${languageName(x.language_iso_code)}: ${x.title}` : t("quran.noTranslation");
+
+  async function pickTranslation(then) {
+    const body = sheet(t("quran.chooseTranslation"), loading());
+    let list; try { list = await getTrList(); } catch { body.innerHTML = `<div class="empty">${esc(t("quran.trListFailed"))}</div>`; return; }
+    const cur = await currentTr(); const c = collator();
+    const rows = list.map(x => ({ x, lang: languageName(x.language_iso_code) })).sort((a, b) => (a.x.language_iso_code === getLang() ? -1 : 0) - (b.x.language_iso_code === getLang() ? -1 : 0) || c.compare(a.lang, b.lang) || c.compare(a.x.title, b.x.title));
+    body.innerHTML = `<div class="searchbox small">${icon("search")}<input type="search" id="tr-q" placeholder="${esc(t("quran.trSearch"))}" autocomplete="off"></div><div class="list flat" id="tr-list"></div>`;
+    const draw = f => {
+      const q = lower(f.trim());
+      const none = `<button class="row" data-k=""><div class="lbl">${esc(t("quran.noTranslation"))}</div>${cur === "" ? icon("check") : ""}</button>`;
+      $("#tr-list", body).innerHTML = (q ? "" : none) + rows.filter(r => !q || lower(r.lang + " " + r.x.title + " " + r.x.language_iso_code).includes(q))
+        .map(r => `<button class="row" data-k="${esc(r.x.key)}"><div class="lbl" dir="auto">${esc(r.lang)}<span class="sub" dir="auto">${esc(r.x.title)}</span></div>${cur === r.x.key ? icon("check") : ""}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`;
+    };
+    draw(""); $("#tr-q", body).oninput = e => draw(e.target.value);
+    $("#tr-list", body).onclick = e => { const b = e.target.closest("[data-k]"); if (!b) return; state.tr = b.dataset.k; state.trChosen = true; save(); closeSheet(); then?.(); };
+  }
 
   // ---------- persistent audio player ----------
   const player = (() => {
@@ -84,22 +134,23 @@ export function setupQuran(ctx) {
     let q = null;
     const pad = n => String(n).padStart(3, "0");
     const url = () => q.type === "radio" ? q.url : `${q.server}${pad(q.list[q.idx])}.mp3`;
-    const title = () => q.type === "radio" ? q.name : `سورة ${surahName(q.list[q.idx])}`;
+    const title = () => q.type === "radio" ? q.name : t("quran.surah", { name: surahName(q.list[q.idx]) });
     function render() {
       el.hidden = !q; document.body.classList.toggle("has-player", !!q); if (!q) return;
       t1.textContent = title(); t2.textContent = q.sub || "";
       const surahs = q.type === "surahs"; prev.hidden = next.hidden = !surahs;
       if (surahs) { prev.disabled = q.idx <= 0; next.disabled = q.idx >= q.list.length - 1; }
-      btn.innerHTML = icon(a.paused ? "play" : "pause"); btn.setAttribute("aria-label", a.paused ? "تشغيل" : "إيقاف مؤقت");
+      btn.innerHTML = icon(a.paused ? "play" : "pause"); btn.setAttribute("aria-label", t(a.paused ? "common.play" : "common.pause"));
       document.querySelectorAll("[data-playing]").forEach(x => x.classList.toggle("on", x.dataset.playing === key()));
       if ("mediaSession" in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({ title: title(), artist: q.sub || "", album: "حصن المسلم", artwork: [{ src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }] });
+        navigator.mediaSession.metadata = new MediaMetadata({ title: title(), artist: q.sub || "", album: t("app.name"), artwork: [{ src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }] });
       }
     }
+    const failMsg = () => t(q.type === "radio" ? "radio.playFailed" : "listen.playFailed");
     function start() {
       document.getElementById("audio")?.pause();
       el.classList.add("loading"); a.src = url();
-      a.play().catch(() => { el.classList.remove("loading"); toast(q.type === "radio" ? "تعذّر تشغيل الإذاعة، قد تكون متوقفة حاليًا" : "تعذّر تشغيل التلاوة"); render(); });
+      a.play().catch(() => { el.classList.remove("loading"); toast(failMsg()); render(); });
       render();
     }
     function step(d) { if (q?.type !== "surahs") return; const i = q.idx + d; if (i < 0 || i >= q.list.length) return; q.idx = i; start(); }
@@ -108,7 +159,7 @@ export function setupQuran(ctx) {
     a.addEventListener("waiting", () => el.classList.add("loading"));
     a.addEventListener("pause", render);
     a.addEventListener("ended", () => { if (q?.type === "surahs" && q.idx < q.list.length - 1) step(1); else render(); });
-    a.addEventListener("error", () => { if (!q || !a.getAttribute("src")) return; el.classList.remove("loading"); toast(q.type === "radio" ? "تعذّر تشغيل الإذاعة، قد تكون متوقفة حاليًا" : "تعذّر تحميل التلاوة"); render(); });
+    a.addEventListener("error", () => { if (!q || !a.getAttribute("src")) return; el.classList.remove("loading"); toast(q.type === "radio" ? t("radio.playFailed") : t("listen.loadFailed")); render(); });
     btn.onclick = () => { if (!q) return; if (a.paused) { if (q.type === "radio") start(); else a.play().catch(() => {}); } else a.pause(); };
     prev.onclick = () => step(-1); next.onclick = () => step(1);
     $("#pl-close", el).onclick = () => { a.pause(); a.removeAttribute("src"); a.load(); q = null; render(); };
@@ -118,7 +169,7 @@ export function setupQuran(ctx) {
       try { navigator.mediaSession.setActionHandler("previoustrack", () => step(-1)); navigator.mediaSession.setActionHandler("nexttrack", () => step(1)); } catch { /* unsupported */ }
     }
     return {
-      surahs({ server, list, start: s, sub }) { const idx = list.indexOf(s); if (idx < 0) { toast("هذه السورة غير متوفرة بصوت هذا القارئ"); return; } q = { type: "surahs", server, list, idx, sub }; start(); },
+      surahs({ server, list, start: s, sub }) { const idx = list.indexOf(s); if (idx < 0) { toast(t("listen.surahUnavailable")); return; } q = { type: "surahs", server, list, idx, sub }; start(); },
       radio({ id, url: u, name, sub }) { if (q?.type === "radio" && q.id === id && !a.paused) { a.pause(); return; } q = { type: "radio", id, url: u, name, sub }; start(); },
       pause() { a.pause(); },
       key, refresh: render,
@@ -127,40 +178,42 @@ export function setupQuran(ctx) {
 
   // ---------- reciter picker (for the reader) ----------
   async function pickReciter(meta, then) {
-    const body = sheet(`اختيار القارئ، رواية ${meta.short}`, loading("جارٍ جلب القرّاء…"));
+    const body = sheet(t("quran.pickReciterTitle", { name: rShort(meta) }), loading(t("quran.fetchingReciters")));
     try {
       const lists = await Promise.all(meta.audio.map(id => getReciters(id).catch(() => [])));
       const items = [];
       lists.flat().forEach(r => r.moshaf.filter(m => meta.audio.includes(m.rewaya_id)).forEach(m => items.push({ name: r.name, moshaf: m.name, server: m.server, list: m.surah_list, total: m.surah_total })));
-      const seen = new Set(); const uniq = items.filter(x => !seen.has(x.server) && seen.add(x.server)).sort((x, y) => x.name.localeCompare(y.name, "ar"));
-      if (!uniq.length) { body.innerHTML = `<div class="empty">لا يتوفر قرّاء لهذه الرواية حاليًا، أو لا يوجد اتصال بالإنترنت.</div>`; return; }
-      body.innerHTML = `<div class="searchbox small">${icon("search")}<input type="search" placeholder="ابحث عن قارئ…" id="rc-q"></div><div class="list flat" id="rc-list"></div>`;
-      const draw = f => { $("#rc-list", body).innerHTML = uniq.filter(x => !f || x.name.includes(f)).map((x, i) => `<button class="row" data-i="${uniq.indexOf(x)}"><div class="lbl">${esc(x.name)}<span class="sub">${esc(x.moshaf)}، ${ar(x.total)} ${plural(x.total, "سورة", "سورتان", "سور")}</span></div>${state.reciters[meta.id]?.server === x.server ? icon("check") : ""}</button>`).join("") || `<div class="empty">لا نتائج</div>`; };
+      const c = collator(); const seen = new Set();
+      const uniq = items.filter(x => !seen.has(x.server) && seen.add(x.server)).sort((x, y) => c.compare(x.name, y.name));
+      if (!uniq.length) { body.innerHTML = `<div class="empty">${esc(t("quran.noReciters"))}</div>`; return; }
+      body.innerHTML = `<div class="searchbox small">${icon("search")}<input type="search" placeholder="${esc(t("quran.searchReciter"))}" id="rc-q"></div><div class="list flat" id="rc-list"></div>`;
+      const draw = f => { const q = lower(f); $("#rc-list", body).innerHTML = uniq.filter(x => !q || lower(x.name).includes(q)).map(x => `<button class="row" data-i="${uniq.indexOf(x)}"><div class="lbl" dir="auto">${esc(x.name)}<span class="sub" dir="auto">${esc(x.moshaf)}${sep()}${esc(t("count.surahs", { n: x.total }))}</span></div>${state.reciters[meta.id]?.server === x.server ? icon("check") : ""}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
       draw(""); $("#rc-q", body).oninput = e => draw(e.target.value.trim());
       $("#rc-list", body).onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; const x = uniq[Number(b.dataset.i)]; state.reciters[meta.id] = x; save(); closeSheet(); then?.(x); };
-    } catch (err) { body.innerHTML = `<div class="empty">تعذّر جلب القرّاء.<br><small>${esc(err.message)}</small></div>`; }
+    } catch (err) { body.innerHTML = `<div class="empty">${esc(t("quran.recitersFailed"))}<br><small>${esc(err.message)}</small></div>`; }
   }
   const surahList = x => String(x.list || "").split(",").map(Number).filter(Boolean);
 
   // ---------- Mushaf home ----------
   let homeQuery = "";
   async function renderHome() {
-    setNav("quran"); setHeader("المصحف", { actions: `<a class="icon-btn" href="#/listen" aria-label="الاستماع">${icon("headphones")}</a>` });
+    setNav("quran"); setHeader(t("quran.title"), { actions: `<button class="icon-btn" id="q-tr-pick" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><a class="icon-btn" href="#/listen" aria-label="${esc(t("listen.title"))}">${icon("headphones")}</a>` });
     const hash = location.hash; view.innerHTML = loading();
     try { await loadIndex(); } catch (e) { return failed(e, renderHome); }
     if (stale(hash)) return;
+    $("#q-tr-pick").onclick = () => pickTranslation(renderHome);
     const meta = riw(state.riwayah);
     const cont = state.last && INDEX.riwayat.some(r => r.id === state.last.r) ? state.last : null;
     const bm = state.bookmark && INDEX.riwayat.some(r => r.id === state.bookmark.r) ? state.bookmark : null;
-    const pos = (p, label, ic) => `<a class="resume" href="#/quran/${p.r}/${p.s}?a=${p.a}">${icon(ic)}<div><b>${label}</b><span>سورة ${esc(riw(p.r).surahs[p.s - 1][0])}، آية ${ar(p.a)}، رواية ${esc(riw(p.r).short)}</span></div></a>`;
+    const pos = (p, label, ic) => `<a class="resume" href="#/quran/${p.r}/${p.s}?a=${p.a}">${icon(ic)}<div><b>${esc(label)}</b><span>${esc(t("quran.position", { surah: surahName(p.s, riw(p.r)), aya: p.a, riwayah: rShort(riw(p.r)) }))}</span></div></a>`;
     view.innerHTML = `
-      <div class="chips" role="tablist" aria-label="الرواية">${INDEX.riwayat.map(r => `<button class="chip ${r.id === meta.id ? "on" : ""}" data-r="${r.id}" role="tab" aria-selected="${r.id === meta.id}">${esc(r.short)}</button>`).join("")}</div>
-      <p class="riwayah-note">رواية <b>${esc(meta.name)}</b>، ${ar(meta.ayat)} ${plural(meta.ayat, "آية", "آيتان", "آيات")} <span id="cached"></span></p>
-      ${cont || bm ? `<div class="resume-row">${cont ? pos(cont, "متابعة القراءة", "book") : ""}${bm ? pos(bm, "العلامة", "bookmark") : ""}</div>` : ""}
-      <div class="searchbox">${icon("search")}<input id="qq" type="search" placeholder="ابحث عن سورة أو كلمة في الآيات…" value="${esc(homeQuery)}" autocomplete="off" enterkeyhint="search"></div>
-      <div class="tabs-row"><div class="segmented" id="qtabs"><button data-t="surahs" class="${state.tab === "surahs" ? "on" : ""}">السور</button><button data-t="juz" class="${state.tab === "juz" ? "on" : ""}">الأجزاء</button></div></div>
+      <div class="chips" role="tablist" aria-label="${esc(t("quran.riwayah"))}">${INDEX.riwayat.map(r => `<button class="chip ${r.id === meta.id ? "on" : ""}" data-r="${r.id}" role="tab" aria-selected="${r.id === meta.id}">${esc(rShort(r))}</button>`).join("")}</div>
+      <p class="riwayah-note">${esc(t("quran.riwayahOf", { name: rName(meta) }))}${sep()}${esc(t("count.ayat", { n: meta.ayat }))} <span id="cached"></span></p>
+      ${cont || bm ? `<div class="resume-row">${cont ? pos(cont, t("quran.continue"), "book") : ""}${bm ? pos(bm, t("quran.bookmark"), "bookmark") : ""}</div>` : ""}
+      <div class="searchbox">${icon("search")}<input id="qq" type="search" placeholder="${esc(t("quran.searchPlaceholder"))}" value="${esc(homeQuery)}" autocomplete="off" enterkeyhint="search"></div>
+      <div class="tabs-row"><div class="segmented" id="qtabs"><button data-t="surahs" class="${state.tab === "surahs" ? "on" : ""}">${esc(t("quran.surahs"))}</button><button data-t="juz" class="${state.tab === "juz" ? "on" : ""}">${esc(t("quran.juzs"))}</button></div></div>
       <div id="qlist"></div>`;
-    isCached(meta).then(c => { const x = document.getElementById("cached"); if (x && c) x.innerHTML = `، ${icon("check")} محفوظة للقراءة دون اتصال`; });
+    isCached(meta).then(c => { const x = document.getElementById("cached"); if (x && c) x.innerHTML = `${sep()}${icon("check")} ${esc(t("quran.savedOffline"))}`; });
     view.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { state.riwayah = b.dataset.r; save(); renderHome(); });
     view.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { state.tab = b.dataset.t; save(); view.querySelectorAll("[data-t]").forEach(x => x.classList.toggle("on", x === b)); drawList(); });
     const input = $("#qq"); let timer;
@@ -170,26 +223,28 @@ export function setupQuran(ctx) {
     async function drawList() {
       const box = $("#qlist"); if (!box) return;
       const q = homeQuery.trim(); $("#qtabs").parentElement.hidden = !!q;
-      const surahRow = (i, extra = "") => { const [name, count, page] = meta.surahs[i]; return `<a href="#/quran/${meta.id}/${i + 1}"><div class="num">${ar(i + 1)}</div><div class="lbl">${esc(name)}<span class="sub">${ar(count)} ${plural(count, "آية", "آيتان", "آيات")}، صفحة ${ar(page)}${extra}</span></div>${icon("back", "chev")}</a>`; };
+      const surahRow = i => { const [, count, page] = meta.surahs[i]; return `<a href="#/quran/${meta.id}/${i + 1}"><div class="num">${num(i + 1)}</div><div class="lbl">${esc(surahName(i + 1, meta))}${isAr() ? "" : ` <span class="ar-name" lang="ar" dir="rtl">${esc(meta.surahs[i][0])}</span>`}<span class="sub">${esc(t("quran.surahMeta", { ayat: t("count.ayat", { n: count }), page }))}</span></div>${icon("back", "chev")}</a>`; };
       if (!q) {
         box.innerHTML = state.tab === "juz"
-          ? `<div class="list">${meta.juz.map(([s, a], j) => `<a href="#/quran/${meta.id}/${s}?a=${a}"><div class="num">${ar(j + 1)}</div><div class="lbl">الجزء ${ar(j + 1)}<span class="sub">يبدأ من سورة ${esc(meta.surahs[s - 1][0])}، آية ${ar(a)}</span></div>${icon("back", "chev")}</a>`).join("")}</div>`
+          ? `<div class="list">${meta.juz.map(([s, a], j) => `<a href="#/quran/${meta.id}/${s}?a=${a}"><div class="num">${num(j + 1)}</div><div class="lbl">${esc(t("quran.juz", { n: j + 1 }))}<span class="sub">${esc(t("quran.juzStart", { surah: surahName(s, meta), aya: a }))}</span></div>${icon("back", "chev")}</a>`).join("")}</div>`
           : `<div class="list">${meta.surahs.map((_, i) => surahRow(i)).join("")}</div>`;
         return;
       }
-      const k = quranKey(q); const num = Number(q.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)));
-      const names = meta.surahs.map((s, i) => i).filter(i => (num >= 1 && num <= 114 && i + 1 === num) || (k && quranKey(meta.surahs[i][0]).includes(k)));
-      let html = names.length ? `<h2 class="section-title">السور</h2><div class="list">${names.map(i => surahRow(i)).join("")}</div>` : "";
-      if (k.length < 3) { box.innerHTML = html || `<div class="empty">اكتب كلمة أطول للبحث في الآيات</div>`; return; }
-      box.innerHTML = html + loading("جارٍ البحث في الآيات…");
-      let res; try { res = await loadRiwayah(meta.id); } catch (e) { box.innerHTML = html + `<div class="empty">تعذّر تحميل نص الرواية للبحث.</div>`; return; }
+      const k = quranKey(q); const n = Number(q.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+      const latin = lower(q).normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]/g, "");
+      const names = meta.surahs.map((s, i) => i).filter(i => (n >= 1 && n <= 114 && i + 1 === n) || (k && quranKey(meta.surahs[i][0]).includes(k))
+        || (latin.length > 1 && lower(meta.surahs[i][3] || "").normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]/g, "").includes(latin)));
+      let html = names.length ? `<h2 class="section-title">${esc(t("quran.surahs"))}</h2><div class="list">${names.map(i => surahRow(i)).join("")}</div>` : "";
+      if (k.length < 3) { box.innerHTML = html || `<div class="empty">${esc(t("quran.typeLonger"))}</div>`; return; }
+      box.innerHTML = html + loading(t("quran.searching"));
+      let res; try { res = await loadRiwayah(meta.id); } catch (e) { box.innerHTML = html + `<div class="empty">${esc(t("quran.searchLoadFailed"))}</div>`; return; }
       if (homeQuery.trim() !== q || !document.body.contains(box)) return;
       if (!searchIdx.has(meta.id)) searchIdx.set(meta.id, res.data.s.map((ayat, si) => ayat.map((x, ai) => quranKey(res.data.e ? res.data.e[si][ai] : x[0]))));
       const idx = searchIdx.get(meta.id); const hits = [];
       for (let si = 0; si < idx.length && hits.length < 200; si++) for (let ai = 0; ai < idx[si].length; ai++) if (idx[si][ai].includes(k)) hits.push([si, ai]);
-      html += `<h2 class="section-title">${hits.length ? (hits.length >= 200 ? "أكثر من ٢٠٠ آية" : `${ar(hits.length)} ${plural(hits.length, "آية", "آيتان", "آيات")}`) : "لا توجد آيات مطابقة"}</h2>`;
-      if (hits.length) html += `<div class="list hits" style="--qfont:'kfgqpc-${meta.id}'">${hits.slice(0, 60).map(([si, ai]) => `<a href="#/quran/${meta.id}/${si + 1}?a=${ai + 1}"><div class="lbl"><span class="hit-text">${esc(res.data.s[si][ai][0])}</span><span class="sub">سورة ${esc(meta.surahs[si][0])}، آية ${ar(ai + 1)}</span></div></a>`).join("")}</div>`;
-      if (hits.length > 60) html += `<p class="stat center">تُعرض أول ${ar(60)} نتيجة، حدّد البحث أكثر.</p>`;
+      html += `<h2 class="section-title">${esc(hits.length ? (hits.length >= 200 ? t("quran.moreThan", { n: 200 }) : t("count.ayat", { n: hits.length })) : t("quran.noMatches"))}</h2>`;
+      if (hits.length) html += `<div class="list hits" style="--qfont:'kfgqpc-${meta.id}'">${hits.slice(0, 60).map(([si, ai]) => `<a href="#/quran/${meta.id}/${si + 1}?a=${ai + 1}"><div class="lbl"><span class="hit-text" lang="ar" dir="rtl">${esc(res.data.s[si][ai][0])}</span><span class="sub">${esc(t("quran.surah", { name: surahName(si + 1, meta) }))}${sep()}${esc(t("quran.ayaRef", { aya: ai + 1, page: res.data.s[si][ai][1] }))}</span></div></a>`).join("")}</div>`;
+      if (hits.length > 60) html += `<p class="stat center">${esc(t("quran.showingFirst", { n: 60 }))}</p>`;
       box.innerHTML = html;
     }
   }
@@ -199,53 +254,80 @@ export function setupQuran(ctx) {
   async function renderReader(rid, s, params) {
     setNav("quran"); const hash = location.hash;
     s = Math.min(114, Math.max(1, s | 0 || 1));
-    setHeader("المصحف", { back: true }); view.innerHTML = loading("جارٍ تحميل المصحف…");
+    setHeader(t("quran.title"), { back: true }); view.innerHTML = loading(t("quran.loadingMushaf"));
     let meta, data;
     try { ({ meta, data } = await loadRiwayah(rid)); } catch (e) { return failed(e, () => renderReader(rid, s, params)); }
     if (stale(hash)) return;
     if (meta.id !== rid) { location.replace(`#/quran/${meta.id}/${s}`); return; }
     if (state.riwayah !== meta.id) { state.riwayah = meta.id; save(); }
-    const ayat = data.s[s - 1]; const [name] = meta.surahs[s - 1];
-    setHeader(`سورة ${name}`, { back: true, actions: `<button class="icon-btn" id="q-play" aria-label="استماع للسورة">${icon("headphones")}</button><button class="icon-btn" id="q-riw" aria-label="تغيير الرواية">${icon("layers")}</button>` });
+    const ayat = data.s[s - 1]; const arName = meta.surahs[s - 1][0]; const name = surahName(s, meta);
+    setHeader(t("quran.surah", { name }), { back: true, actions: `<button class="icon-btn" id="q-play" aria-label="${esc(t("quran.listenSurah"))}">${icon("headphones")}</button><button class="icon-btn" id="q-tr" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><button class="icon-btn" id="q-riw" aria-label="${esc(t("quran.changeRiwayah"))}">${icon("layers")}</button>` });
     const showBasmala = s !== 9 && !(s === 1 && meta.basmalaIsAya);
     const rec = state.reciters[meta.id];
     let lastJuz = s > 1 ? data.s[s - 2].at(-1)[2] : ayat[0][2];
     const bm = state.bookmark;
     const parts = [];
     ayat.forEach(([text, page, juz], i) => {
-      if (juz !== lastJuz) { parts.push(`<div class="juz-mark"><span>الجزء ${ar(juz)}</span></div>`); lastJuz = juz; }
+      if (juz !== lastJuz) { parts.push(`<div class="juz-mark"><span>${esc(t("quran.juz", { n: juz }))}</span></div>`); lastJuz = juz; }
       const marked = bm && bm.r === meta.id && bm.s === s && bm.a === i + 1;
-      parts.push(`<div class="aya ${marked ? "bm" : ""}" id="a-${i + 1}" data-a="${i + 1}" data-p="${page}" tabindex="0"><span class="aya-text">${esc(text)}</span></div>`);
+      parts.push(`<div class="aya ${marked ? "bm" : ""}" id="a-${i + 1}" data-a="${i + 1}" data-p="${page}" tabindex="0"><span class="aya-text" lang="ar" dir="rtl">${esc(text)}</span></div>`);
     });
     view.innerHTML = `
       <div class="reader-bar">
-        <span class="pill">رواية ${esc(meta.short)}</span><span class="pill ghost">${ar(ayat.length)} ${plural(ayat.length, "آية", "آيتان", "آيات")}</span><span class="pill ghost">صفحة ${ar(ayat[0][1])}</span>
-        <button class="link" id="q-rec">${icon("headphones")} ${rec ? esc(rec.name) : "اختر القارئ"}</button>
+        <span class="pill">${esc(t("quran.riwayahOf", { name: rShort(meta) }))}</span><span class="pill ghost">${esc(t("count.ayat", { n: ayat.length }))}</span><span class="pill ghost">${esc(t("quran.page", { n: ayat[0][1] }))}</span>
+        <button class="link" id="q-rec">${icon("headphones")} <span dir="auto">${esc(rec ? rec.name : t("quran.chooseReciter"))}</span></button>
       </div>
-      <article class="mushaf" style="--qfont:'kfgqpc-${meta.id}'">
-        <header class="surah-head"><span>سورة ${esc(name)}</span></header>
+      <div id="tr-note"></div>
+      <article class="mushaf" lang="ar" dir="rtl" style="--qfont:'kfgqpc-${meta.id}'">
+        <header class="surah-head"><span>سورة ${esc(arName)}</span></header>
         ${showBasmala ? `<div class="basmala">${esc(meta.basmala)}</div>` : ""}
         ${parts.join("")}
       </article>
       <nav class="reader-nav">
-        ${s > 1 ? `<a class="btn ghost" href="#/quran/${meta.id}/${s - 1}">${icon("back")} ${esc(meta.surahs[s - 2][0])}</a>` : "<span></span>"}
-        ${s < 114 ? `<a class="btn ghost" href="#/quran/${meta.id}/${s + 1}">${esc(meta.surahs[s][0])} ${icon("back", "flip")}</a>` : "<span></span>"}
+        ${s > 1 ? `<a class="btn ghost" href="#/quran/${meta.id}/${s - 1}">${icon("back", "dir")} ${esc(surahName(s - 1, meta))}</a>` : "<span></span>"}
+        ${s < 114 ? `<a class="btn ghost" href="#/quran/${meta.id}/${s + 1}">${esc(surahName(s + 1, meta))} ${icon("back", "flip")}</a>` : "<span></span>"}
       </nav>
-      <p class="source-note">النص والخط: ${esc(INDEX.source)}، الإصدار ${ar(meta.version)}</p>`;
+      <p class="source-note">${esc(t("quran.sourceNote", { source: t("kfgqpc.name"), v: meta.version }))}</p>
+      <p class="source-note" id="tr-source"></p>`;
 
-    const play = () => { const r = state.reciters[meta.id]; const go = x => { player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}، رواية ${meta.short}` }); const b = $("#q-rec"); if (b) b.innerHTML = `${icon("headphones")} ${esc(x.name)}`; }; r ? go(r) : pickReciter(meta, go); };
-    $("#q-play").onclick = play;
-    $("#q-rec").onclick = () => pickReciter(meta, x => { $("#q-rec").innerHTML = `${icon("headphones")} ${esc(x.name)}`; player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}، رواية ${meta.short}` }); });
+    const playWith = x => { player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}` }); const b = $("#q-rec"); if (b) b.innerHTML = `${icon("headphones")} <span dir="auto">${esc(x.name)}</span>`; };
+    $("#q-play").onclick = () => { const r = state.reciters[meta.id]; r ? playWith(r) : pickReciter(meta, playWith); };
+    $("#q-rec").onclick = () => pickReciter(meta, playWith);
+    $("#q-tr").onclick = () => pickTranslation(() => renderReader(meta.id, s, params));
     $("#q-riw").onclick = () => {
-      const body = sheet("اختر الرواية", `<div class="list flat">${INDEX.riwayat.map(r => `<button class="row" data-r="${r.id}"><div class="lbl">${esc(r.name)}<span class="sub">${ar(r.ayat)} ${plural(r.ayat, "آية", "آيتان", "آيات")}</span></div>${r.id === meta.id ? icon("check") : ""}</button>`).join("")}</div>`);
-      body.onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; closeSheet(); const other = riw(b.dataset.r); location.hash = `#/quran/${other.id}/${s}`; };
+      const body = sheet(t("quran.chooseRiwayah"), `<div class="list flat">${INDEX.riwayat.map(r => `<button class="row" data-r="${r.id}"><div class="lbl">${esc(rName(r))}<span class="sub">${esc(t("count.ayat", { n: r.ayat }))}</span></div>${r.id === meta.id ? icon("check") : ""}</button>`).join("")}</div>`);
+      body.onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; closeSheet(); location.hash = `#/quran/${riw(b.dataset.r).id}/${s}`; };
     };
+
+    // translation of meanings
+    const trText = {}; // aya → translation (for copy/share)
+    (async () => {
+      const key = await currentTr(); if (!key || stale(hash)) return;
+      const note = $("#tr-note");
+      if (meta.ayat !== KUFI_AYAT) {
+        note.innerHTML = `<div class="info">${icon("translate")}<div>${esc(t("quran.trOnlyKufi"))} <a href="#/quran/hafs/${s}">${esc(t("quran.trSwitchHafs"))}</a></div></div>`;
+        return;
+      }
+      note.innerHTML = loading(t("quran.trLoading"));
+      try {
+        const [rows, m] = await Promise.all([getTrSura(key, s), trMeta(key)]);
+        if (stale(hash)) return; note.innerHTML = "";
+        const dir = m?.direction === "rtl" ? "rtl" : "ltr", lang = m?.language_iso_code || "";
+        rows.forEach(r => {
+          const el = document.getElementById("a-" + Number(r.aya)); if (!el) return;
+          trText[Number(r.aya)] = r.translation;
+          el.insertAdjacentHTML("beforeend", `<div class="aya-tr" dir="${dir}" lang="${esc(lang)}">${esc(r.translation)}${r.footnotes ? `<details class="fn"><summary>${esc(t("quran.footnotes"))}</summary><div dir="${dir}">${esc(r.footnotes)}</div></details>` : ""}</div>`);
+        });
+        if (m) $("#tr-source").textContent = t("quran.trSource", { title: m.title, v: m.version });
+      } catch { if (!stale(hash)) note.innerHTML = `<div class="info">${icon("translate")}<div>${esc(t("quran.trFailed"))}</div></div>`; }
+    })();
 
     // aya actions
     const mushaf = $(".mushaf");
-    const ref = n => `[سورة ${name}: ${ar(n)}] رواية ${meta.name}`;
-    const plain = n => `${ayat[n - 1][0].replace(AYA_NUM, "")} ﴿${ar(n)}﴾`;
+    const ref = n => t("quran.copyRef", { surah: name, aya: n, riwayah: rName(meta) });
+    const plain = n => `${ayat[n - 1][0].replace(AYA_NUM, "")} ﴿${num(n)}﴾` + (trText[n] ? `\n${trText[n]}` : "");
     mushaf.addEventListener("click", e => {
+      if (e.target.closest("details")) return;
       const act = e.target.closest("[data-act]");
       if (act) {
         const n = Number(act.closest(".aya-tools").dataset.a);
@@ -253,10 +335,10 @@ export function setupQuran(ctx) {
           const on = !(state.bookmark && state.bookmark.r === meta.id && state.bookmark.s === s && state.bookmark.a === n);
           state.bookmark = on ? { r: meta.id, s, a: n } : null; save();
           mushaf.querySelectorAll(".aya.bm").forEach(x => x.classList.remove("bm")); if (on) document.getElementById("a-" + n).classList.add("bm");
-          toast(on ? "حُفظت العلامة" : "أُزيلت العلامة"); closeTools(); return;
+          toast(t(on ? "quran.bmSaved" : "quran.bmRemoved")); closeTools(); return;
         }
         if (act.dataset.act === "copy") { copyText(`${plain(n)}\n${ref(n)}`); closeTools(); return; }
-        if (act.dataset.act === "share") { share(`سورة ${name}`, `${plain(n)}\n${ref(n)}`); closeTools(); return; }
+        if (act.dataset.act === "share") { share(t("quran.surah", { name }), `${plain(n)}\n${ref(n)}`); closeTools(); return; }
       }
       const aya = e.target.closest(".aya"); if (!aya) return;
       if (window.getSelection && String(window.getSelection()).length) return;
@@ -264,10 +346,10 @@ export function setupQuran(ctx) {
       closeTools(); if (open) return;
       aya.classList.add("sel");
       const n = Number(aya.dataset.a); const isBm = state.bookmark && state.bookmark.r === meta.id && state.bookmark.s === s && state.bookmark.a === n;
-      aya.insertAdjacentHTML("afterend", `<div class="aya-tools" data-a="${n}"><span class="aya-ref">آية ${ar(n)}، صفحة ${ar(aya.dataset.p)}</span><span class="spacer"></span>
-        <button class="icon-btn ${isBm ? "active" : ""}" data-act="bm" aria-label="${isBm ? "إزالة العلامة" : "حفظ علامة"}">${icon("bookmark")}</button>
-        <button class="icon-btn" data-act="copy" aria-label="نسخ">${icon("copy")}</button>
-        <button class="icon-btn" data-act="share" aria-label="مشاركة">${icon("share")}</button></div>`);
+      aya.insertAdjacentHTML("afterend", `<div class="aya-tools" dir="${document.documentElement.dir}" data-a="${n}"><span class="aya-ref">${esc(t("quran.ayaRef", { aya: n, page: Number(aya.dataset.p) }))}</span><span class="spacer"></span>
+        <button class="icon-btn ${isBm ? "active" : ""}" data-act="bm" aria-label="${esc(t(isBm ? "quran.bmRemove" : "quran.bmAdd"))}">${icon("bookmark")}</button>
+        <button class="icon-btn" data-act="copy" aria-label="${esc(t("common.copy"))}">${icon("copy")}</button>
+        <button class="icon-btn" data-act="share" aria-label="${esc(t("common.share"))}">${icon("share")}</button></div>`);
     });
     mushaf.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("aya")) { e.preventDefault(); e.target.click(); } });
     function closeTools() { mushaf.querySelectorAll(".aya-tools").forEach(x => x.remove()); mushaf.querySelectorAll(".aya.sel").forEach(x => x.classList.remove("sel")); }
@@ -290,42 +372,41 @@ export function setupQuran(ctx) {
   }
 
   // ---------- listening: riwayat → reciters → surahs ----------
-  const listenTabs = on => `<div class="tabs-row"><div class="segmented"><a href="#/listen" class="${on === "rec" ? "on" : ""}">${icon("headphones")} التلاوات</a><a href="#/radio" class="${on === "radio" ? "on" : ""}">${icon("radio")} الإذاعات</a></div></div>`;
+  const listenTabs = on => `<div class="tabs-row"><div class="segmented"><a href="#/listen" class="${on === "rec" ? "on" : ""}">${icon("headphones")} ${esc(t("listen.recitations"))}</a><a href="#/radio" class="${on === "radio" ? "on" : ""}">${icon("radio")} ${esc(t("listen.radios"))}</a></div></div>`;
   async function renderListen(parts) {
     setNav("listen"); const hash = location.hash;
     loadIndex().catch(() => {});
     if (parts[0] === "r") return renderRewaya(Number(parts[1]), hash);
     if (parts[0] === "m") return renderMoshaf(Number(parts[1]), Number(parts[2]), hash);
-    setHeader("الاستماع"); view.innerHTML = listenTabs("rec") + loading();
+    setHeader(t("listen.title")); view.innerHTML = listenTabs("rec") + loading();
     let list; try { list = await getRiwayatList(); } catch (e) { return failed(e, () => renderListen(parts)); }
     if (stale(hash)) return;
     await loadIndex().catch(() => {});
     const withText = new Set((INDEX?.riwayat || []).flatMap(r => r.audio));
-    view.innerHTML = listenTabs("rec") + `<p class="riwayah-note">اختر الرواية ثم القارئ. التلاوات تُبث من موقع mp3quran وتحتاج اتصالًا بالإنترنت.</p>
-      <div class="list">${list.map((r, i) => `<a href="#/listen/r/${r.id}"><div class="num">${ar(i + 1)}</div><div class="lbl">${esc(r.name.trim())}${withText.has(r.id) ? `<span class="sub">${icon("book")} متوفرة بالنص في المصحف</span>` : ""}</div>${icon("back", "chev")}</a>`).join("")}</div>`;
+    view.innerHTML = listenTabs("rec") + `<p class="riwayah-note">${esc(t("listen.intro"))}</p>
+      <div class="list">${list.map((r, i) => `<a href="#/listen/r/${r.id}"><div class="num">${num(i + 1)}</div><div class="lbl" dir="auto">${esc(r.name.trim())}${withText.has(r.id) ? `<span class="sub">${icon("book")} ${esc(t("listen.hasText"))}</span>` : ""}</div>${icon("back", "chev")}</a>`).join("")}</div>`;
   }
   async function renderRewaya(id, hash) {
-    setHeader("القرّاء", { back: true }); view.innerHTML = loading("جارٍ جلب القرّاء…");
+    setHeader(t("listen.reciters"), { back: true }); view.innerHTML = loading(t("quran.fetchingReciters"));
     let rl, reciters; try { [rl, reciters] = await Promise.all([getRiwayatList(), getReciters(id)]); } catch (e) { return failed(e, () => renderRewaya(id, hash)); }
     if (stale(hash)) return;
-    const rname = rl.find(r => r.id === id)?.name.trim() || "";
-    setHeader(rname || "القرّاء", { back: true });
+    setHeader(rl.find(r => r.id === id)?.name.trim() || t("listen.reciters"), { back: true });
     const rows = []; reciters.forEach(r => r.moshaf.filter(m => m.rewaya_id === id).forEach(m => rows.push({ r, m })));
-    rows.sort((x, y) => x.r.name.localeCompare(y.r.name, "ar"));
-    view.innerHTML = `<div class="searchbox">${icon("search")}<input id="rq" type="search" placeholder="ابحث عن قارئ…" autocomplete="off"></div><p class="riwayah-note">${ar(rows.length)} ${plural(rows.length, "تلاوة", "تلاوتان", "تلاوات")}</p><div class="list" id="rlist"></div>`;
-    const draw = f => { $("#rlist").innerHTML = rows.filter(x => !f || x.r.name.includes(f)).map(({ r, m }) => `<a href="#/listen/m/${id}/${m.id}"><div class="num">${esc(r.letter || r.name[0])}</div><div class="lbl">${esc(r.name)}<span class="sub">${esc(m.name)}، ${ar(m.surah_total)} ${plural(m.surah_total, "سورة", "سورتان", "سور")}</span></div>${icon("back", "chev")}</a>`).join("") || `<div class="empty">لا نتائج</div>`; };
+    const c = collator(); rows.sort((x, y) => c.compare(x.r.name, y.r.name));
+    view.innerHTML = `<div class="searchbox">${icon("search")}<input id="rq" type="search" placeholder="${esc(t("quran.searchReciter"))}" autocomplete="off"></div><p class="riwayah-note">${esc(t("count.recitations", { n: rows.length }))}</p><div class="list" id="rlist"></div>`;
+    const draw = f => { const q = lower(f); $("#rlist").innerHTML = rows.filter(x => !q || lower(x.r.name).includes(q)).map(({ r, m }) => `<a href="#/listen/m/${id}/${m.id}"><div class="num">${esc(r.letter || r.name[0])}</div><div class="lbl" dir="auto">${esc(r.name)}<span class="sub" dir="auto">${esc(m.name)}${sep()}${esc(t("count.surahs", { n: m.surah_total }))}</span></div>${icon("back", "chev")}</a>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
     draw(""); $("#rq").oninput = e => draw(e.target.value.trim());
   }
   async function renderMoshaf(rewaya, moshafId, hash) {
-    setHeader("التلاوة", { back: true }); view.innerHTML = loading();
+    setHeader(t("listen.recitation"), { back: true }); view.innerHTML = loading();
     let reciters; try { reciters = await getReciters(rewaya); await loadIndex(); } catch (e) { return failed(e, () => renderMoshaf(rewaya, moshafId, hash)); }
     if (stale(hash)) return;
     let rec, m; for (const r of reciters) { const x = r.moshaf.find(y => y.id === moshafId); if (x) { rec = r; m = x; break; } }
-    if (!m) { view.innerHTML = `<div class="empty">لم تُعثر على هذه التلاوة.</div>`; return; }
+    if (!m) { view.innerHTML = `<div class="empty">${esc(t("listen.notFound"))}</div>`; return; }
     setHeader(rec.name, { back: true });
-    const list = surahList({ list: m.surah_list }); const sub = `${rec.name}، ${m.name}`;
-    view.innerHTML = `<div class="hero slim"><h2>${esc(rec.name)}</h2><p>${esc(m.name)}، ${ar(list.length)} ${plural(list.length, "سورة", "سورتان", "سور")}</p><div class="hero-actions"><button class="btn light" id="play-all">${icon("play")} تشغيل من البداية</button></div></div>
-      <div class="list" id="slist">${list.map(n => `<button class="row" data-n="${n}" data-playing="surah:${esc(m.server)}:${n}"><div class="num">${ar(n)}</div><div class="lbl">سورة ${esc(surahName(n))}</div>${icon("play", "chev-play")}</button>`).join("")}</div>`;
+    const list = surahList({ list: m.surah_list }); const sub = `${rec.name}${sep()}${m.name}`;
+    view.innerHTML = `<div class="hero slim"><h2 dir="auto">${esc(rec.name)}</h2><p dir="auto">${esc(m.name)}${sep()}${esc(t("count.surahs", { n: list.length }))}</p><div class="hero-actions"><button class="btn light" id="play-all">${icon("play")} ${esc(t("listen.playFromStart"))}</button></div></div>
+      <div class="list" id="slist">${list.map(n => `<button class="row" data-n="${n}" data-playing="surah:${esc(m.server)}:${n}"><div class="num">${num(n)}</div><div class="lbl">${esc(t("quran.surah", { name: surahName(n) }))}</div>${icon("play", "chev-play")}</button>`).join("")}</div>`;
     $("#play-all").onclick = () => player.surahs({ server: m.server, list, start: list[0], sub });
     $("#slist").onclick = e => { const b = e.target.closest("[data-n]"); if (b) player.surahs({ server: m.server, list, start: Number(b.dataset.n), sub }); };
     player.refresh();
@@ -334,22 +415,24 @@ export function setupQuran(ctx) {
   // ---------- radios ----------
   let radioQuery = "";
   async function renderRadio() {
-    setNav("listen"); setHeader("الإذاعات"); const hash = location.hash;
-    view.innerHTML = listenTabs("radio") + loading("جارٍ جلب الإذاعات…");
+    setNav("listen"); setHeader(t("radio.title")); const hash = location.hash;
+    view.innerHTML = listenTabs("radio") + loading(t("radio.fetching"));
     const canHls = !!document.createElement("audio").canPlayType("application/vnd.apple.mpegurl");
     const [live, reciters] = await Promise.all([getLiveRadios().catch(() => []), getReciterRadios().catch(() => null)]);
     if (stale(hash)) return;
+    const stationName = r => { const k = "station." + r.id; const v = t(k); return v === k ? r.name : v; };
+    const country = r => r.cc ? regionName(r.cc) : t("radio.variety");
     const liveOk = live.filter(r => !r.hls || canHls);
-    const rows = (reciters || []).filter(r => r.url).sort((x, y) => x.name.localeCompare(y.name, "ar"));
+    const c = collator(); const rows = (reciters || []).filter(r => r.url).sort((x, y) => c.compare(x.name, y.name));
     view.innerHTML = listenTabs("radio") + `<div id="radios">
-      <h2 class="section-title">إذاعات القرآن الكريم المباشرة</h2>
-      <div class="list" id="live">${liveOk.map(r => `<button class="row" data-id="live:${r.id}" data-playing="radio:live:${r.id}"><div class="num">${icon("radio")}</div><div class="lbl">${esc(r.name)}<span class="sub">${esc(r.country)}، بث مباشر</span></div>${icon("play", "chev-play")}</button>`).join("")}</div>
-      <h2 class="section-title">إذاعات القرّاء والتفسير (على مدار الساعة)</h2>
-      ${reciters ? `<div class="searchbox">${icon("search")}<input id="radq" type="search" placeholder="ابحث عن قارئ أو إذاعة…" value="${esc(radioQuery)}" autocomplete="off"></div><div class="list" id="rlist"></div>` : `<div class="empty">تعذّر جلب قائمة إذاعات القرّاء. تحقق من الاتصال بالإنترنت.</div>`}
-      <p class="source-note">إذاعات القرّاء من موقع mp3quran.net. قد تتوقف أي إذاعة مؤقتًا من مصدرها.</p></div>`;
-    const byId = new Map(); liveOk.forEach(r => byId.set("live:" + r.id, { id: "live:" + r.id, url: r.url, name: r.name, sub: `${r.country}، بث مباشر` }));
-    rows.forEach(r => byId.set("rad:" + r.id, { id: "rad:" + r.id, url: r.url, name: r.name, sub: "إذاعة mp3quran" }));
-    const draw = () => { const f = radioQuery.trim(); const box = $("#rlist"); if (!box) return; box.innerHTML = rows.filter(r => !f || r.name.includes(f)).map(r => `<button class="row" data-id="rad:${r.id}" data-playing="radio:rad:${r.id}"><div class="num">${icon("radio")}</div><div class="lbl">${esc(r.name)}</div>${icon("play", "chev-play")}</button>`).join("") || `<div class="empty">لا نتائج</div>`; player.refresh(); };
+      <h2 class="section-title">${esc(t("radio.live"))}</h2>
+      <div class="list" id="live">${liveOk.map(r => `<button class="row" data-id="live:${r.id}" data-playing="radio:live:${r.id}"><div class="num">${icon("radio")}</div><div class="lbl">${esc(stationName(r))}<span class="sub">${esc(t("radio.liveSub", { country: country(r) }))}</span></div>${icon("play", "chev-play")}</button>`).join("")}</div>
+      <h2 class="section-title">${esc(t("radio.reciters"))}</h2>
+      ${reciters ? `<div class="searchbox">${icon("search")}<input id="radq" type="search" placeholder="${esc(t("radio.search"))}" value="${esc(radioQuery)}" autocomplete="off"></div><div class="list" id="rlist"></div>` : `<div class="empty">${esc(t("radio.listFailed"))}</div>`}
+      <p class="source-note">${esc(t("radio.sourceNote"))}</p></div>`;
+    const byId = new Map(); liveOk.forEach(r => byId.set("live:" + r.id, { id: "live:" + r.id, url: r.url, name: stationName(r), sub: t("radio.liveSub", { country: country(r) }) }));
+    rows.forEach(r => byId.set("rad:" + r.id, { id: "rad:" + r.id, url: r.url, name: r.name, sub: t("radio.mp3quran") }));
+    const draw = () => { const q = lower(radioQuery.trim()); const box = $("#rlist"); if (!box) return; box.innerHTML = rows.filter(r => !q || lower(r.name).includes(q)).map(r => `<button class="row" data-id="rad:${r.id}" data-playing="radio:rad:${r.id}"><div class="num">${icon("radio")}</div><div class="lbl" dir="auto">${esc(r.name)}</div>${icon("play", "chev-play")}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; player.refresh(); };
     draw(); const qi = $("#radq"); if (qi) qi.oninput = () => { radioQuery = qi.value; draw(); };
     $("#radios").addEventListener("click", e => { const b = e.target.closest("[data-id]"); if (b && byId.has(b.dataset.id)) player.radio(byId.get(b.dataset.id)); });
     player.refresh();
@@ -357,6 +440,7 @@ export function setupQuran(ctx) {
 
   return {
     quran(parts, params) { return parts.length ? renderReader(parts[0], Number(parts[1]), params) : renderHome(); },
-    listen: renderListen, radio: renderRadio, player,
+    listen: renderListen, radio: renderRadio, player, sheet, closeSheet,
+    pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
   };
 }
