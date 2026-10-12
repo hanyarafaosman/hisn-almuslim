@@ -1,0 +1,15 @@
+{
+  "appId": "com.hisnalmuslim.azkar",
+  "appName": "حصن المسلم",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  },
+  "android": {
+    "backgroundColor": "#0f766e"
+  },
+  "ios": {
+    "backgroundColor": "#0f766e",
+    "contentInset": "automatic"
+  }
+}

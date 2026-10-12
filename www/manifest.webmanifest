@@ -1,0 +1,24 @@
+{
+  "name": "حصن المسلم - من أذكار الكتاب والسنة",
+  "short_name": "حصن المسلم",
+  "description": "أذكار الصباح والمساء وسائر أذكار حصن المسلم الصحيحة، مع عداد وسبحة، يعمل دون اتصال.",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0f766e",
+  "theme_color": "#0f766e",
+  "categories": ["lifestyle", "education"],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "أذكار الصباح والمساء", "url": "./index.html#/cat/27", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "أذكار النوم", "url": "./index.html#/cat/28", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] },
+    { "name": "السبحة", "url": "./index.html#/tasbih", "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }] }
+  ]
+}

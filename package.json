@@ -1,0 +1,17 @@
+{
+  "name": "hisn-almuslim",
+  "version": "1.0.0",
+  "private": true,
+  "description": "حصن المسلم - تطبيق أذكار يعمل على جميع الأنظمة (PWA + Capacitor)",
+  "scripts": {
+    "dev": "node scripts/serve.js",
+    "icons": "node scripts/make-icons.js",
+    "check": "node scripts/check.js",
+    "cap:add:android": "npx cap add android",
+    "cap:add:ios": "npx cap add ios",
+    "cap:sync": "npx cap sync",
+    "cap:open:android": "npx cap open android",
+    "cap:open:ios": "npx cap open ios"
+  },
+  "license": "MIT"
+}
