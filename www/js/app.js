@@ -1,5 +1,5 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js";
+import { setupQuran } from "./quran.js?v=1.1.1";
 
 // ---------- storage ----------
 const LS = {

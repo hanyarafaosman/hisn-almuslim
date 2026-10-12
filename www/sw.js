@@ -1,5 +1,5 @@
 /* Service worker: offline-first app shell for حصن المسلم */
-const VERSION = "hisn-v1.1.0";
+const VERSION = "hisn-v1.1.1";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/app.css", "./js/app.js", "./js/quran.js", "./data/hisn.json", "./data/radios.json", "./quran/index.json",
@@ -12,7 +12,8 @@ const QURAN_CACHE = "hisn-quran-v1";
 const KEEP = [VERSION, FONT_CACHE, AUDIO_CACHE, QURAN_CACHE];
 
 self.addEventListener("install", e => {
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL)));
+  // cache: "reload" bypasses the browser HTTP cache (GitHub Pages sends max-age=600), so a new version never stores stale files.
+  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: "reload" })))));
 });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => !KEEP.includes(k)).map(k => caches.delete(k)))).then(() => self.clients.claim()));
