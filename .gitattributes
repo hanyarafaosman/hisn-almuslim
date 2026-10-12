@@ -1,0 +1,4 @@
+# Quran text/data must stay byte-identical to the verified KFGQPC files
+www/quran/** -text
+*.woff2 binary
+*.png binary

@@ -1,4 +1,5 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
+import { setupQuran } from "./quran.js";
 
 // ---------- storage ----------
 const LS = {
@@ -93,6 +94,7 @@ function togglePlay(url, btn) {
   if (playingBtn === btn && !audio.paused) { audio.pause(); return; }
   if (!navigator.onLine && !audio.src.includes(url)) { toast("تشغيل الصوت يحتاج اتصالًا بالإنترنت"); }
   if (playingBtn) setPlaying(playingBtn, false);
+  document.getElementById("qaudio")?.pause();
   playingBtn = btn; audio.src = url; audio.play().then(() => setPlaying(btn, true)).catch(() => { toast("تعذّر تشغيل الصوت"); setPlaying(btn, false); playingBtn = null; });
 }
 function setPlaying(btn, on) { btn.classList.toggle("playing", on); btn.innerHTML = icon(on ? "pause" : "play"); btn.setAttribute("aria-label", on ? "إيقاف" : "استماع"); }
@@ -111,6 +113,13 @@ async function shareText(title, t) {
   else copyText(`${t}\n\n— ${title} | حصن المسلم`);
 }
 
+// ---------- Mushaf / listening / radios ----------
+const Q = setupQuran({
+  view, $, esc, icon, toast, ar: toArabicNum, LS, copyText,
+  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
+  share: async (title, text) => { if (navigator.share) { try { await navigator.share({ title, text }); } catch { /* cancelled */ } } else copyText(text); },
+});
+
 // ---------- router ----------
 function setHeader(title, { back = false, actions = "" } = {}) {
   titleEl.textContent = title; backBtn.hidden = !back; actionsEl.innerHTML = actions;
@@ -122,7 +131,7 @@ function setNav(name) { document.querySelectorAll(".bottom-nav a").forEach(a => 
 const scrollPos = {};
 function route() {
   const h = location.hash || "#/"; const [path, qs] = h.slice(1).split("?"); const parts = path.split("/").filter(Boolean); const params = new URLSearchParams(qs || "");
-  stopAudio(); updateWakeLock(parts[0] === "cat"); view.scrollTop = 0; window.scrollTo(0, 0);
+  stopAudio(); updateWakeLock(parts[0] === "cat" || (parts[0] === "quran" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
   if (!parts.length) return renderHome(params.get("q") || "");
   switch (parts[0]) {
     case "section": return renderSection(parts[1]);
@@ -130,6 +139,9 @@ function route() {
     case "fav": return renderFavorites();
     case "tasbih": return renderTasbih();
     case "settings": return renderSettings();
+    case "quran": return Q.quran(parts.slice(1), params);
+    case "listen": return Q.listen(parts.slice(1), params);
+    case "radio": return Q.radio();
     case "search": return renderHome(params.get("q") || "");
     default: location.hash = "#/";
   }
@@ -138,7 +150,7 @@ window.addEventListener("hashchange", route);
 
 // ---------- views ----------
 function renderHome(q = "") {
-  setNav("home"); setHeader("حصن المسلم", { actions: `<button class="icon-btn" id="a-search" aria-label="بحث">${icon("search")}</button>` });
+  setNav("home"); setHeader("حصن المسلم", { actions: `<a class="icon-btn" href="#/fav" aria-label="المفضلة">${icon("star")}</a><button class="icon-btn" id="a-search" aria-label="بحث">${icon("search")}</button>` });
   const period = currentPeriod(); const h = new Date().getHours();
   const greet = h < 12 ? "صباح الخير" : h < 18 ? "مساء الخير" : "ليلة مباركة";
   const p27 = catProgress(catById.get(27), period), p28 = catProgress(catById.get(28)), p1 = catProgress(catById.get(1));
@@ -180,7 +192,7 @@ function renderSection(id) {
   const s = DB.sections.find(x => x.id === id); if (!s) { location.hash = "#/"; return; }
   setNav("home"); setHeader(s.title, { back: true });
   view.innerHTML = `<div class="list">` + s.cats.map((cid, n) => { const c = catById.get(cid); const p = catProgress(c);
-    return `<a href="#/cat/${c.id}"><div class="num">${toArabicNum(n + 1)}</div><div class="lbl">${esc(c.title)}<span class="sub">${toArabicNum(c.items.length)} ${c.items.length === 1 ? "ذكر" : c.items.length <= 10 ? "أذكار" : "ذكرًا"}${p.pct === 100 ? " · ✓ مكتمل" : ""}</span></div>${icon("back", "chev")}</a>`; }).join("") + `</div>`;
+    return `<a href="#/cat/${c.id}"><div class="num">${toArabicNum(n + 1)}</div><div class="lbl">${esc(c.title)}<span class="sub">${toArabicNum(c.items.length)} ${c.items.length === 1 ? "ذكر" : c.items.length <= 10 ? "أذكار" : "ذكرًا"}${p.pct === 100 ? "، ✓ مكتمل" : ""}</span></div>${icon("back", "chev")}</a>`; }).join("") + `</div>`;
 }
 
 function dhikrCard(cat, item, { showWhere = false } = {}) {
@@ -256,7 +268,7 @@ function renderCategory(id) {
 }
 
 function renderFavorites() {
-  setNav("fav"); setHeader("المفضلة");
+  setNav("home"); setHeader("المفضلة", { back: true });
   const keys = [...favorites].map(k => k.split(":").map(Number)).map(([c, i]) => ({ cat: catById.get(c), item: catById.get(c)?.items.find(x => x.id === i) })).filter(x => x.cat && x.item);
   if (!keys.length) { view.innerHTML = `<div class="empty">${icon("star")}<div>لم تُضف شيئًا بعد.<br>اضغط ☆ على أي ذكر لحفظه هنا.</div></div>`; return; }
   view.innerHTML = `<div id="cards">${keys.map(({ cat, item }) => dhikrCard(cat, item, { showWhere: true })).join("")}</div>`;
@@ -317,7 +329,12 @@ function renderSettings() {
       <b>حصن المسلم من أذكار الكتاب والسنة</b><br>تأليف الشيخ سعيد بن علي بن وهف القحطاني رحمه الله.<br>
       النصوص مأخوذة من الموقع الرسمي للكتاب <a href="${esc(DB.sourceUrl)}" target="_blank" rel="noopener" style="color:var(--primary)">hisnmuslim.com</a>، وتضم ${toArabicNum(DB.categories.length)} بابًا و${toArabicNum(DB.categories.reduce((a, c) => a + c.items.length, 0))} ذكرًا.<br>
       يعمل التطبيق دون اتصال بالإنترنت بعد أول فتح، ولا يجمع أي بيانات.
-      <br><small>الإصدار 1.0.0</small>
+    </div><div class="about">
+      <b>المصحف الشريف</b><br>نص المصحف وخطوطه بثماني روايات من <b>مجمع الملك فهد لطباعة المصحف الشريف</b>، تُعرض كما هي دون أي تعديل: حفص وشعبة عن عاصم، وورش وقالون عن نافع، والدوري والسوسي عن أبي عمرو، والبزي وقنبل عن ابن كثير.<br>
+      تُحفظ كل رواية على الجهاز بعد أول فتح لها لتُقرأ دون اتصال.
+    </div><div class="about">
+      <b>الاستماع والإذاعات</b><br>التلاوات وإذاعات القرّاء من موقع <a href="https://mp3quran.net" target="_blank" rel="noopener" style="color:var(--primary)">mp3quran.net</a>، والإذاعات المباشرة من مصادرها الرسمية. تحتاج اتصالًا بالإنترنت.
+      <br><small>الإصدار 1.1.0</small>
     </div></div>`;
   view.querySelectorAll("[data-sw]").forEach(b => b.onclick = () => { settings[b.dataset.sw] = !settings[b.dataset.sw]; saveSettings(); b.classList.toggle("on"); b.setAttribute("aria-checked", settings[b.dataset.sw]); if (b.dataset.sw === "vibrate") vibrate(20); });
   view.querySelectorAll("[data-theme]").forEach(b => b.onclick = () => { settings.theme = b.dataset.theme; saveSettings(); applyTheme(); view.querySelectorAll("[data-theme]").forEach(x => x.classList.toggle("on", x === b)); });
@@ -332,6 +349,11 @@ function renderSettings() {
 // ---------- service worker ----------
 function registerSW() {
   if (!("serviceWorker" in navigator) || location.protocol === "file:") return;
+  // On the local dev server, skip the cache so edits show up immediately (add ?sw to test offline mode locally).
+  if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && !location.search.includes("sw")) {
+    navigator.serviceWorker.getRegistrations().then(rs => rs.forEach(r => r.unregister())).catch(() => {});
+    return;
+  }
   navigator.serviceWorker.register("sw.js").then(reg => {
     reg.addEventListener("updatefound", () => { const nw = reg.installing; nw?.addEventListener("statechange", () => {
       if (nw.state === "installed" && navigator.serviceWorker.controller) toast("يتوفر تحديث جديد", { label: "تحديث", fn: () => nw.postMessage("SKIP_WAITING") });
