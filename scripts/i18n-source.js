@@ -6,7 +6,10 @@ const ROOT = path.join(__dirname, "..");
 
 const S = {
   "app.name": ["حصن المسلم", "Hisn al-Muslim"],
-  "nav.home": ["الأذكار", "Adhkar"],
+  "nav.hub": ["الرئيسية", "Home"],
+  "nav.adhkar": ["الأذكار", "Adhkar"],
+  "nav.hadith": ["الحديث", "Hadith"],
+  "nav.more": ["المزيد", "More"],
   "nav.quran": ["المصحف", "Quran"],
   "nav.listen": ["استماع", "Listen"],
   "nav.tasbih": ["السبحة", "Tasbih"],
@@ -39,6 +42,13 @@ const S = {
   "audio.needsInternet": ["تشغيل الصوت يحتاج اتصالًا بالإنترنت", "Playing audio needs an internet connection"],
   "audio.playFailed": ["تعذّر تشغيل الصوت", "Could not play the audio"],
   "audio.loadFailed": ["تعذّر تحميل الصوت", "Could not load the audio"],
+
+  "hub.now": ["المناسب الآن", "Right now"],
+  "hub.sections": ["الأقسام", "Sections"],
+  "hub.searchPlaceholder": ["ابحث في الأذكار والمصحف…", "Search the adhkar and the Quran…"],
+  "hub.searchQuran": ["البحث في آيات المصحف عن «{q}»", "Search the Quran verses for “{q}”"],
+  "hub.soon": ["قريبًا", "Coming soon"],
+  "hadith.soonText": ["نعمل على إضافة كتب الصحاح من السنة النبوية، بنصوص موثّقة ودرجة كل حديث.", "We’re adding the authentic hadith collections, with verified texts and the grading of each hadith."],
 
   "home.greetMorning": ["صباح الخير", "Good morning"],
   "home.greetEvening": ["مساء الخير", "Good evening"],
@@ -92,6 +102,7 @@ const S = {
 
   "dhikr.tapToCount": ["اضغط للعدّ", "Tap to count"],
   "dhikr.count": ["عدّ", "Count"],
+  "dhikr.trMorning": ["الترجمة الرسمية متاحة لصيغة الصباح فقط", "The official translation is of the morning wording"],
   "fav.add": ["إضافة للمفضلة", "Add to favorites"],
   "fav.remove": ["إزالة من المفضلة", "Remove from favorites"],
   "fav.added": ["أُضيف إلى المفضلة", "Added to favorites"],

@@ -3,7 +3,7 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.3.2";
+import * as off from "./offline.js?v=1.4.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -578,7 +578,20 @@ export function setupQuran(ctx) {
   }
 
   return {
-    quran(parts, params) { return parts.length ? renderReader(parts[0], Number(parts[1]), params) : renderHome(); },
+    quran(parts, params) {
+      if (!parts.length && params?.get("q")) homeQuery = params.get("q"); // search started from the Home page
+      return parts.length ? renderReader(parts[0], Number(parts[1]), params) : renderHome();
+    },
+    // Surah names matching a query (Arabic, transliterated, or a number), for the Home search.
+    async searchSurahs(q) {
+      await loadIndex(); const meta = riw(state.riwayah); const k = quranKey(q);
+      const n = Number(String(q).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)));
+      const latin = lower(q).normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]/g, "");
+      return meta.surahs.map((s, i) => i).filter(i => (n >= 1 && n <= 114 && i + 1 === n) || (k.length > 1 && quranKey(meta.surahs[i][0]).includes(k))
+        || (latin.length > 1 && lower(meta.surahs[i][3] || "").normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]/g, "").includes(latin)))
+        .map(i => ({ n: i + 1, name: surahName(i + 1, meta), href: `#/quran/${meta.id}/${i + 1}` }));
+    },
+    async describe(p) { await loadIndex(); const m = riw(p.r); return t("quran.position", { surah: surahName(p.s, m), aya: p.a, riwayah: rShort(m) }); },
     listen: renderListen, radio: renderRadio, offline: renderOffline, player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
   };

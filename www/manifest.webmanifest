@@ -56,8 +56,8 @@
       ]
     },
     {
-      "name": "الإذاعات",
-      "url": "./index.html#/radio",
+      "name": "الأذكار",
+      "url": "./index.html#/adhkar",
       "icons": [
         {
           "src": "icons/icon-192.png",
@@ -66,8 +66,8 @@
       ]
     },
     {
-      "name": "السبحة",
-      "url": "./index.html#/tasbih",
+      "name": "الإذاعات",
+      "url": "./index.html#/radio",
       "icons": [
         {
           "src": "icons/icon-192.png",

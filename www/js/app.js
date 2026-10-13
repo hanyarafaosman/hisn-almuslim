@@ -1,8 +1,8 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.3.2";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.3.2";
+import { setupQuran } from "./quran.js?v=1.4.0";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.4.0";
 
-const VERSION = "1.3.2";
+const VERSION = "1.4.0";
 
 // ---------- storage ----------
 const LS = {
@@ -168,12 +168,14 @@ function setHeader(title, { back = false, actions = "" } = {}) {
   document.title = title === t("app.name") ? title : `${title} — ${t("app.name")}`;
 }
 backBtn.addEventListener("click", () => { if (history.length > 1) history.back(); else location.hash = "#/"; });
-function setNav(name) { document.querySelectorAll(".bottom-nav a").forEach(a => a.classList.toggle("on", a.dataset.nav === name)); }
+// Bottom bar: Home, Quran, Adhkar, Hadith, More. Pages reached from "More" highlight that tab.
+const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more" };
+function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll(".bottom-nav a").forEach(a => a.classList.toggle("on", a.dataset.nav === name)); }
 
 function route() {
   const h = location.hash || "#/"; const [path, qs] = h.slice(1).split("?"); const parts = path.split("/").filter(Boolean); const params = new URLSearchParams(qs || "");
   stopAudio(); updateWakeLock(parts[0] === "cat" || (parts[0] === "quran" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
-  if (!parts.length) return renderHome(params.get("q") || "");
+  if (!parts.length) return renderHub(params.get("q") || "");
   switch (parts[0]) {
     case "section": return renderSection(parts[1]);
     case "cat": return renderCategory(Number(parts[1]));
@@ -185,7 +187,10 @@ function route() {
     case "listen": return Q.listen(parts.slice(1), params);
     case "radio": return Q.radio();
     case "offline": return Q.offline();
-    case "search": return renderHome(params.get("q") || "");
+    case "search": return renderHub(params.get("q") || "");
+    case "adhkar": return renderHome(params.get("q") || "");
+    case "hadith": return renderHadith();
+    case "more": return renderMore();
     default: location.hash = "#/";
   }
 }
@@ -196,12 +201,91 @@ function buildSearchIndex() {
   const en = EN || { titles: {}, items: {} };
   return DB.categories.map(c => ({
     c, title: normalizeSearch([c.title, catTitle(c), en.titles[c.id] || ""].join(" ")),
-    items: c.items.map(i => ({ i, text: normalizeSearch(i.text + " " + (en.items[i.id]?.t || "") + " " + (en.items[i.id]?.n || "")) })),
+    items: c.items.map(i => ({ i, text: normalizeSearch(i.text + " " + (i.evening || "") + " " + (en.items[i.id]?.t || "") + " " + (en.items[i.id]?.n || "")) })),
   }));
 }
-function renderHome(q = "") {
+// Adhkar search shared by the Home and Adhkar pages. Returns null when the query is too short.
+function adhkarSearch(query, limit = 60) {
+  const nq = normalizeSearch(query); if (nq.length < 2) return null;
+  searchIndex ||= buildSearchIndex();
+  const hits = []; const terms = nq.split(" ");
+  searchIndex.forEach(({ c, title, items }) => {
+    if (terms.every(x => title.includes(x))) hits.push({ c });
+    items.forEach(({ i, text }) => { if (terms.every(x => text.includes(x))) hits.push({ c, i }); });
+  });
+  const html = `<h2 class="section-title">${T("count.results", { n: hits.length })}</h2><div class="list">` + hits.slice(0, limit).map(({ c, i }) =>
+    `<a href="#/cat/${c.id}${i ? "?item=" + i.id : ""}"><div class="num">${icon("book")}</div><div class="lbl">${esc(catTitle(c))}${i ? `<span class="sub" lang="ar" dir="rtl">${esc(stripTashkeel(plainText(i.text))).slice(0, 90)}…</span>` : ""}</div>${icon("back", "chev")}</a>`).join("") + `</div>`;
+  return { count: hits.length, html };
+}
+
+// ---------- Home: a hub for every part of the app ----------
+const HUB_TILES = [
+  { href: "#/adhkar", icon: "sun", label: () => t("nav.adhkar") },
+  { href: "#/quran", icon: "quran", label: () => t("nav.quran") },
+  { href: "#/hadith", icon: "books", label: () => t("nav.hadith"), soon: true },
+  { href: "#/listen", icon: "headphones", label: () => t("listen.recitations") },
+  { href: "#/radio", icon: "radio", label: () => t("listen.radios") },
+  { href: "#/tasbih", icon: "beads", label: () => t("nav.tasbih") },
+];
+function renderHub(q = "") {
   setNav("home");
-  setHeader(t("app.name"), { actions: `<button class="icon-btn" id="a-lang" aria-label="${T("common.language")}">${icon("globe")}</button><a class="icon-btn" href="#/fav" aria-label="${T("common.favorites")}">${icon("star")}</a><button class="icon-btn" id="a-search" aria-label="${T("common.search")}">${icon("search")}</button>` });
+  setHeader(t("app.name"), { actions: `<button class="icon-btn" id="a-lang" aria-label="${T("common.language")}">${icon("globe")}</button><button class="icon-btn" id="a-search" aria-label="${T("common.search")}">${icon("search")}</button>` });
+  $("#a-lang").onclick = pickLanguage;
+  const h = new Date().getHours();
+  const greet = t(h < 12 ? "home.greetMorning" : h < 18 ? "home.greetEvening" : "home.greetNight");
+  // What fits now: morning adhkar until mid-afternoon, evening adhkar until night, then the adhkar before sleeping.
+  const now = h >= 4 && h < 15 ? { id: 27, period: "morning", label: t("home.morning"), ic: "sun" }
+    : h >= 15 && h < 21 ? { id: 27, period: "evening", label: t("home.evening"), ic: "moon" }
+    : { id: 28, label: t("home.sleep"), ic: "bed" };
+  const p = catProgress(catById.get(now.id), now.period);
+  const last = LS.get("quran", {}).last;
+  view.innerHTML = `
+    <section class="hero">
+      <h2>${esc(greet)}</h2>
+      <p class="verse" lang="ar" dir="rtl">«فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ»</p>
+      <p class="verse-ref">${T("home.verseRef")}</p>
+      <a class="now" href="#/cat/${now.id}">${icon(now.ic)}<div><small>${T("hub.now")}</small><b>${esc(now.label)}</b><div class="progress light"><div style="width:${p.pct}%"></div></div></div><span class="pct">${T("common.percent", { n: p.pct })}</span></a>
+      ${last ? `<a class="now" href="#/quran/${esc(last.r)}/${last.s}?a=${last.a}">${icon("quran")}<div><small>${T("quran.continue")}</small><b id="hub-last">…</b></div>${icon("back", "chev")}</a>` : ""}
+    </section>
+    <div class="searchbox">${icon("search")}<input id="q" type="search" placeholder="${T("hub.searchPlaceholder")}" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></div>
+    <div id="results"></div>`;
+  if (last) Q.describe(last).then(x => { const b = document.getElementById("hub-last"); if (b) b.textContent = x; });
+  const input = $("#q"), results = $("#results");
+  const tiles = () => {
+    results.innerHTML = `<h2 class="section-title">${T("hub.sections")}</h2><div class="hub-grid">${HUB_TILES.map(x =>
+      `<a class="hub-tile ${x.soon ? "soon" : ""}" href="${x.href}"><div class="ic">${icon(x.icon)}</div><div class="t">${esc(x.label())}</div>${x.soon ? `<div class="c">${T("hub.soon")}</div>` : ""}</a>`).join("")}</div>`;
+  };
+  let seq = 0;
+  const doSearch = async () => {
+    const query = input.value.trim(); const r = adhkarSearch(query, 20); if (!r) return tiles();
+    const mine = ++seq;
+    const surahs = await Q.searchSurahs(query).catch(() => []); if (mine !== seq) return;
+    results.innerHTML =
+      (surahs.length ? `<h2 class="section-title">${T("quran.surahs")}</h2><div class="list">${surahs.slice(0, 8).map(x => `<a href="${x.href}"><div class="num">${num(x.n)}</div><div class="lbl">${esc(x.name)}</div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
+      + `<div class="list" style="margin-top:12px"><a href="#/quran?q=${encodeURIComponent(query)}"><div class="num">${icon("quran")}</div><div class="lbl">${T("hub.searchQuran", { q: query })}</div>${icon("back", "chev")}</a></div>`
+      + (r.count ? r.html : "");
+  };
+  input.addEventListener("input", doSearch); doSearch();
+  $("#a-search").onclick = () => { input.focus(); input.scrollIntoView({ behavior: "smooth", block: "start" }); };
+}
+
+function renderMore() {
+  setNav("more"); setHeader(t("nav.more"));
+  const rows = [
+    ["#/listen", "headphones", t("listen.recitations")], ["#/radio", "radio", t("listen.radios")], ["#/tasbih", "beads", t("nav.tasbih")],
+    ["#/fav", "star", t("common.favorites")], ["#/extras", "book", t("extra.section")], ["#/offline", "download", t("offline.title")], ["#/settings", "settings", t("nav.settings")],
+  ];
+  view.innerHTML = `<div class="list">${rows.map(([href, ic, label]) => `<a href="${href}"><div class="num">${icon(ic)}</div><div class="lbl">${esc(label)}</div>${icon("back", "chev")}</a>`).join("")}</div>`;
+}
+
+function renderHadith() {
+  setNav("hadith"); setHeader(t("nav.hadith"));
+  view.innerHTML = `<div class="empty">${icon("books")}<h2 style="margin:8px 0 4px;font-size:1.1rem">${T("hub.soon")}</h2><div>${T("hadith.soonText")}</div></div>`;
+}
+
+function renderHome(q = "") {
+  setNav("adhkar");
+  setHeader(t("nav.adhkar"), { actions: `<button class="icon-btn" id="a-lang" aria-label="${T("common.language")}">${icon("globe")}</button><a class="icon-btn" href="#/fav" aria-label="${T("common.favorites")}">${icon("star")}</a><button class="icon-btn" id="a-search" aria-label="${T("common.search")}">${icon("search")}</button>` });
   $("#a-lang").onclick = pickLanguage;
   const period = currentPeriod(); const h = new Date().getHours();
   const greet = t(h < 12 ? "home.greetMorning" : h < 18 ? "home.greetEvening" : "home.greetNight");
@@ -228,16 +312,8 @@ function renderHome(q = "") {
       + (EXTRAS.length ? `<a class="extra-link" href="#/extras">${icon("book")}<div><b>${T("extra.section")}</b><span>${T("extra.sectionHint")}</span></div>${icon("back", "chev")}</a>` : "");
   };
   const doSearch = () => {
-    const nq = normalizeSearch(input.value); if (nq.length < 2) return renderSections();
-    searchIndex ||= buildSearchIndex();
-    const hits = []; const terms = nq.split(" ");
-    searchIndex.forEach(({ c, title, items }) => {
-      if (terms.every(x => title.includes(x))) hits.push({ c });
-      items.forEach(({ i, text }) => { if (terms.every(x => text.includes(x))) hits.push({ c, i }); });
-    });
-    if (!hits.length) { results.innerHTML = `<div class="empty">${icon("search")}<div>${T("search.noResultsFor", { q: input.value })}</div></div>`; return; }
-    results.innerHTML = `<h2 class="section-title">${T("count.results", { n: hits.length })}</h2><div class="list">` + hits.slice(0, 60).map(({ c, i }) =>
-      `<a href="#/cat/${c.id}${i ? "?item=" + i.id : ""}"><div class="num">${icon("book")}</div><div class="lbl">${esc(catTitle(c))}${i ? `<span class="sub" lang="ar" dir="rtl">${esc(stripTashkeel(plainText(i.text))).slice(0, 90)}…</span>` : ""}</div>${icon("back", "chev")}</a>`).join("") + `</div>`;
+    const r = adhkarSearch(input.value); if (!r) return renderSections();
+    results.innerHTML = r.count ? r.html : `<div class="empty">${icon("search")}<div>${T("search.noResultsFor", { q: input.value })}</div></div>`;
   };
   input.addEventListener("input", doSearch); doSearch();
   $("#a-search").onclick = () => { input.focus(); input.scrollIntoView({ behavior: "smooth", block: "start" }); };
@@ -245,32 +321,38 @@ function renderHome(q = "") {
 
 function renderSection(id) {
   const s = DB.sections.find(x => x.id === id); if (!s) { location.hash = "#/"; return; }
-  setNav("home"); setHeader(sectionTitle(s), { back: true });
+  setNav("adhkar"); setHeader(sectionTitle(s), { back: true });
   view.innerHTML = `<div class="list">` + s.cats.map((cid, n) => { const c = catById.get(cid); const p = catProgress(c);
     return `<a href="#/cat/${c.id}"><div class="num">${num(n + 1)}</div><div class="lbl">${esc(catTitle(c))}<span class="sub">${T("count.adhkar", { n: c.items.length })}${p.pct === 100 ? `${sep()}✓ ${T("section.completed")}` : ""}</span></div>${icon("back", "chev")}</a>`; }).join("") + `</div>`;
 }
 
+// Morning/evening chapter: in the evening, show the evening wording the book gives in its notes (item.evening).
+const isEveningText = (cat, item) => cat.id === 27 && !!item.evening && currentPeriod() === "evening";
+const textFor = (cat, item) => isEveningText(cat, item) ? item.evening : item.text;
+
 function dhikrCard(cat, item, { showWhere = false } = {}) {
   const key = itemKey(cat, item); const n = getCount(key); const done = n >= item.repeat; const fav = favorites.has(`${cat.id}:${item.id}`);
   const tr = showAdhkarTr() && EN?.items[item.id];
+  const evening = isEveningText(cat, item);
   return `<article class="dhikr ${done ? "done" : ""}" data-key="${key}" data-cat="${cat.id}" data-item="${item.id}" id="item-${item.id}">
     ${showWhere ? `<div class="where" style="padding-top:12px">${icon("book")} ${esc(catTitle(cat))}</div>` : ""}
-    <div class="dhikr-text" lang="ar" dir="rtl" role="button" tabindex="0" aria-label="${T("dhikr.tapToCount")}">${formatText(item.text)}</div>
-    ${tr ? `<div class="dhikr-tr" lang="en" dir="ltr">${tr.n ? `<p class="translit">${esc(tr.n)}</p>` : ""}${tr.t ? `<p>${esc(tr.t)}</p>` : ""}</div>` : ""}
+    <div class="dhikr-text" lang="ar" dir="rtl" role="button" tabindex="0" aria-label="${T("dhikr.tapToCount")}">${formatText(textFor(cat, item))}</div>
+    ${tr ? `<div class="dhikr-tr" lang="en" dir="ltr">${evening ? `<p class="trnote" dir="auto">${T("dhikr.trMorning")}</p>` : ""}${tr.n ? `<p class="translit">${esc(tr.n)}</p>` : ""}${tr.t ? `<p>${esc(tr.t)}</p>` : ""}</div>` : ""}
     <div class="dhikr-bar">
       <button class="count-btn" type="button" aria-label="${T("dhikr.count")}"><span class="big">${done ? icon("check") : num(item.repeat - n)}</span>${item.repeat > 1 ? `<span class="of">/ ${num(item.repeat)}</span>` : ""}</button>
       <span class="spacer"></span>
       <button class="icon-btn ${fav ? "active" : ""}" data-act="fav" type="button" aria-label="${T(fav ? "fav.remove" : "fav.add")}">${icon(fav ? "star-f" : "star")}</button>
       <button class="icon-btn" data-act="copy" type="button" aria-label="${T("common.copy")}">${icon("copy")}</button>
       <button class="icon-btn" data-act="share" type="button" aria-label="${T("common.share")}">${icon("share")}</button>
-      ${item.audio ? `<button class="icon-btn" data-act="play" type="button" aria-label="${T("common.listen")}">${icon("play")}</button>` : ""}
+      ${item.audio && !evening ? `<button class="icon-btn" data-act="play" type="button" aria-label="${T("common.listen")}">${icon("play")}</button>` : ""}
     </div>
   </article>`;
 }
 // Copy/share: Arabic text, plus the official English translation when it is shown.
-function dhikrPlain(item) {
+// In the evening the English translation (of the morning wording) is left out.
+function dhikrPlain(cat, item) {
   const tr = showAdhkarTr() && EN?.items[item.id];
-  return plainText(item.text) + (tr?.t ? `\n\n${tr.t}` : "");
+  return plainText(textFor(cat, item)) + (tr?.t && !isEveningText(cat, item) ? `\n\n${tr.t}` : "");
 }
 
 function bindCards(root, onCount) {
@@ -283,8 +365,8 @@ function bindCards(root, onCount) {
       if (favorites.has(k)) { favorites.delete(k); toast(t("fav.removed")); } else { favorites.add(k); toast(t("fav.added")); }
       saveFav(); btn.classList.toggle("active", favorites.has(k)); btn.innerHTML = icon(favorites.has(k) ? "star-f" : "star"); return;
     }
-    if (act === "copy") return copyText(dhikrPlain(item));
-    if (act === "share") return shareText(catTitle(cat), dhikrPlain(item));
+    if (act === "copy") return copyText(dhikrPlain(cat, item));
+    if (act === "share") return shareText(catTitle(cat), dhikrPlain(cat, item));
     if (act === "play") return togglePlay(item.audio, e.target.closest("[data-act]"));
     if (e.target.closest(".dhikr-text") || e.target.closest(".count-btn")) {
       if (window.getSelection && String(window.getSelection()).length) return; // user is selecting text
@@ -306,7 +388,7 @@ function count(card, cat, item, onCount) {
 
 function renderCategory(id) {
   const cat = catById.get(id); if (!cat) { location.hash = "#/"; return; }
-  setNav("home");
+  setNav("adhkar");
   const is27 = cat.id === 27;
   setHeader(catTitle(cat), { back: true, actions: `${cat.audio ? `<button class="icon-btn" id="a-audio" aria-label="${T("cat.listenAll")}">${icon("play")}</button>` : ""}<button class="icon-btn" id="a-reset" aria-label="${T("cat.resetCount")}">${icon("reset")}</button>` });
   const draw = () => {
@@ -331,7 +413,7 @@ function renderCategory(id) {
 }
 
 function renderExtras() {
-  setNav("home"); setHeader(t("extra.section"), { back: true });
+  setNav("adhkar"); setHeader(t("extra.section"), { back: true });
   const period = currentPeriod();
   const key = x => `x:${x.id}` + ((x.periods || []).length ? ":" + period : "");
   view.innerHTML = `<p class="riwayah-note">${T("extra.sectionHint")}</p><div id="extras">${EXTRAS.map(x => {
@@ -371,7 +453,7 @@ function renderExtras() {
 }
 
 function renderFavorites() {
-  setNav("home"); setHeader(t("common.favorites"), { back: true });
+  setNav("adhkar"); setHeader(t("common.favorites"), { back: true });
   const keys = [...favorites].map(k => k.split(":").map(Number)).map(([c, i]) => ({ cat: catById.get(c), item: catById.get(c)?.items.find(x => x.id === i) })).filter(x => x.cat && x.item);
   if (!keys.length) { view.innerHTML = `<div class="empty">${icon("star")}<div>${T("fav.empty")}<br>${T("fav.emptyHint")}</div></div>`; return; }
   view.innerHTML = `<div id="cards">${keys.map(({ cat, item }) => dhikrCard(cat, item, { showWhere: true })).join("")}</div>`;
@@ -380,7 +462,7 @@ function renderFavorites() {
 
 const PHRASES = ["سُبْحَانَ اللَّهِ", "الْحَمْدُ لِلَّهِ", "اللَّهُ أَكْبَرُ", "لَا إِلَهَ إِلَّا اللَّهُ", "أَسْتَغْفِرُ اللَّهَ", "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ", "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ"];
 function renderTasbih() {
-  setNav("tasbih"); setHeader(t("nav.tasbih"), { actions: `<button class="icon-btn" id="a-reset" aria-label="${T("tasbih.reset")}">${icon("reset")}</button>` });
+  setNav("tasbih"); setHeader(t("nav.tasbih"), { back: true, actions: `<button class="icon-btn" id="a-reset" aria-label="${T("tasbih.reset")}">${icon("reset")}</button>` });
   const draw = () => {
     view.innerHTML = `<section class="tasbih">
       <div class="phrases" dir="rtl">${PHRASES.map((p, i) => `<button class="chip ${tasbih.phrase === i ? "on" : ""}" data-ph="${i}" lang="ar">${p}</button>`).join("")}</div>
@@ -405,7 +487,7 @@ document.addEventListener("keydown", e => { if (e.code === "Space" && location.h
 let installPrompt = null;
 window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installPrompt = e; if (location.hash === "#/settings") renderSettings(); });
 function renderSettings() {
-  setNav("settings"); setHeader(t("nav.settings"));
+  setNav("settings"); setHeader(t("nav.settings"), { back: true });
   const sw = (key, label, small, ic, on = settings[key]) => `<div class="setting"><span class="ic">${icon(ic)}</span><div class="lbl">${T(label)}<small>${T(small)}</small></div><button class="switch ${on ? "on" : ""}" data-sw="${key}" role="switch" aria-checked="${!!on}" aria-label="${T(label)}"></button></div>`;
   const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener" style="color:var(--primary)">${esc(text)}</a>`;

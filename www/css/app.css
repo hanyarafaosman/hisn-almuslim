@@ -340,6 +340,7 @@ html[dir="ltr"] #btn-back svg, html[dir="ltr"] #pl-prev svg, html[dir="ltr"] #pl
 .dhikr-tr p { margin: 0; }
 .dhikr-tr p + p { margin-top: 6px; }
 .dhikr-tr .translit { color: var(--muted); font-style: italic; }
+.dhikr-tr .trnote { font-size: .8rem; color: var(--accent); font-weight: 700; }
 .dhikr.done .dhikr-tr { background: color-mix(in srgb, var(--surface) 60%, transparent); }
 .aya-tr { margin-top: 6px; padding-top: 8px; border-top: 1px dotted var(--border); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; font-size: calc(1rem * var(--scale)); line-height: 1.75; color: var(--text); text-align: start; }
 .aya-tr[dir="rtl"] { font-family: "Noto Naskh Arabic", Tahoma, sans-serif; }
@@ -392,4 +393,24 @@ a.info { color: inherit; }
 .ruling cite { display: block; font-style: normal; font-family: var(--font-ui); font-size: .8rem; color: var(--muted); }
 .ruling p { margin: 6px 0; }
 .ruling a { color: var(--primary); font-weight: 700; }
+
+/* ===== الرئيسية: بوابة الأقسام ===== */
+.hero .now { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 12px; border-radius: 14px; background: rgba(255,255,255,.14); border: 1px solid rgba(255,255,255,.22); color: #fff; }
+.hero .now > svg:first-child { width: 28px; height: 28px; flex: none; }
+.hero .now div { flex: 1; min-width: 0; }
+.hero .now small { display: block; opacity: .8; font-size: .78rem; }
+.hero .now b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.hero .now .pct { font-variant-numeric: tabular-nums; font-size: .85rem; }
+.hero .now .chev { color: #fff; opacity: .8; }
+.progress.light { background: rgba(255,255,255,.25); margin-top: 6px; height: 5px; }
+.progress.light > div { background: #fff; }
+.hub-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.hub-tile { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 6px; display: flex; flex-direction: column; align-items: center; gap: 6px; text-align: center; box-shadow: var(--shadow); }
+.hub-tile:active { transform: scale(.97); }
+.hub-tile .ic { width: 46px; height: 46px; border-radius: 14px; background: var(--surface-2); color: var(--primary); display: grid; place-items: center; }
+.hub-tile .t { font-weight: 700; font-size: .92rem; line-height: 1.3; }
+.hub-tile .c { font-size: .72rem; color: var(--accent); font-weight: 700; }
+.hub-tile.soon { border-style: dashed; box-shadow: none; }
+.hub-tile.soon .ic { color: var(--accent); }
+.empty h2 { color: var(--text); }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
