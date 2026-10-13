@@ -139,7 +139,6 @@
  "tasbih.tap": "Count",
  "tasbih.target": "Goal {n}",
  "tasbih.noLimit": "No limit",
- "tasbih.total": "Total: {n}",
  "tasbih.completed": "You completed {n}",
  "tasbih.wasReset": "Counter reset",
  "settings.install": "Install the app",

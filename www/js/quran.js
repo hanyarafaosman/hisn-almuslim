@@ -3,7 +3,8 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.7.1";
+import * as off from "./offline.js?v=1.7.2";
+import { mirrorOf } from "./mirror.js?v=1.7.2";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -411,7 +412,9 @@ export function setupQuran(ctx) {
   function loadPageFont(ed, n) {
     const fam = `qcf-${ed}-${n}`;
     if (!pageFonts.has(fam)) {
-      const ff = new FontFace(fam, `url(${pageFontUrl(ed, n)}) format("woff2")`, { display: "block" });
+      // The backup copy is the second source: the browser falls back to it only if the first fails to load.
+      const src = [pageFontUrl(ed, n), mirrorOf(pageFontUrl(ed, n))].filter(Boolean).map(u => `url(${u}) format("woff2")`).join(", ");
+      const ff = new FontFace(fam, src, { display: "block" });
       pageFonts.set(fam, ff.load().then(f => { document.fonts.add(f); return fam; }).catch(e => { pageFonts.delete(fam); throw e; }));
     }
     return pageFonts.get(fam);
