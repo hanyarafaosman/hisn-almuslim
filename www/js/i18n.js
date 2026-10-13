@@ -50,17 +50,24 @@ export function th(key, p = {}, html = {}, esc) {
   return s;
 }
 
-// First visit: use the browser language if we support it. Returning users who never chose keep Arabic.
-export function detect(saved, returningUser) {
-  const fromUrl = new URLSearchParams(location.search).get("lang");
-  if (fromUrl && isSupported(fromUrl)) return fromUrl;
-  if (saved && isSupported(saved)) return saved;
-  if (returningUser) return "ar";
+// The first browser language the app supports, or null.
+export function browserLang() {
   for (const l of navigator.languages || [navigator.language || "ar"]) {
     const base = String(l).toLowerCase().split("-")[0];
     if (isSupported(base)) return base;
   }
-  return "en";
+  return null;
+}
+
+// First visit: use the browser language if we support it. Returning users who never chose keep Arabic.
+// A page of the website opens in the language of its text (pageLang), as search engines and visitors saw it.
+export function detect(saved, returningUser, pageLang) {
+  const fromUrl = new URLSearchParams(location.search).get("lang");
+  if (fromUrl && isSupported(fromUrl)) return fromUrl;
+  if (saved && isSupported(saved)) return saved;
+  if (pageLang && isSupported(pageLang)) return pageLang;
+  if (returningUser) return "ar";
+  return browserLang() || "en";
 }
 
 // Localised names via Intl, with a safe fallback when the browser does not know a code.

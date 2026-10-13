@@ -19,9 +19,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: node scripts/check.js
+      # The app plus a ready-made page for every chapter and surah, and the sitemap
+      - run: node scripts/build-site.js
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: www
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4
