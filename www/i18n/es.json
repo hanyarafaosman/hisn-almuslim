@@ -196,6 +196,7 @@
  "about.hisnAuthor": "Por el sheij Saʿid ibn ʿAli ibn Wahf al-Qahtani, que Allah tenga misericordia de él.",
  "about.hisnSource": "Los textos proceden del sitio web oficial del libro {link}: {chapters} y {adhkar}.",
  "about.offline": "La aplicación funciona sin conexión después de la primera visita y no recopila ningún dato.",
+ "about.privacy": "Política de privacidad",
  "about.mushafTitle": "El Noble Corán",
  "about.mushafText": "El texto del Corán y sus tipografías en ocho lecturas proceden del {source} y se muestran tal como se publicaron.",
  "about.mushafOffline": "Cada lectura se guarda en el dispositivo la primera vez que la abres, para que puedas leerla sin conexión.",

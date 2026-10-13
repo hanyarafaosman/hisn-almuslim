@@ -1,7 +1,8 @@
 {
   "name": "حصن المسلم - من أذكار الكتاب والسنة",
   "short_name": "حصن المسلم",
-  "description": "أذكار حصن المسلم الصحيحة، والمصحف الشريف بثماني روايات بخط مجمع الملك فهد، مع التلاوات وإذاعات القرآن الكريم.",
+  "id": "./index.html",
+  "description": "أذكار حصن المسلم كاملة مع العداد والصوت، والمصحف الشريف بثماني روايات بخط مجمع الملك فهد، والكتب الستة في الحديث، مع التلاوات وإذاعات القرآن الكريم. يعمل دون إنترنت.",
   "lang": "ar",
   "dir": "rtl",
   "start_url": "./index.html",
@@ -11,8 +12,9 @@
   "background_color": "#0f766e",
   "theme_color": "#0f766e",
   "categories": [
-    "lifestyle",
-    "education"
+    "books",
+    "education",
+    "lifestyle"
   ],
   "icons": [
     {
@@ -74,6 +76,50 @@
           "sizes": "192x192"
         }
       ]
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "screenshots/home.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "الرئيسية"
+    },
+    {
+      "src": "screenshots/adhkar.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "أذكار الصباح والمساء"
+    },
+    {
+      "src": "screenshots/quran.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "المصحف بثماني روايات"
+    },
+    {
+      "src": "screenshots/mushaf.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "صفحات مصحف المدينة"
+    },
+    {
+      "src": "screenshots/hadith.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "كتب السنة"
+    },
+    {
+      "src": "screenshots/tasbih.jpg",
+      "sizes": "1080x1920",
+      "type": "image/jpeg",
+      "form_factor": "narrow",
+      "label": "السبحة"
     }
   ]
 }

@@ -82,6 +82,7 @@ npm run dev
 | `npm run site` | بناء الموقع المنشور في `_site/`: التطبيق مع صفحة جاهزة لكل باب وكل سورة وخريطة الموقع |
 | `npm run site:preview` | بناء الموقع لعنوان محلي وتشغيله للمعاينة |
 | `npm run og` | رسم صورة المعاينة عند مشاركة الروابط (`icons/og-image.jpg`) بمتصفح Chrome أو Edge |
+| `npm run store` | رسم لقطات Google Play وصورة العرض (`store/android/`) ولقطات الـ manifest (`www/screenshots/`) |
 
 ## مصدر نص المصحف
 
@@ -125,6 +126,10 @@ npm run dev
 - بعد أول نشر: أضف الموقع في [Google Search Console](https://search.google.com/search-console) كخاصية «بادئة عنوان URL» وأرسل `sitemap.xml`. لا يمكن وضع `robots.txt` لأن موقع المشروع ليس في جذر النطاق.
 
 ## إصدار Android و iOS (المتاجر)
+
+**Google Play:** التطبيق يُنشر كـ TWA يفتح الموقع نفسه، فالتحديثات تصل فورًا دون إصدار جديد. الخطوات كاملة ونصوص صفحة التطبيق وصوره في [`store/android/`](store/android/README.md)، وسياسة الخصوصية في `www/privacy.html`. معرّف الحزمة `io.github.hanyarafaosman.hisnalmuslim` ولا يتغيّر بعد النشر.
+
+بديل يضم المحتوى داخل التطبيق (Capacitor):
 
 ```bash
 npm install @capacitor/core @capacitor/cli @capacitor/android @capacitor/ios

@@ -57,6 +57,15 @@ if (!mirrorBase || !fs.readFileSync(path.join(root, "sw.js"), "utf8").includes(`
 const radios = readJson("data/radios.json");
 radios.live.forEach(r => { if (!r.url.startsWith("https://")) fail("radio must be https: " + r.id); });
 
+// Google Play listing texts (store/android/listing.md) must fit Play Console's limits.
+const listing = fs.readFileSync(path.join(root, "..", "store", "android", "listing.md"), "utf8");
+const LIMITS = { title: 30, short: 80, full: 4000 }; let texts = 0;
+for (const m of listing.matchAll(/<!-- (title|short|full)-([a-z]+) -->\r?\n([\s\S]*?)\r?\n<!-- \/\1-\2 -->/g)) {
+  texts++; const n = [...m[3]].length;
+  if (n > LIMITS[m[1]]) fail(`store listing ${m[1]}-${m[2]} is ${n} characters, Google Play allows ${LIMITS[m[1]]}`);
+}
+if (texts < 6) fail("store/android/listing.md: expected title, short and full texts in Arabic and English");
+
 // Hadith books: pinned source, contiguous hadith ranges per book, sizes known, translations only for UI languages.
 const hx = readJson("hadith/index.json"); let hadithCount = 0;
 if (!/@[0-9a-f]{40}\/editions$/.test(hx.source.cdn)) fail("hadith: source must be pinned to a commit");
@@ -85,7 +94,7 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }

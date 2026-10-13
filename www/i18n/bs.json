@@ -196,6 +196,7 @@
  "about.hisnAuthor": "Autor: šejh Se'id ibn Ali ibn Vehf el-Kahtani, Allah mu se smilovao.",
  "about.hisnSource": "Tekstovi su preuzeti sa zvanične stranice knjige {link}: {chapters} i {adhkar}.",
  "about.offline": "Aplikacija radi bez interneta nakon prvog otvaranja i ne prikuplja nikakve podatke.",
+ "about.privacy": "Politika privatnosti",
  "about.mushafTitle": "Časni Kur'an",
  "about.mushafText": "Tekst Kur'ana i fontovi u osam rivajeta preuzeti su iz izvora: {source}. Prikazuju se tačno onako kako su objavljeni.",
  "about.mushafOffline": "Svaki rivajet se sačuva na uređaju nakon prvog otvaranja, pa ga možeš čitati bez interneta.",

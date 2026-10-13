@@ -187,6 +187,7 @@
  "about.hisnAuthor": "Müəllif: Şeyx Səid ibn Əli ibn Vəhf əl-Qəhtani (Allah ona rəhmət etsin).",
  "about.hisnSource": "Mətnlər kitabın rəsmi saytından ({link}) götürülüb: {chapters} və {adhkar}.",
  "about.offline": "Tətbiq ilk açılışdan sonra internetsiz işləyir və heç bir məlumat toplamır.",
+ "about.privacy": "Məxfilik siyasəti",
  "about.mushafTitle": "Qurani-Kərim",
  "about.mushafText": "Səkkiz rəvayətdə Quran mətni və şriftləri bu mənbədən götürülüb: {source}. Dərc olunduğu kimi, heç bir dəyişiklik edilmədən göstərilir.",
  "about.mushafOffline": "Hər rəvayət ilk açılışdan sonra cihazda saxlanılır və internetsiz oxuna bilər.",

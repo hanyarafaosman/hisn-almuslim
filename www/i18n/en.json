@@ -187,6 +187,7 @@
  "about.hisnAuthor": "By Shaykh Saʿid ibn ʿAli ibn Wahf al-Qahtani, may Allah have mercy on him.",
  "about.hisnSource": "The texts come from the book’s official website {link}: {chapters} and {adhkar}.",
  "about.offline": "The app works offline after the first visit and collects no data.",
+ "about.privacy": "Privacy policy",
  "about.mushafTitle": "The Holy Quran",
  "about.mushafText": "The Quran text and fonts in eight readings come from the {source} and are shown exactly as published.",
  "about.mushafOffline": "Each reading is saved on the device after you first open it, so you can read it offline.",

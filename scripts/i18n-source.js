@@ -197,6 +197,7 @@ const S = {
   "about.hisnAuthor": ["تأليف الشيخ سعيد بن علي بن وهف القحطاني رحمه الله.", "By Shaykh Saʿid ibn ʿAli ibn Wahf al-Qahtani, may Allah have mercy on him."],
   "about.hisnSource": ["النصوص مأخوذة من الموقع الرسمي للكتاب {link}، وتضم {chapters} و{adhkar}.", "The texts come from the book’s official website {link}: {chapters} and {adhkar}."],
   "about.offline": ["يعمل التطبيق دون اتصال بالإنترنت بعد أول فتح، ولا يجمع أي بيانات.", "The app works offline after the first visit and collects no data."],
+  "about.privacy": ["سياسة الخصوصية", "Privacy policy"],
   "about.mushafTitle": ["المصحف الشريف", "The Holy Quran"],
   "about.mushafText": ["نص المصحف وخطوطه بثماني روايات من {source}، تُعرض كما هي دون أي تعديل.", "The Quran text and fonts in eight readings come from the {source} and are shown exactly as published."],
   "about.mushafOffline": ["تُحفظ كل رواية على الجهاز بعد أول فتح لها لتُقرأ دون اتصال.", "Each reading is saved on the device after you first open it, so you can read it offline."],

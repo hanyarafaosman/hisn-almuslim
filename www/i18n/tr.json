@@ -187,6 +187,7 @@
  "about.hisnAuthor": "Yazarı: Şeyh Saîd b. Ali b. Vehf el-Kahtânî (Allah ona rahmet etsin).",
  "about.hisnSource": "Metinler kitabın resmî sitesinden ({link}) alınmıştır: {chapters} ve {adhkar}.",
  "about.offline": "Uygulama ilk açılıştan sonra internetsiz çalışır ve hiçbir veri toplamaz.",
+ "about.privacy": "Gizlilik politikası",
  "about.mushafTitle": "Kur'an-ı Kerim",
  "about.mushafText": "Sekiz rivayetteki Kur'an metni ve yazı tipleri şu kaynaktan alınmıştır: {source}. Yayımlandığı hâliyle, hiçbir değişiklik yapılmadan gösterilir.",
  "about.mushafOffline": "Her rivayet ilk açılışından sonra cihaza kaydedilir, böylece internetsiz okunabilir.",

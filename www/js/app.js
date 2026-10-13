@@ -1,10 +1,10 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.8.1";
-import { setupHadith } from "./hadith.js?v=1.8.1";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.8.1";
-import { mirrorOf } from "./mirror.js?v=1.8.1";
+import { setupQuran } from "./quran.js?v=1.8.2";
+import { setupHadith } from "./hadith.js?v=1.8.2";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.8.2";
+import { mirrorOf } from "./mirror.js?v=1.8.2";
 
-const VERSION = "1.8.1";
+const VERSION = "1.8.2";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -572,6 +572,7 @@ function renderSettings() {
       </div><div class="about">
         <b>${T("about.audioTitle")}</b><br>${th("about.audioText", {}, { link: link("https://mp3quran.net", "mp3quran.net") }, esc)}
         <br><small>${T("about.version", { v: VERSION })}</small>
+        <br>${link(`${SITE}privacy.html`, t("about.privacy"))}
       </div>
     </div>`;
   view.querySelectorAll("[data-sw]").forEach(b => b.onclick = () => {

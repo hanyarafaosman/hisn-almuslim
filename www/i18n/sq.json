@@ -187,6 +187,7 @@
  "about.hisnAuthor": "Nga shejh Seid ibn Ali ibn Vehf el-Kahtani, Allahu e mëshiroftë.",
  "about.hisnSource": "Tekstet janë marrë nga faqja zyrtare e librit {link}: {chapters} dhe {adhkar}.",
  "about.offline": "Aplikacioni punon pa internet pas vizitës së parë dhe nuk mbledh asnjë të dhënë.",
+ "about.privacy": "Politika e privatësisë",
  "about.mushafTitle": "Kurani Fisnik",
  "about.mushafText": "Teksti i Kuranit dhe shkronjat në tetë transmetime vijnë nga {source} dhe shfaqen saktësisht siç janë botuar.",
  "about.mushafOffline": "Çdo transmetim ruhet në pajisje pasi e hap për herë të parë, që ta lexosh edhe pa internet.",

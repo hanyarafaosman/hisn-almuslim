@@ -1,17 +1,12 @@
 // Draws www/icons/og-image.jpg (1200×630), the preview image shown when a link to the website is shared
-// in chat apps and social networks. Uses headless Chrome or Edge (set CHROME=path if it is elsewhere)
-// and the Amiri font from Google Fonts, so it needs a connection. Run again after changing the design.
-const fs = require("fs"), path = require("path"), os = require("os"), { spawnSync } = require("child_process");
-const www = path.join(__dirname, "..", "www"), out = path.join(www, "icons", "og-image.jpg");
-const candidates = [process.env.CHROME,
-  "C:/Program Files/Google/Chrome/Application/chrome.exe", "C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", "/usr/bin/google-chrome", "/usr/bin/chromium", "/usr/bin/chromium-browser"];
-const browser = candidates.find(p => p && fs.existsSync(p));
-if (!browser) { console.error("✗ Chrome or Edge not found: set CHROME=path/to/browser"); process.exit(1); }
+// in chat apps and social networks, with headless Chrome (scripts/headless.js) and the app's own fonts.
+// Run again after changing the design.
+const path = require("path");
+const { shootHtml, fileUrl, FONTS_CSS, www } = require("./headless");
 
-const icon = "file:///" + path.join(www, "icons", "icon-512.png").replace(/\\/g, "/");
+const icon = fileUrl(path.join(www, "icons", "icon-512.png"));
 const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-8">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Noto+Naskh+Arabic:wght@500;700&display=block">
+<link rel="stylesheet" href="${FONTS_CSS}">
 <style>
   html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
   body { display: flex; align-items: center; gap: 56px; padding: 0 88px; box-sizing: border-box; color: #fff;
@@ -33,10 +28,4 @@ const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-
   <img src="${icon}" alt="">
 </body></html>`;
 
-const dir = fs.mkdtempSync(path.join(os.tmpdir(), "hisn-og-")); const page = path.join(dir, "og.html");
-fs.writeFileSync(page, html);
-const r = spawnSync(browser, ["--headless=new", "--disable-gpu", "--hide-scrollbars", "--force-device-scale-factor=1", "--window-size=1200,630",
-  "--virtual-time-budget=10000", "--allow-file-access-from-files", `--user-data-dir=${path.join(dir, "profile")}`, `--screenshot=${out}`, "file:///" + page.replace(/\\/g, "/")], { encoding: "utf8", timeout: 60000 });
-fs.rmSync(dir, { recursive: true, force: true });
-if (r.status !== 0 || !fs.existsSync(out)) { console.error("✗ screenshot failed", r.error || r.stderr); process.exit(1); }
-console.log("✓", path.relative(process.cwd(), out), fs.statSync(out).size, "bytes");
+shootHtml(html, path.join(www, "icons", "og-image.jpg"), { width: 1200, height: 630 }).catch(e => { console.error("✗", e.message); process.exit(1); });

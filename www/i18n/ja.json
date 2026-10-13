@@ -178,6 +178,7 @@
  "about.hisnAuthor": "著者：サイード・イブン・アリー・イブン・ワフフ・アル＝カフターニー師（アッラーのご慈悲がありますように）。",
  "about.hisnSource": "本文は本書の公式サイト {link} から取得しています：{chapters}、{adhkar}。",
  "about.offline": "初回アクセス後はオフラインで動作し、データを一切収集しません。",
+ "about.privacy": "プライバシーポリシー",
  "about.mushafTitle": "聖クルアーン",
  "about.mushafText": "8つの伝承によるクルアーンの本文とフォントは{source}によるもので、公開されたとおりに表示しています。",
  "about.mushafOffline": "各伝承は初めて開いたときに端末に保存されるため、オフラインでも読めます。",
