@@ -39,7 +39,22 @@
  "hub.searchPlaceholder": "Cari zikir dan Al-Qur'an…",
  "hub.searchQuran": "Cari “{q}” di ayat-ayat Al-Qur'an",
  "hub.soon": "Segera hadir",
- "hadith.soonText": "Kami sedang menambahkan kitab-kitab hadits sahih, dengan teks yang terverifikasi dan derajat setiap hadits.",
+ "hadith.books": "Kitab hadits",
+ "hadith.sahihBook": "Salah satu dari Sahihain",
+ "hadith.sahihShort": "Sahih",
+ "hadith.position": "{book}: {section}, hadits {n}",
+ "hadith.search": "Cari di {book}…",
+ "hadith.loadingSearch": "Memuat teks kitab untuk pencarian…",
+ "hadith.noMatches": "Tidak ada hadits yang cocok",
+ "hadith.manyResults": "{n} hasil pertama. Tambahkan kata lain untuk mempersempit pencarian.",
+ "hadith.showTr": "Tampilkan atau sembunyikan terjemahan",
+ "hadith.number": "Hadits {n}",
+ "hadith.gradings": "Penilaian para ulama",
+ "hadith.gradesNote": "Catatan: penilaian dikutip sebagaimana tercantum dalam sumbernya. Sebagian diringkas dan tidak menyebutkan rincian dari ulama yang bersangkutan, misalnya ketika beliau menilai awal hadits sahih, tetapi menilai dhaif suatu tambahan di dalamnya. Untuk memastikannya, rujuklah kitab-kitab ulama itu sendiri.",
+ "hadith.showMore": "Tampilkan lebih banyak",
+ "hadith.ref": "{book}, hadits no. {n}",
+ "hadith.source": "Teks hadits beserta derajatnya berasal dari proyek terbuka hadith-api. Nama kitab dan bab berasal dari hadith-json.",
+ "hadith.trSource": "Terjemahan berasal dari proyek hadith-api.",
  "home.greetMorning": "Selamat pagi",
  "home.greetEvening": "Selamat sore",
  "home.greetNight": "Semoga malam Anda penuh berkah",
@@ -71,6 +86,12 @@
  },
  "count.items": {
   "other": "{n} item"
+ },
+ "count.hadith": {
+  "other": "{n} hadits"
+ },
+ "count.books": {
+  "other": "{n} kitab"
  },
  "search.noResultsFor": "Tidak ada hasil untuk “{q}”",
  "section.completed": "Selesai",
@@ -281,7 +302,7 @@
  "extra.abu-darda.summary": "Syekh Ibnu Baz menilai hadits ini dhaif. Beliau mengatakan bahwa ini adalah zikir yang baik bagi siapa saja yang mengucapkannya dengan harapan mendapat manfaat, tanpa meyakini bahwa itu sunnah atau bahwa dengannya diperoleh keutamaan yang disebutkan dalam hadits tersebut.",
  "offline.title": "Konten tanpa internet",
  "offline.manage": "Konten tanpa internet",
- "offline.manageHint": "Simpan Al-Qur'an, terjemahan, dan audio untuk digunakan tanpa internet",
+ "offline.manageHint": "Simpan Al-Qur'an, kitab hadits, terjemahan, dan audio untuk digunakan tanpa internet",
  "offline.intro": "Apa pun yang Anda simpan di sini dapat digunakan tanpa internet. Radio siaran langsung selalu memerlukan koneksi internet.",
  "offline.save": "Simpan ke perangkat",
  "offline.saveAll": "Simpan semua",
@@ -320,6 +341,7 @@
  "offline.open": "Buka",
  "offline.size": "Ukuran: {size}",
  "offline.mushafPages": "Halaman Al-Qur'an cetak",
+ "offline.hadith": "Kitab hadits",
  "player.prev": "Surah sebelumnya",
  "player.next": "Surah berikutnya",
  "player.close": "Tutup pemutar",

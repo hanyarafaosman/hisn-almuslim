@@ -1,12 +1,12 @@
-/* ===== Offline storage: saving Quran data, translations and recorded audio on the device ===== */
+/* ===== Offline storage: saving Quran data, translations, hadith books and recorded audio on the device ===== */
 // Files are stored with the Cache API under the exact URL the app requests, so the service worker
 // can answer from them when there is no connection (see sw.js). Recorded audio is served with
 // byte-range support so seeking works offline. A file whose source is down is taken from its backup copy
 // (js/mirror.js) but still saved under the original URL.
 
-import { fetchWithMirror } from "./mirror.js?v=1.5.2";
+import { fetchWithMirror } from "./mirror.js?v=1.6.3";
 
-export const STORES = { QURAN: "hisn-quran-v1", TR: "hisn-tr-v1", AUDIO: "hisn-offline-audio-v1", PAGES: "hisn-mushaf-fonts-v1" };
+export const STORES = { QURAN: "hisn-quran-v1", TR: "hisn-tr-v1", AUDIO: "hisn-offline-audio-v1", PAGES: "hisn-mushaf-fonts-v1", HADITH: "hisn-hadith-v1" };
 const supported = typeof caches !== "undefined";
 export const isSupported = () => supported;
 const abs = u => new URL(u, location.href).href;
