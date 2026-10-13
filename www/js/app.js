@@ -1,8 +1,8 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.4.0";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.4.0";
+import { setupQuran } from "./quran.js?v=1.5.0";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.5.0";
 
-const VERSION = "1.4.0";
+const VERSION = "1.5.0";
 
 // ---------- storage ----------
 const LS = {
@@ -174,7 +174,7 @@ function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll("
 
 function route() {
   const h = location.hash || "#/"; const [path, qs] = h.slice(1).split("?"); const parts = path.split("/").filter(Boolean); const params = new URLSearchParams(qs || "");
-  stopAudio(); updateWakeLock(parts[0] === "cat" || (parts[0] === "quran" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
+  stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
   if (!parts.length) return renderHub(params.get("q") || "");
   switch (parts[0]) {
     case "section": return renderSection(parts[1]);
@@ -187,6 +187,7 @@ function route() {
     case "listen": return Q.listen(parts.slice(1), params);
     case "radio": return Q.radio();
     case "offline": return Q.offline();
+    case "mushaf": return Q.mushaf(parts[1], Number(parts[2]));
     case "search": return renderHub(params.get("q") || "");
     case "adhkar": return renderHome(params.get("q") || "");
     case "hadith": return renderHadith();

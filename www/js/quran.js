@@ -3,7 +3,7 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.4.0";
+import * as off from "./offline.js?v=1.5.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -87,7 +87,9 @@ export function setupQuran(ctx) {
   const remote = new Map();
   function getJSON(url, { keep = true } = {}) {
     if (remote.has(url)) return remote.get(url);
-    const p = fetch(url).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    // A slow outside service must never freeze a page: give up after 12 s and use the last saved copy, if any.
+    const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 12000);
+    const p = fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer)).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
       .then(j => { if (keep) LS.set("api:" + url, j); return j; })
       .catch(err => { remote.delete(url); const old = LS.get("api:" + url, null); if (old) return old; throw err; });
     remote.set(url, p); return p;
@@ -220,7 +222,7 @@ export function setupQuran(ctx) {
     view.innerHTML = `
       <div class="chips" role="tablist" aria-label="${esc(t("quran.riwayah"))}">${INDEX.riwayat.map(r => `<button class="chip ${r.id === meta.id ? "on" : ""}" data-r="${r.id}" role="tab" aria-selected="${r.id === meta.id}">${esc(rShort(r))}</button>`).join("")}</div>
       <p class="riwayah-note">${esc(t("quran.riwayahOf", { name: rName(meta) }))}${sep()}${esc(t("count.ayat", { n: meta.ayat }))} <span id="cached"></span></p>
-      ${cont || bm ? `<div class="resume-row">${cont ? pos(cont, t("quran.continue"), "book") : ""}${bm ? pos(bm, t("quran.bookmark"), "bookmark") : ""}</div>` : ""}
+      <div class="resume-row"><a class="resume" href="#/mushaf/${state.lastPage?.ed || state.mushafEd || 1421}/${state.lastPage?.p || 1}">${icon("quran")}<div><b>${esc(t("mushaf.pages"))}</b><span>${esc(t("mushaf.ed" + (state.lastPage?.ed || state.mushafEd || 1421)))}${sep()}${esc(t("quran.page", { n: state.lastPage?.p || 1 }))}</span></div></a>${cont ? pos(cont, t("quran.continue"), "book") : ""}${bm ? pos(bm, t("quran.bookmark"), "bookmark") : ""}</div>
       <div class="searchbox">${icon("search")}<input id="qq" type="search" placeholder="${esc(t("quran.searchPlaceholder"))}" value="${esc(homeQuery)}" autocomplete="off" enterkeyhint="search"></div>
       <div class="tabs-row"><div class="segmented" id="qtabs"><button data-t="surahs" class="${state.tab === "surahs" ? "on" : ""}">${esc(t("quran.surahs"))}</button><button data-t="juz" class="${state.tab === "juz" ? "on" : ""}">${esc(t("quran.juzs"))}</button></div></div>
       <div id="qlist"></div>`;
@@ -278,7 +280,7 @@ export function setupQuran(ctx) {
     if (meta.id !== rid) { location.replace(`#/quran/${meta.id}/${s}`); return; }
     if (state.riwayah !== meta.id) { state.riwayah = meta.id; save(); }
     const ayat = data.s[s - 1]; const arName = meta.surahs[s - 1][0]; const name = surahName(s, meta);
-    setHeader(t("quran.surah", { name }), { back: true, actions: `<button class="icon-btn" id="q-play" aria-label="${esc(t("quran.listenSurah"))}">${icon("headphones")}</button><button class="icon-btn" id="q-tr" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><button class="icon-btn" id="q-riw" aria-label="${esc(t("quran.changeRiwayah"))}">${icon("layers")}</button>` });
+    setHeader(t("quran.surah", { name }), { back: true, actions: `${meta.id === "hafs" ? `<button class="icon-btn" id="q-page" aria-label="${esc(t("mushaf.openPage"))}">${icon("book")}</button>` : ""}<button class="icon-btn" id="q-play" aria-label="${esc(t("quran.listenSurah"))}">${icon("headphones")}</button><button class="icon-btn" id="q-tr" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><button class="icon-btn" id="q-riw" aria-label="${esc(t("quran.changeRiwayah"))}">${icon("layers")}</button>` });
     const showBasmala = s !== 9 && !(s === 1 && meta.basmalaIsAya);
     const rec = state.reciters[meta.id];
     let lastJuz = s > 1 ? data.s[s - 2].at(-1)[2] : ayat[0][2];
@@ -308,6 +310,7 @@ export function setupQuran(ctx) {
       <p class="source-note" id="tr-source"></p>`;
 
     const playWith = x => { player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}` }); const b = $("#q-rec"); if (b) b.innerHTML = `${icon("headphones")} <span dir="auto">${esc(x.name)}</span>`; };
+    const qp = $("#q-page"); if (qp) qp.onclick = () => { const a = (state.last && state.last.r === meta.id && state.last.s === s) ? state.last.a : 1; location.hash = `#/mushaf/${state.mushafEd || 1421}/${ayat[a - 1][1]}`; };
     $("#q-play").onclick = () => { const r = state.reciters[meta.id]; r ? playWith(r) : pickReciter(meta, playWith); };
     $("#q-rec").onclick = () => pickReciter(meta, playWith);
     $("#q-tr").onclick = () => pickTranslation(() => renderReader(meta.id, s, params));
@@ -387,6 +390,97 @@ export function setupQuran(ctx) {
       requestAnimationFrame(() => { el.scrollIntoView({ block: "center" }); el.classList.add("flash"); setTimeout(() => el.classList.remove("flash"), 1800); });
     }
   }
+
+  // ---------- printed pages: the Madinah Mushaf, page-exact (Hafs) ----------
+  // Each word is a King Fahd Complex glyph drawn by the font of its page, so lines break exactly as in print.
+  const EDITIONS = { 1405: { v: "v1", key: "w1" }, 1421: { v: "v2", key: "w2" } };
+  let PAGES = null, pageFirst = null;
+  async function loadPages() {
+    if (!PAGES) {
+      const r = await fetch("mushaf/madinah.json"); if (!r.ok) throw new Error("HTTP " + r.status); PAGES = await r.json();
+      pageFirst = Array(605).fill(null); // first verse that starts on each page
+      Object.entries(PAGES.verseStart).forEach(([k, p]) => { const [s, a] = k.split(":").map(Number); const cur = pageFirst[p]; if (!cur || s < cur[0] || (s === cur[0] && a < cur[1])) pageFirst[p] = [s, a]; });
+      for (let p = 1; p <= 604; p++) if (!pageFirst[p]) pageFirst[p] = pageFirst[p - 1]; // page that only continues a long verse
+    }
+    return PAGES;
+  }
+  const pageFontUrl = (ed, n) => PAGES.fonts[EDITIONS[ed].v].url.replace("{n}", n);
+  const pageFontUrls = ed => Array.from({ length: 604 }, (_, i) => pageFontUrl(ed, i + 1));
+  const pageFonts = new Map();
+  function loadPageFont(ed, n) {
+    const fam = `qcf-${ed}-${n}`;
+    if (!pageFonts.has(fam)) {
+      const ff = new FontFace(fam, `url(${pageFontUrl(ed, n)}) format("woff2")`, { display: "block" });
+      pageFonts.set(fam, ff.load().then(f => { document.fonts.add(f); return fam; }).catch(e => { pageFonts.delete(fam); throw e; }));
+    }
+    return pageFonts.get(fam);
+  }
+  function juzOf(s, a) { const hafs = riw("hafs"); let j = 1; hafs.juz.forEach(([js, ja], i) => { if (s > js || (s === js && a >= ja)) j = i + 1; }); return j; }
+  function pageInfo(n) {
+    const [s, a] = pageFirst[n];
+    const surahs = new Set([s]); PAGES.pages[n - 1].forEach(x => { if (x.h) surahs.add(x.h); });
+    return { surahs: [...surahs].sort((x, y) => x - y), juz: juzOf(s, a) };
+  }
+  const pageHref = (ed, n) => `#/mushaf/${ed}/${n}`;
+  const goPage = (ed, n) => { if (n >= 1 && n <= 604) location.replace(pageHref(ed, n)); };
+
+  async function renderPages(ed, n) {
+    setNav("quran"); const hash = location.hash;
+    if (!EDITIONS[ed]) ed = state.mushafEd || "1421";
+    n = Math.min(604, Math.max(1, n | 0 || 1));
+    setHeader(t("mushaf.pages"), { back: true }); view.innerHTML = loading();
+    try { await Promise.all([loadIndex(), loadPages()]); loadFont(riw("hafs")); } catch (e) { return failed(e, () => renderPages(ed, n)); }
+    if (stale(hash)) return;
+    state.mushafEd = ed; state.lastPage = { ed, p: n }; save();
+    const info = pageInfo(n); const key = EDITIONS[ed].key; const hafs = riw("hafs");
+    setHeader(info.surahs.map(s => surahName(s, hafs)).join(sep()), { back: true, actions: `<button class="icon-btn" id="m-goto" aria-label="${esc(t("mushaf.goto"))}">${icon("search")}</button><button class="icon-btn" id="m-ed" aria-label="${esc(t("mushaf.chooseEdition"))}">${icon("layers")}</button>` });
+    const lines = PAGES.pages[n - 1].map(x =>
+      x.h ? `<div class="mline mhead"><span>سورة ${esc(hafs.surahs[x.h - 1][0])}</span></div>`
+      : x.b ? `<div class="mline mbasm">${esc(hafs.basmala)}</div>`
+      : `<div class="mline${n <= 2 ? " center" : ""}">${x[key].split(" ").map(g => `<span>${g}</span>`).join("")}</div>`).join("");
+    view.innerHTML = `
+      <div class="reader-bar"><span class="pill">${esc(t("mushaf.ed" + ed))}</span><span class="pill ghost">${esc(t("quran.juz", { n: info.juz }))}</span><span class="pill ghost">${esc(t("quran.page", { n }))}</span></div>
+      <div class="mpage-wrap"><div class="mpage${n <= 2 ? " opening" : ""}" id="mpage" lang="ar" dir="rtl" style="--qfont:'kfgqpc-hafs'">${lines}<div class="mpage-msg" id="mpage-msg">${loading("")}</div></div></div>
+      <nav class="reader-nav">
+        ${n > 1 ? `<a class="btn ghost" href="${pageHref(ed, n - 1)}" data-replace>${icon("back")} ${esc(t("mushaf.prev"))}</a>` : "<span></span>"}
+        ${n < 604 ? `<a class="btn ghost" href="${pageHref(ed, n + 1)}" data-replace>${esc(t("mushaf.next"))} ${icon("back", "flip")}</a>` : "<span></span>"}
+      </nav>
+      <p class="source-note">${esc(t("mushaf.source"))}</p>`;
+    view.querySelectorAll("[data-replace]").forEach(a => a.onclick = e => { e.preventDefault(); location.replace(a.getAttribute("href")); });
+    const page = $("#mpage");
+    try {
+      const fam = await loadPageFont(ed, n); if (stale(hash)) return;
+      page.style.setProperty("--qcf", `'${fam}'`); page.classList.add("ready"); $("#mpage-msg").remove();
+      // The two prints draw glyphs at different sizes: scale the page so its widest line fills the width, as in print.
+      if (n > 2) {
+        const ls = [...page.querySelectorAll(".mline:not(.mhead):not(.mbasm)")];
+        const widest = Math.max(...ls.map(l => [...l.children].reduce((w, sp) => w + sp.getBoundingClientRect().width, 0)));
+        if (widest > 0) page.style.setProperty("--fit", Math.min(1.35, Math.max(0.8, 0.97 * ls[0].clientWidth / widest)).toFixed(3));
+      }
+    } catch { if (!stale(hash)) $("#mpage-msg").innerHTML = `<div class="empty">${icon("download")}<div>${esc(t("mushaf.fontNeedsNet"))}</div></div>`; }
+    [n + 1, n - 1].filter(p => p >= 1 && p <= 604).forEach(p => loadPageFont(ed, p).catch(() => {}));
+    // Arabic book: the next page is on the left, so swiping toward the right turns forward.
+    let x0 = null;
+    page.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+    page.addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 60) goPage(ed, dx > 0 ? n + 1 : n - 1); });
+    $("#m-ed").onclick = () => {
+      const body = sheet(t("mushaf.chooseEdition"), `<div class="list flat">${Object.keys(EDITIONS).map(e2 => `<button class="row" data-ed="${e2}"><div class="lbl">${esc(t("mushaf.ed" + e2))}<span class="sub">${esc(t("offline.size", { size: off.fmtSize(PAGES.fonts[EDITIONS[e2].v].bytes, getLang()) }))}</span></div>${e2 === ed ? icon("check") : ""}</button>`).join("")}</div>`);
+      body.onclick = e => { const b = e.target.closest("[data-ed]"); if (!b) return; closeSheet(); goPage(b.dataset.ed, n); };
+    };
+    $("#m-goto").onclick = () => {
+      const body = sheet(t("mushaf.goto"), `<div class="goto"><input type="number" inputmode="numeric" min="1" max="604" id="goto-n" placeholder="${esc(t("mushaf.pagePrompt"))}"><button class="btn" id="goto-go">${esc(t("mushaf.go"))}</button></div>
+        <div class="list flat">${hafs.juz.map(([s, a], j) => `<button class="row" data-p="${PAGES.verseStart[s + ":" + a]}"><div class="num">${num(j + 1)}</div><div class="lbl">${esc(t("quran.juz", { n: j + 1 }))}<span class="sub">${esc(t("quran.page", { n: PAGES.verseStart[s + ":" + a] }))}</span></div></button>`).join("")}</div>`);
+      const go = () => { const v = Number($("#goto-n", body).value); if (v >= 1 && v <= 604) { closeSheet(); goPage(ed, v); } };
+      $("#goto-go", body).onclick = go; $("#goto-n", body).onkeydown = e => { if (e.key === "Enter") go(); };
+      body.onclick = e => { const b = e.target.closest("[data-p]"); if (b) { closeSheet(); goPage(ed, Number(b.dataset.p)); } };
+      setTimeout(() => $("#goto-n", body)?.focus(), 50);
+    };
+  }
+  document.addEventListener("keydown", e => {
+    const m = /^#\/mushaf\/(\d+)\/(\d+)/.exec(location.hash); if (!m || e.target?.closest?.("input, textarea, select")) return;
+    if (e.key === "ArrowLeft") goPage(m[1], Number(m[2]) + 1);
+    if (e.key === "ArrowRight") goPage(m[1], Number(m[2]) - 1);
+  });
 
   // ---------- listening: riwayat → reciters → surahs ----------
   const listenTabs = on => `<div class="tabs-row"><div class="segmented"><a href="#/listen" class="${on === "rec" ? "on" : ""}">${icon("headphones")} ${esc(t("listen.recitations"))}</a><a href="#/radio" class="${on === "radio" ? "on" : ""}">${icon("radio")} ${esc(t("listen.radios"))}</a></div></div>`;
@@ -482,11 +576,14 @@ export function setupQuran(ctx) {
     setNav("settings"); setHeader(t("offline.title"), { back: true }); const hash = location.hash;
     if (!off.isSupported()) { view.innerHTML = `<div class="empty">${esc(t("offline.needOnce"))}</div>`; return; }
     view.innerHTML = loading();
-    try { await loadIndex(); } catch (e) { return failed(e, renderOffline); }
+    try { await Promise.all([loadIndex(), loadPages()]); } catch (e) { return failed(e, renderOffline); }
+    const pagesSaved = { 1405: await off.savedSet(off.STORES.PAGES, pageFontUrls(1405)), 1421: await off.savedSet(off.STORES.PAGES, pageFontUrls(1421)) };
     sizes ||= await fetch("data/audio-sizes.json").then(r => r.json()).catch(() => null);
     const lang = getLang(); const fmt = b => off.fmtSize(b, lang);
     const audio = adhkarAudio();
-    const trKey = await currentTr(); const tm = await trMeta(trKey);
+    // Don't hold the page for the QuranEnc list: wait at most 3 s, then show what is already known.
+    const within = (p, ms, fallback) => Promise.race([p, new Promise(r => setTimeout(() => r(fallback), ms))]);
+    const trKey = await within(currentTr(), 3000, state.trChosen ? state.tr || "" : ""); const tm = await within(trMeta(trKey), 3000, null);
     const trUrls = trKey ? Array.from({ length: 114 }, (_, i) => trUrl(trKey, i + 1)) : [];
     const recs = LS.get("offline:recs", {});
     const [storage, riwSaved, trSaved, itemsSaved, chSaved, recRows] = await Promise.all([
@@ -507,6 +604,8 @@ export function setupQuran(ctx) {
       <h2 class="section-title">${esc(t("offline.mushaf"))}</h2>
       <div class="card">${INDEX.riwayat.map((r, i) => row(rName(r), esc(t(riwSaved[i] ? "offline.saved" : "offline.notSaved")), "riw:" + r.id, riwSaved[i] ? "full" : false)).join("")}
         ${riwSaved.some(x => !x) ? `<div class="setting"><div class="lbl"></div>${btn("save:riw:all", "offline.saveAll", "download", "")}</div>` : ""}</div>
+      <h2 class="section-title">${esc(t("offline.mushafPages"))}</h2>
+      <div class="card">${Object.keys(EDITIONS).map(e2 => row(t("mushaf.ed" + e2), esc(t("offline.progress", { done: pagesSaved[e2].size, total: 604 })) + `${sep()}${esc(t("offline.size", { size: fmt(PAGES.fonts[EDITIONS[e2].v].bytes) }))}`, "pages:" + e2, part(pagesSaved[e2].size, 604))).join("")}</div>
       <h2 class="section-title">${esc(t("offline.translation"))}</h2>
       <div class="card">${trKey
         ? row(tm ? trLabel(tm) : trKey, esc(t("offline.progress", { done: trSaved.size, total: 114 })), "tr", part(trSaved.size, 114))
@@ -527,6 +626,7 @@ export function setupQuran(ctx) {
 
     const targets = {
       tr: [off.STORES.TR, trUrls], items: [off.STORES.AUDIO, audio.items], chapters: [off.STORES.AUDIO, audio.chapters],
+      pages: id => [off.STORES.PAGES, pageFontUrls(id)],
     };
     view.querySelectorAll("[data-act]").forEach(b => b.onclick = async () => {
       // data-act is "<save|del>:<kind>[:<id>]"; the id may itself contain ":" (reciter server URLs).
@@ -544,10 +644,10 @@ export function setupQuran(ctx) {
         await off.remove(off.STORES.AUDIO, surahList(x).map(n => surahUrl(x.server, n)));
         delete recs[id]; LS.set("offline:recs", recs); toast(t("offline.deleted")); return renderOffline();
       }
-      const [store, urls] = targets[kind] || [];
+      const tg = targets[kind]; const [store, urls] = typeof tg === "function" ? tg(id) : (tg || []);
       if (!store) return;
       if (act === "del") { await off.remove(store, urls); toast(t("offline.deleted")); return renderOffline(); }
-      reportJob(await off.download({ id: "off:" + kind, urls, store, concurrency: kind === "tr" ? 4 : 3 }));
+      reportJob(await off.download({ id: "off:" + kind + id, urls, store, concurrency: kind === "audio" ? 3 : 4 }));
     });
   }
 
@@ -592,7 +692,7 @@ export function setupQuran(ctx) {
         .map(i => ({ n: i + 1, name: surahName(i + 1, meta), href: `#/quran/${meta.id}/${i + 1}` }));
     },
     async describe(p) { await loadIndex(); const m = riw(p.r); return t("quran.position", { surah: surahName(p.s, m), aya: p.a, riwayah: rShort(m) }); },
-    listen: renderListen, radio: renderRadio, offline: renderOffline, player, sheet, closeSheet,
+    listen: renderListen, radio: renderRadio, offline: renderOffline, mushaf: (ed, n) => renderPages(ed, n), player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
   };
 }

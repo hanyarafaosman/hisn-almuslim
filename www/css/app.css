@@ -413,4 +413,18 @@ a.info { color: inherit; }
 .hub-tile.soon { border-style: dashed; box-shadow: none; }
 .hub-tile.soon .ic { color: var(--accent); }
 .empty h2 { color: var(--text); }
+
+/* ===== صفحات المصحف المطبوع ===== */
+.mpage-wrap { display: flex; justify-content: center; }
+.mpage { position: relative; width: 100%; max-width: 560px; container-type: inline-size; background: var(--paper); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 4.5cqw 4cqw; touch-action: pan-y; user-select: none; }
+.mpage .mline { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; height: 9.6cqw; font-family: var(--qcf), serif; font-size: calc(5.9cqw * var(--fit, 1)); line-height: 1; color: var(--text); }
+.mpage .mline.center { justify-content: center; gap: 1.2cqw; }
+.mpage.opening .mline { height: 11cqw; }
+.mpage:not(.ready) .mline:not(.mhead):not(.mbasm) { visibility: hidden; }
+.mpage .mhead { justify-content: center; border: 2px solid var(--gold); border-radius: 2.4cqw; background: color-mix(in srgb, var(--gold) 10%, transparent); height: 8cqw; margin: .8cqw 0; }
+.mpage .mhead span { font-family: var(--font-text); font-weight: 700; font-size: 4.6cqw; color: var(--primary-2); }
+.mpage .mbasm { justify-content: center; font-family: var(--qfont), var(--font-text); font-size: 5.6cqw; }
+.mpage-msg { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 70%, transparent); border-radius: 14px; }
+.goto { display: flex; gap: 8px; }
+.goto input { flex: 1; height: 44px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface); padding-inline: 12px; font-size: 1rem; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

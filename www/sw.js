@@ -1,5 +1,5 @@
 /* Service worker: offline-first app shell for حصن المسلم */
-const VERSION = "hisn-v1.4.0";
+const VERSION = "hisn-v1.5.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
@@ -13,7 +13,9 @@ const OFFLINE_AUDIO = "hisn-offline-audio-v1";
 const QURAN_CACHE = "hisn-quran-v1";
 // Translations of meanings from QuranEnc.com, kept for offline reading of surahs already opened.
 const TR_CACHE = "hisn-tr-v1";
-const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE];
+// Page fonts of the printed Madinah Mushaf (KFGQPC QCF, one per page), from the Quran.com CDN.
+const MUSHAF_FONTS = "hisn-mushaf-fonts-v1";
+const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS];
 
 self.addEventListener("install", e => {
   // cache: "reload" bypasses the browser HTTP cache (GitHub Pages sends max-age=600), so a new version never stores stale files.
@@ -30,10 +32,12 @@ self.addEventListener("fetch", e => {
   const req = e.request; if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin === location.origin) {
-    const quranFile = /\/quran\/(fonts\/[a-z]+\.woff2|[a-z]+\.json)$/.test(url.pathname) && !url.pathname.endsWith("/index.json");
+    const quranFile = (/\/quran\/(fonts\/[a-z]+\.woff2|[a-z]+\.json)$/.test(url.pathname) && !url.pathname.endsWith("/index.json"))
+      || /\/mushaf\/[a-z]+\.json$/.test(url.pathname);
     e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : VERSION));
     return;
   }
+  if (url.hostname === "static.qurancdn.com" && url.pathname.startsWith("/fonts/quran/")) { e.respondWith(cacheFirst(req, MUSHAF_FONTS)); return; }
   if (url.hostname === "quranenc.com" && url.pathname.startsWith("/api/v1/translation")) { e.respondWith(staleWhileRevalidate(req, TR_CACHE)); return; }
   if (url.hostname.endsWith("gstatic.com") || url.hostname.endsWith("googleapis.com")) { e.respondWith(staleWhileRevalidate(req, FONT_CACHE)); return; }
   // Recorded audio the user saved: answer from the device, with byte ranges so seeking works.

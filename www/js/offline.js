@@ -3,7 +3,7 @@
 // can answer from them when there is no connection (see sw.js). Recorded audio is served with
 // byte-range support so seeking works offline.
 
-export const STORES = { QURAN: "hisn-quran-v1", TR: "hisn-tr-v1", AUDIO: "hisn-offline-audio-v1" };
+export const STORES = { QURAN: "hisn-quran-v1", TR: "hisn-tr-v1", AUDIO: "hisn-offline-audio-v1", PAGES: "hisn-mushaf-fonts-v1" };
 const supported = typeof caches !== "undefined";
 export const isSupported = () => supported;
 const abs = u => new URL(u, location.href).href;
