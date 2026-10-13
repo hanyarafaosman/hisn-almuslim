@@ -50,6 +50,7 @@
  "hadith.showTr": "Nuna ko ɓoye fassara",
  "hadith.number": "Hadisi na {n}",
  "hadith.gradings": "Hukunce-hukuncen malamai",
+ "hadith.gradesNote": "Lura: an kawo hukunce-hukuncen kamar yadda suka zo a majiyarsu. Wasu daga cikinsu a taƙaice suke, ba sa ambaton cikakken bayanin malamin, misali idan ya hukunta farkon hadisi da Sahihi amma ya hukunta wani ƙari a cikinsa da rauni. Don tabbatarwa, duba littattafan malamin da kansa.",
  "hadith.showMore": "Nuna ƙari",
  "hadith.ref": "{book}, hadisi na {n}",
  "hadith.source": "Rubutun hadisai da hukunce-hukuncensu sun fito ne daga buɗaɗɗen aikin hadith-api. Sunayen littattafai da babobi sun fito ne daga hadith-json.",

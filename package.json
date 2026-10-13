@@ -1,6 +1,6 @@
 {
   "name": "hisn-almuslim",
-  "version": "1.6.0",
+  "version": "1.6.1",
   "private": true,
   "description": "حصن المسلم - تطبيق أذكار يعمل على جميع الأنظمة (PWA + Capacitor)",
   "scripts": {

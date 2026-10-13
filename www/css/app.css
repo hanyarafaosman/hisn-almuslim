@@ -448,3 +448,7 @@ a.info { color: inherit; }
 .grades .weak { color: var(--danger); }
 .hadith-snippet { display: block; font-family: var(--font-text); font-size: calc(1.05rem * var(--scale)); line-height: 1.9; font-weight: 400; }
 #hmore { margin: 12px 0; }
+.grades-notice { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; font-size: .85rem; line-height: 1.7;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); color: var(--text); }
+.grades-notice svg { flex: none; width: 18px; height: 18px; margin-top: 3px; color: color-mix(in srgb, var(--accent) 75%, var(--text)); }
+.grades-note { margin: 6px 0 0; font-size: .8rem; line-height: 1.7; color: var(--muted); }

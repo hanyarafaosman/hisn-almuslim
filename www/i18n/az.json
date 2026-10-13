@@ -50,6 +50,7 @@
  "hadith.showTr": "Tərcüməni göstər və ya gizlət",
  "hadith.number": "Hədis {n}",
  "hadith.gradings": "Alimlərin hökmləri",
+ "hadith.gradesNote": "Qeyd: hökmlər mənbədə gəldiyi kimi nəql olunub. Bəziləri qısadır və alimin təfsilatını göstərmir; məsələn, alim hədisin əvvəlini səhih, ondakı bir əlavəni isə zəif saydıqda. Əmin olmaq üçün alimin öz kitablarına müraciət edin.",
  "hadith.showMore": "Daha çox göstər",
  "hadith.ref": "{book}, hədis {n}",
  "hadith.source": "Hədislərin mətnləri və hökmləri açıq hadith-api layihəsindən götürülüb. Kitab və fəsil adları hadith-json layihəsindən götürülüb.",

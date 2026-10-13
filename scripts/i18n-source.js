@@ -60,6 +60,7 @@ const S = {
   "hadith.showTr": ["إظهار الترجمة أو إخفاؤها", "Show or hide the translation"],
   "hadith.number": ["حديث {n}", "Hadith {n}"],
   "hadith.gradings": ["أحكام العلماء على الحديث", "Scholars’ gradings"],
+  "hadith.gradesNote": ["تنبيه: الأحكام منقولة كما وردت في المصدر، وبعضها مختصر لا يذكر تفصيل العالم، كأن يصحّح أول الحديث ويضعّف زيادة فيه. ارجع إلى كتب العالم نفسه للتثبت.", "Note: gradings are quoted as they appear in the source. Some are shortened and leave out the scholar’s details, for example when he authenticates the start of a hadith but grades an addition weak. Check the scholar’s own books to be sure."],
   "hadith.showMore": ["عرض المزيد", "Show more"],
   "hadith.ref": ["{book}، حديث رقم {n}", "{book}, hadith {n}"],
   "hadith.source": ["نصوص الأحاديث وأحكامها من مشروع hadith-api المفتوح، وأسماء الكتب والأبواب من hadith-json.", "Hadith texts and gradings come from the open hadith-api project. Book and chapter names come from hadith-json."],

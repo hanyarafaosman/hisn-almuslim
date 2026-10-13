@@ -50,6 +50,7 @@
  "hadith.showTr": "Shfaq ose fshih përkthimin",
  "hadith.number": "Hadithi {n}",
  "hadith.gradings": "Vlerësimet e dijetarëve",
+ "hadith.gradesNote": "Shënim: vlerësimet përcillen ashtu siç janë në burim. Disa janë të shkurtuara dhe nuk i përmendin hollësitë e dijetarit, për shembull kur ai e vlerëson si të saktë fillimin e një hadithi, por një shtesë në të e vlerëson si të dobët. Për t'u siguruar, shiko librat e vetë dijetarit.",
  "hadith.showMore": "Shfaq më shumë",
  "hadith.ref": "{book}, hadithi {n}",
  "hadith.source": "Tekstet e haditheve dhe vlerësimet e tyre vijnë nga projekti i hapur hadith-api. Emrat e librave dhe të kapitujve vijnë nga hadith-json.",

@@ -50,6 +50,7 @@
  "hadith.showTr": "Mostrar u ocultar la traducción",
  "hadith.number": "Hadiz {n}",
  "hadith.gradings": "Juicios de los sabios",
+ "hadith.gradesNote": "Nota: los juicios se citan tal como aparecen en la fuente. Algunos están abreviados y omiten los matices del sabio; por ejemplo, cuando declara auténtico el comienzo de un hadiz pero califica de débil una adición que contiene. Para asegurarte, consulta los libros del propio sabio.",
  "hadith.showMore": "Mostrar más",
  "hadith.ref": "{book}, hadiz {n}",
  "hadith.source": "Los textos de los hadices y sus juicios proceden del proyecto abierto hadith-api. Los nombres de los libros y capítulos proceden de hadith-json.",

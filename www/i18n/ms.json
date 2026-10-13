@@ -50,6 +50,7 @@
  "hadith.showTr": "Tunjukkan atau sembunyikan terjemahan",
  "hadith.number": "Hadis {n}",
  "hadith.gradings": "Penilaian para ulama",
+ "hadith.gradesNote": "Nota: penilaian dipetik sebagaimana yang tercatat dalam sumbernya. Sebahagiannya diringkaskan dan tidak menyebut perincian ulama tersebut, contohnya apabila beliau menilai sahih bahagian awal sesuatu hadis tetapi menilai daif suatu tambahan di dalamnya. Untuk kepastian, rujuklah kitab-kitab ulama itu sendiri.",
  "hadith.showMore": "Tunjukkan lagi",
  "hadith.ref": "{book}, hadis no. {n}",
  "hadith.source": "Teks hadis dan statusnya diambil daripada projek terbuka hadith-api. Nama kitab dan bab diambil daripada hadith-json.",

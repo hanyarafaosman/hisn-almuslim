@@ -50,6 +50,7 @@
  "hadith.showTr": "Çeviriyi göster veya gizle",
  "hadith.number": "Hadis {n}",
  "hadith.gradings": "Âlimlerin hükümleri",
+ "hadith.gradesNote": "Not: Hükümler kaynakta geçtiği şekliyle aktarılmıştır. Bazıları kısaltılmış olup âlimin ayrıntılı görüşünü yansıtmaz; örneğin âlim, hadisin başını sahih kabul edip içindeki bir ilavenin zayıf olduğuna hükmetmiş olabilir. Emin olmak için âlimin kendi kitaplarına başvurun.",
  "hadith.showMore": "Daha fazla göster",
  "hadith.ref": "{book}, hadis {n}",
  "hadith.source": "Hadis metinleri ve hükümleri açık kaynaklı hadith-api projesinden alınmıştır. Kitap ve bab adları hadith-json projesinden alınmıştır.",

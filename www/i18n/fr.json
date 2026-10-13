@@ -50,6 +50,7 @@
  "hadith.showTr": "Afficher ou masquer la traduction",
  "hadith.number": "Hadith {n}",
  "hadith.gradings": "Jugements des savants",
+ "hadith.gradesNote": "Remarque : les jugements sont cités tels qu’ils figurent dans la source. Certains sont abrégés et omettent les précisions du savant, par exemple lorsqu’il authentifie le début d’un hadith mais juge faible un ajout qu’il contient. Pour vous en assurer, consultez les ouvrages du savant lui-même.",
  "hadith.showMore": "Afficher plus",
  "hadith.ref": "{book}, hadith {n}",
  "hadith.source": "Les textes des hadiths et leurs jugements proviennent du projet libre hadith-api. Les noms des livres et des chapitres proviennent de hadith-json.",

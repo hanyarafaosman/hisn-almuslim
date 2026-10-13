@@ -50,6 +50,7 @@
  "hadith.showTr": "Tarjimani koʻrsatish yoki yashirish",
  "hadith.number": "{n}-hadis",
  "hadith.gradings": "Olimlarning hukmlari",
+ "hadith.gradesNote": "Eslatma: hukmlar manbada qanday kelgan boʻlsa, shundayligicha keltirilgan. Ularning baʼzilari qisqartirilgan boʻlib, olimning batafsil fikrini aks ettirmaydi; masalan, olim hadisning boshini sahih, undagi bir qoʻshimchani esa zaif deb hukm qilgan boʻlishi mumkin. Aniqlik uchun olimning oʻz kitoblariga murojaat qiling.",
  "hadith.showMore": "Koʻproq koʻrsatish",
  "hadith.ref": "{book}, {n}-hadis",
  "hadith.source": "Hadis matnlari va ularning hukmlari ochiq hadith-api loyihasidan olingan. Kitob va bob nomlari hadith-json loyihasidan olingan.",

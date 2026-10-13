@@ -50,6 +50,7 @@
  "hadith.showTr": "Onyesha au ficha tafsiri",
  "hadith.number": "Hadithi {n}",
  "hadith.gradings": "Hukumu za wanazuoni",
+ "hadith.gradesNote": "Kumbuka: hukumu zimenukuliwa kama zilivyo katika chanzo. Baadhi yake zimefupishwa na hazitaji ufafanuzi wa mwanazuoni, kwa mfano anapohukumu mwanzo wa hadithi kuwa sahihi lakini akahukumu nyongeza iliyomo ndani yake kuwa dhaifu. Ili kuhakikisha, rejea vitabu vya mwanazuoni mwenyewe.",
  "hadith.showMore": "Onyesha zaidi",
  "hadith.ref": "{book}, hadithi nambari {n}",
  "hadith.source": "Maandishi ya hadithi na hukumu zake yanatoka katika mradi huria wa hadith-api. Majina ya vitabu na milango yanatoka katika hadith-json.",

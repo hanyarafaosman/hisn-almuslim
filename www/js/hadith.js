@@ -1,7 +1,7 @@
 /* ===== كتب الحديث: الكتب الستة والأربعون النووية والقدسية ===== */
 // Texts: fawazahmed0/hadith-api (Unlicense), loaded per section from a pinned, immutable jsDelivr release.
 // Arabic book and section titles: AhmedBaset/hadith-json. Built by scripts/build-hadith-index.js.
-import * as off from "./offline.js?v=1.6.0";
+import * as off from "./offline.js?v=1.6.1";
 
 const HADITH_STORE = off.STORES.HADITH;
 
@@ -176,7 +176,7 @@ export function setupHadith(ctx) {
           ${b.sahih ? `<span class="badge good">${esc(t("hadith.sahihShort"))}</span>` : pg ? `<span class="badge ${tone(pg.grade)}">${esc(gradeLabel(pg))}${others.length ? ` <small>(${esc(graderLabel(pg.name))})</small>` : ""}</span>` : ""}</div>
         <div class="hadith-text" lang="ar" dir="rtl">${esc(showText(String(h.text).trim()))}</div>
         ${trText ? `<div class="hadith-tr" dir="${trDir}" lang="${getLang()}">${esc(trText)}</div>` : ""}
-        ${others.length > 1 ? `<details class="grades"><summary>${esc(t("hadith.gradings"))}</summary><ul>${others.map(g => `<li><b>${esc(graderLabel(g.name))}:</b> <span class="${tone(g.grade) === "danger" ? "weak" : ""}">${esc(gradeLabel(g))}</span></li>`).join("")}</ul></details>` : ""}
+        ${others.length > 1 ? `<details class="grades"><summary>${esc(t("hadith.gradings"))}</summary><ul>${others.map(g => `<li><b>${esc(graderLabel(g.name))}:</b> <span class="${tone(g.grade) === "danger" ? "weak" : ""}">${esc(gradeLabel(g))}</span></li>`).join("")}</ul><p class="grades-note">${esc(t("hadith.gradesNote"))}</p></details>` : ""}
         <div class="dhikr-bar"><span class="spacer"></span>
           <button class="icon-btn" data-act="copy" aria-label="${esc(t("common.copy"))}">${icon("copy")}</button>
           <button class="icon-btn" data-act="share" aria-label="${esc(t("common.share"))}">${icon("share")}</button></div>
@@ -188,6 +188,7 @@ export function setupHadith(ctx) {
     let shown = Math.max(40, wantIdx + 20);
     view.innerHTML = `
       ${b.sections.length > 1 ? `<p class="riwayah-note">${esc(bookTitle(b))}${sep()}${esc(t("count.hadith", { n: list.length }))}</p>` : ""}
+      ${b.graded ? `<p class="grades-notice">${icon("book")}<span>${esc(t("hadith.gradesNote"))}</span></p>` : ""}
       <div id="hcards">${list.slice(0, shown).map(card).join("")}</div>
       <div id="hmore"></div>
       <nav class="reader-nav">${prevNext(b, n)}</nav>

@@ -50,6 +50,7 @@
  "hadith.showTr": "Übersetzung ein- oder ausblenden",
  "hadith.number": "Hadith {n}",
  "hadith.gradings": "Bewertungen der Gelehrten",
+ "hadith.gradesNote": "Hinweis: Die Bewertungen werden so wiedergegeben, wie sie in der Quelle stehen. Manche sind verkürzt und geben die genauere Unterscheidung des Gelehrten nicht wieder, etwa wenn er den Anfang eines Hadith für authentisch erklärt, einen Zusatz darin aber als schwach einstuft. Sieh zur Sicherheit in den Büchern des Gelehrten selbst nach.",
  "hadith.showMore": "Mehr anzeigen",
  "hadith.ref": "{book}, Hadith {n}",
  "hadith.source": "Die Hadith-Texte und ihre Bewertungen stammen aus dem offenen Projekt hadith-api. Die Namen der Bücher und Kapitel stammen aus hadith-json.",

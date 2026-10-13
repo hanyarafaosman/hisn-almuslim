@@ -50,6 +50,7 @@
  "hadith.showTr": "Mostra o nascondi la traduzione",
  "hadith.number": "Hadith {n}",
  "hadith.gradings": "Giudizi degli studiosi",
+ "hadith.gradesNote": "Nota: i giudizi sono riportati così come compaiono nella fonte. Alcuni sono abbreviati e omettono le precisazioni dello studioso, ad esempio quando dichiara autentico l’inizio di un hadith ma giudica debole un’aggiunta che contiene. Per averne conferma, consulta i libri dello studioso stesso.",
  "hadith.showMore": "Mostra altro",
  "hadith.ref": "{book}, hadith n. {n}",
  "hadith.source": "I testi degli hadith e i giudizi sulla loro autenticità provengono dal progetto aperto hadith-api. I nomi dei libri e dei capitoli provengono da hadith-json.",

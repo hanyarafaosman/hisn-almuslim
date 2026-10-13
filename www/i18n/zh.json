@@ -50,6 +50,7 @@
  "hadith.showTr": "显示或隐藏译文",
  "hadith.number": "第{n}段圣训",
  "hadith.gradings": "学者的等级评定",
+ "hadith.gradesNote": "注：等级评定均按来源原样引用，其中有些经过简化，略去了学者的具体说明，例如学者判定某段圣训的开头部分为正确，却判定其中的某处增补为弱。如需核实，请查阅该学者本人的著作。",
  "hadith.showMore": "显示更多",
  "hadith.ref": "{book}，第{n}段圣训",
  "hadith.source": "圣训文本及其等级评定来自开源项目 hadith-api，书名和章节名称来自 hadith-json。",

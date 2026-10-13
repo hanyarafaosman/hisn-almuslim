@@ -50,6 +50,7 @@
  "hadith.showTr": "Show or hide the translation",
  "hadith.number": "Hadith {n}",
  "hadith.gradings": "Scholars’ gradings",
+ "hadith.gradesNote": "Note: gradings are quoted as they appear in the source. Some are shortened and leave out the scholar’s details, for example when he authenticates the start of a hadith but grades an addition weak. Check the scholar’s own books to be sure.",
  "hadith.showMore": "Show more",
  "hadith.ref": "{book}, hadith {n}",
  "hadith.source": "Hadith texts and gradings come from the open hadith-api project. Book and chapter names come from hadith-json.",

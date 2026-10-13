@@ -50,6 +50,7 @@
  "hadith.showTr": "Muuji ama qari turjumaadda",
  "hadith.number": "Xadiis {n}",
  "hadith.gradings": "Xukunnada culimada",
+ "hadith.gradesNote": "Fiiro gaar ah: xukunnada waxaa loo soo guuriyey sida ay ugu qoran yihiin isha. Qaarkood waa la soo koobay oo ma sheegaan faahfaahinta caalimka, tusaale ahaan marka uu bilowga xadiiska ku xukumo inuu saxiix yahay, balse uu ku xukumo kordhin ku jirta inay daciif tahay. Si aad u hubiso, eeg kutubta caalimka laftiisa.",
  "hadith.showMore": "Muuji wax dheeraad ah",
  "hadith.ref": "{book}, xadiis lambar {n}",
  "hadith.source": "Qoraallada xadiisyada iyo xukunnadooda waxaa laga soo qaaday mashruuca furan ee hadith-api. Magacyada kutubta iyo cutubyada waxaa laga soo qaaday hadith-json.",

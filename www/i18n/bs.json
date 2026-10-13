@@ -50,6 +50,7 @@
  "hadith.showTr": "Prikaži ili sakrij prijevod",
  "hadith.number": "Hadis {n}",
  "hadith.gradings": "Ocjene učenjaka",
+ "hadith.gradesNote": "Napomena: ocjene su prenesene onako kako stoje u izvoru. Neke su skraćene i izostavljaju pojedinosti koje je učenjak naveo, na primjer kada ocijeni početak hadisa vjerodostojnim, a neki dodatak u njemu slabim. Radi provjere pogledaj knjige samog učenjaka.",
  "hadith.showMore": "Prikaži više",
  "hadith.ref": "{book}, hadis {n}",
  "hadith.source": "Tekstovi hadisa i njihove ocjene preuzeti su iz otvorenog projekta hadith-api. Nazivi knjiga i poglavlja preuzeti su iz projekta hadith-json.",

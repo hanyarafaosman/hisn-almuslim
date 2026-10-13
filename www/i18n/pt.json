@@ -50,6 +50,7 @@
  "hadith.showTr": "Mostrar ou ocultar a tradução",
  "hadith.number": "Hadith {n}",
  "hadith.gradings": "Classificações dos estudiosos",
+ "hadith.gradesNote": "Observação: as classificações são citadas tal como aparecem na fonte. Algumas estão abreviadas e omitem os detalhes do estudioso, por exemplo, quando ele considera autêntico o início de um hadith, mas classifica como fraco um acréscimo nele contido. Para ter certeza, consulte os livros do próprio estudioso.",
  "hadith.showMore": "Mostrar mais",
  "hadith.ref": "{book}, hadith nº {n}",
  "hadith.source": "Os textos dos hadiths e suas classificações vêm do projeto aberto hadith-api. Os nomes dos livros e capítulos vêm do hadith-json.",
