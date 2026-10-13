@@ -1,7 +1,7 @@
 /* ===== كتب الحديث: الكتب الستة والأربعون النووية والقدسية ===== */
 // Texts: fawazahmed0/hadith-api (Unlicense), loaded per section from a pinned, immutable jsDelivr release.
 // Arabic book and section titles: AhmedBaset/hadith-json. Built by scripts/build-hadith-index.js.
-import * as off from "./offline.js?v=1.6.3";
+import * as off from "./offline.js?v=1.7.1";
 
 const HADITH_STORE = off.STORES.HADITH;
 
@@ -33,7 +33,7 @@ const NOT_MARFU = /mursal|maqtu|mauquf|muquf/i;
 const tone = grade => WEAK.test(grade) ? "danger" : NOT_MARFU.test(grade) ? "" : /^(isnaad |hasan|sahih)/i.test(grade.trim()) ? "good" : "";
 
 export function setupHadith(ctx) {
-  const { view, $, esc, icon, t, num, sep, getLang, setHeader, setNav, LS, copyText, share } = ctx;
+  const { view, $, esc, icon, t, num, sep, getLang, setHeader, setNav, LS, copyText, share, SITE } = ctx;
   const showText = s => ctx.tashkeel() ? s : ctx.stripTashkeel(s);
   const state = Object.assign({ last: null, tr: true }, LS.get("hadith", {}));
   const save = () => LS.set("hadith", state);
@@ -206,7 +206,7 @@ export function setupHadith(ctx) {
       const act = e.target.closest("[data-act]")?.dataset.act; if (!act) return;
       const h = list.find(x => x.hadithnumber === Number(e.target.closest("[data-h]").dataset.h));
       if (act === "copy") copyText(plain(h));
-      if (act === "share") share(bookTitle(b), plain(h));
+      if (act === "share") share(bookTitle(b), `${plain(h)}\n${SITE}#/hadith/${id}/${n}?h=${h.hadithnumber}`); // opens this hadith in the app
     });
     const trBtn = $("#h-tr"); if (trBtn) trBtn.onclick = () => { state.tr = !state.tr; save(); renderSection(id, n, params); };
     // Remember the reading position.

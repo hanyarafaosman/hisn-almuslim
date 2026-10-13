@@ -1,5 +1,5 @@
 /* Service worker: offline-first app shell for حصن المسلم */
-const VERSION = "hisn-v1.6.3";
+const VERSION = "hisn-v1.7.1";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./hadith/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
@@ -77,9 +77,16 @@ async function cacheFirst(req, cacheName, opportunistic = false) {
     if (res && (res.ok || res.type === "opaque") && (opportunistic || res.ok)) cache.put(req, res.clone()).catch(() => {});
     return res;
   } catch (err) {
-    if (req.mode === "navigate") return (await caches.open(VERSION)).match("./index.html");
+    if (req.mode === "navigate") return offlinePage(req);
     throw err;
   }
+}
+// Website pages of chapters and surahs (scripts/build-site.js) not saved yet: open the same content in the app.
+const PAGE_ROUTES = [[/^adhkar\/(morning|evening)\/$/, "#/cat/27?p=$1"], [/^adhkar\/(\d+)\/$/, "#/cat/$1"], [/^adhkar\/$/, "#/adhkar"], [/^surah\/(\d+)\/$/, "#/quran/hafs/$1"], [/^surah\/$/, "#/quran"]];
+async function offlinePage(req) {
+  const scope = self.registration.scope; const p = req.url.slice(scope.length).split(/[?#]/)[0];
+  const hit = req.url.startsWith(scope) && PAGE_ROUTES.find(([re]) => re.test(p));
+  return hit ? Response.redirect(scope + p.replace(hit[0], hit[1]), 302) : (await caches.open(VERSION)).match("./index.html");
 }
 async function staleWhileRevalidate(req, cacheName) {
   const cache = await caches.open(cacheName);
