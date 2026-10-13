@@ -1,0 +1,16 @@
+name: Check outside sources
+# Daily check of the services the app depends on (adhkar audio, Mushaf page fonts, recitations, translations, radios).
+# A failed run means a source broke or changed: GitHub emails the repository owner. See scripts/check-sources.js.
+on:
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - run: node scripts/check-sources.js

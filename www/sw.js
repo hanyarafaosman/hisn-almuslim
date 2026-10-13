@@ -2,11 +2,20 @@
 const VERSION = "hisn-v1.6.4";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/hadith.js", "./hadith/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
+  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/hadith.js", "./hadith/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
   "./i18n/ar.json", "./i18n/en.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png", "./icons/favicon.svg"
 ];
-const FONT_CACHE = "hisn-fonts-v1";
+// Interface fonts shipped with the app (scripts/fetch-fonts.js). The version is in each file name,
+// so they are kept across app updates and fetched only when missing.
+const FONT_CACHE = "hisn-fonts-v2";
+const FONTS = [
+  "./fonts/amiri-v30-italic-400-arabic.woff2", "./fonts/amiri-v30-italic-400-latin-ext.woff2", "./fonts/amiri-v30-italic-400-latin.woff2",
+  "./fonts/amiri-v30-400-arabic.woff2", "./fonts/amiri-v30-400-latin-ext.woff2", "./fonts/amiri-v30-400-latin.woff2",
+  "./fonts/amiri-v30-700-arabic.woff2", "./fonts/amiri-v30-700-latin-ext.woff2", "./fonts/amiri-v30-700-latin.woff2",
+  "./fonts/noto-naskh-arabic-v44-400-700-arabic.woff2", "./fonts/noto-naskh-arabic-v44-400-700-math.woff2", "./fonts/noto-naskh-arabic-v44-400-700-symbols.woff2",
+  "./fonts/noto-naskh-arabic-v44-400-700-latin-ext.woff2", "./fonts/noto-naskh-arabic-v44-400-700-latin.woff2"
+];
 // Recorded audio (adhkar clips, surah recitations) saved by the user from the Offline content page.
 const OFFLINE_AUDIO = "hisn-offline-audio-v1";
 // Mushaf text + fonts (~1.5 MB per riwayah). Kept across app updates; bump only when quran/ data changes.
@@ -24,7 +33,10 @@ self.addEventListener("install", e => {
   // cache: "reload" bypasses the browser HTTP cache (GitHub Pages sends max-age=600), so a new version never stores stale files.
   // Activate immediately: open pages then reload once into the new version (see controllerchange in app.js),
   // instead of waiting until every tab or the installed app is fully closed.
-  e.waitUntil(caches.open(VERSION).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: "reload" })))).then(() => self.skipWaiting()));
+  e.waitUntil(Promise.all([
+    caches.open(VERSION).then(c => c.addAll(SHELL.map(u => new Request(u, { cache: "reload" })))),
+    caches.open(FONT_CACHE).then(async c => c.addAll((await Promise.all(FONTS.map(async u => (await c.match(u)) ? null : u))).filter(Boolean))),
+  ]).then(() => self.skipWaiting()));
 });
 self.addEventListener("activate", e => {
   e.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(k => !KEEP.includes(k)).map(k => caches.delete(k)))).then(() => self.clients.claim()));
@@ -37,13 +49,13 @@ self.addEventListener("fetch", e => {
   if (url.origin === location.origin) {
     const quranFile = (/\/quran\/(fonts\/[a-z]+\.woff2|[a-z]+\.json)$/.test(url.pathname) && !url.pathname.endsWith("/index.json"))
       || /\/mushaf\/[a-z]+\.json$/.test(url.pathname);
-    e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : VERSION));
+    const uiFont = /\/fonts\/[a-z0-9-]+\.woff2$/.test(url.pathname);
+    e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : uiFont ? FONT_CACHE : VERSION));
     return;
   }
   if (url.hostname === "static.qurancdn.com" && url.pathname.startsWith("/fonts/quran/")) { e.respondWith(cacheFirst(req, MUSHAF_FONTS)); return; }
   if (url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/gh/fawazahmed0/hadith-api@")) { e.respondWith(cacheFirst(req, HADITH_CACHE)); return; }
   if (url.hostname === "quranenc.com" && url.pathname.startsWith("/api/v1/translation")) { e.respondWith(staleWhileRevalidate(req, TR_CACHE)); return; }
-  if (url.hostname.endsWith("gstatic.com") || url.hostname.endsWith("googleapis.com")) { e.respondWith(staleWhileRevalidate(req, FONT_CACHE)); return; }
   // Recorded audio the user saved: answer from the device, with byte ranges so seeking works.
   // Everything else (and live radio streams) goes straight to the network.
   if (url.pathname.endsWith(".mp3") && (url.hostname.endsWith("hisnmuslim.com") || url.hostname.endsWith("mp3quran.net"))) { e.respondWith(savedAudio(req)); return; }
