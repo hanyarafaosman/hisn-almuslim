@@ -1,8 +1,8 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.3.0";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.3.0";
+import { setupQuran } from "./quran.js?v=1.3.1";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.3.1";
 
-const VERSION = "1.3.0";
+const VERSION = "1.3.1";
 
 // ---------- storage ----------
 const LS = {
@@ -80,9 +80,12 @@ const itemKey = (cat, item, period) => `${cat.id}:${item.id}` + (cat.id === 27 ?
 let periodOverride = null;
 const currentPeriod = () => periodOverride || ((h => h >= 4 && h < 15)(new Date().getHours()) ? "morning" : "evening");
 const getCount = key => progress.counts[key] || 0;
+// Morning/evening chapter: some adhkar are said only in the morning or only in the evening (item.when).
+const itemsFor = (cat, period) => cat.items.filter(i => !i.when || i.when === (period || currentPeriod()));
 function catProgress(cat, period) {
-  const total = cat.items.reduce((a, i) => a + i.repeat, 0);
-  const done = cat.items.reduce((a, i) => a + Math.min(i.repeat, getCount(itemKey(cat, i, period))), 0);
+  const items = itemsFor(cat, period);
+  const total = items.reduce((a, i) => a + i.repeat, 0);
+  const done = items.reduce((a, i) => a + Math.min(i.repeat, getCount(itemKey(cat, i, period))), 0);
   return { total, done, pct: total ? Math.round(done / total * 100) : 0 };
 }
 
@@ -307,7 +310,7 @@ function renderCategory(id) {
         <button role="tab" data-p="morning" class="${currentPeriod() === "morning" ? "on" : ""}">${icon("sun")} ${T("cat.morning")}</button>
         <button role="tab" data-p="evening" class="${currentPeriod() === "evening" ? "on" : ""}">${icon("moon")} ${T("cat.evening")}</button></div></div>` : ""}
       <div class="progress-row"><div class="progress"><div style="width:${p.pct}%"></div></div><span id="pct">${T("common.percent", { n: p.pct })}</span></div>
-      <div id="cards">${cat.items.map(i => dhikrCard(cat, i)).join("")}</div>
+      <div id="cards">${itemsFor(cat).map(i => dhikrCard(cat, i)).join("")}</div>
       <div id="finish" class="finish" ${p.pct === 100 ? "" : "hidden"}>${icon("check")}${T("cat.finished", { title: catTitle(cat) })}</div>`;
     const cards = $("#cards");
     bindCards(cards, () => { const p2 = catProgress(cat); $(".progress > div").style.width = p2.pct + "%"; $("#pct").textContent = t("common.percent", { n: p2.pct }); $("#finish").hidden = p2.pct !== 100; if (p2.pct === 100) vibrate([40, 60, 40]); });
@@ -316,7 +319,7 @@ function renderCategory(id) {
   draw();
   const want = new URLSearchParams((location.hash.split("?")[1]) || "").get("item");
   if (want) { const el = document.getElementById("item-" + want); if (el) setTimeout(() => { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.style.outline = "2px solid var(--accent)"; setTimeout(() => el.style.outline = "", 1800); }, 60); }
-  $("#a-reset").onclick = () => { cat.items.forEach(i => { delete progress.counts[itemKey(cat, i)]; }); saveProgress(); draw(); toast(t("cat.countReset")); };
+  $("#a-reset").onclick = () => { itemsFor(cat).forEach(i => { delete progress.counts[itemKey(cat, i)]; }); saveProgress(); draw(); toast(t("cat.countReset")); };
   const ab = $("#a-audio"); if (ab) ab.onclick = () => togglePlay(cat.audio, ab);
 }
 

@@ -16,6 +16,18 @@ db.sections.flatMap(s => s.cats).forEach(id => { if (!ids.has(id)) fail("section
 const used = new Set(db.sections.flatMap(s => s.cats)); ids.forEach(id => { if (!used.has(id)) fail("cat not in any section " + id); });
 db.categories.forEach(c => c.items.forEach(i => { if (!i.text || !(i.repeat >= 1)) fail(`bad item ${c.id}:${i.id}`); if (i.audio && !/\/[^/]+\.mp3$/.test(i.audio)) fail(`bad audio url ${c.id}:${i.id}`); }));
 
+// The counter must match a count written in the dhikr text, e.g. "(سبع مرات)".
+// Allowed exceptions: the count applies to only part of the dhikr, or to an action rather than words.
+const PARTIAL_REPEAT = new Set([66, 67, 106, 114, 138]);
+const COUNT_WORDS = [[/مرتين|مرتان/, 2], [/ثلاث\S* وثلاثين/, 33], [/أربع\S* وثلاثين/, 34], [/ثلاث/, 3], [/أربع/, 4], [/خمس/, 5], [/سبع/, 7], [/عشر/, 10], [/مائة|مئة/, 100]];
+db.categories.forEach(c => c.items.forEach(i => {
+  if (PARTIAL_REPEAT.has(i.id)) return;
+  const plain = i.text.replace(/[ً-ْٰـ]/g, "");
+  const hints = [...plain.matchAll(/\(([^()]{0,40}مر[^()]{0,40})\)/g)].map(m => m[1]);
+  const counts = hints.map(h => (COUNT_WORDS.find(([re]) => re.test(h)) || [null, /مرة واحدة/.test(h) ? 1 : null])[1]).filter(Boolean);
+  if (counts.length && !counts.includes(i.repeat)) fail(`repeat ${c.id}:${i.id} is ${i.repeat} but the text says ${counts.join("/")} — fix in scripts/hisn-corrections.js`);
+}));
+
 // Mushaf: every riwayah file + font exists and verse counts match the index
 const qi = readJson("quran/index.json"); let ayat = 0;
 if (qi.riwayat.length !== 8) fail("expected 8 riwayat, got " + qi.riwayat.length);
