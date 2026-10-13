@@ -39,7 +39,22 @@
  "hub.searchPlaceholder": "搜索记念词和古兰经…",
  "hub.searchQuran": "在古兰经经文中搜索“{q}”",
  "hub.soon": "即将推出",
- "hadith.soonText": "我们正在添加圣训正确集，附经过核实的文本及每段圣训的等级评定。",
+ "hadith.books": "圣训典籍",
+ "hadith.sahihBook": "两大圣训实录之一",
+ "hadith.sahihShort": "正确",
+ "hadith.position": "{book}：{section}，第{n}段圣训",
+ "hadith.search": "在{book}中搜索…",
+ "hadith.loadingSearch": "正在加载书中文本以供搜索…",
+ "hadith.noMatches": "没有匹配的圣训",
+ "hadith.manyResults": "仅显示前{n}条结果。请再添加一个词语以缩小搜索范围。",
+ "hadith.showTr": "显示或隐藏译文",
+ "hadith.number": "第{n}段圣训",
+ "hadith.gradings": "学者的等级评定",
+ "hadith.gradesNote": "注：等级评定均按来源原样引用，其中有些经过简化，略去了学者的具体说明，例如学者判定某段圣训的开头部分为正确，却判定其中的某处增补为弱。如需核实，请查阅该学者本人的著作。",
+ "hadith.showMore": "显示更多",
+ "hadith.ref": "{book}，第{n}段圣训",
+ "hadith.source": "圣训文本及其等级评定来自开源项目 hadith-api，书名和章节名称来自 hadith-json。",
+ "hadith.trSource": "译文来自 hadith-api 项目。",
  "home.greetMorning": "早上好",
  "home.greetEvening": "晚上好",
  "home.greetNight": "愿你今夜吉祥",
@@ -71,6 +86,12 @@
  },
  "count.items": {
   "other": "{n}项"
+ },
+ "count.hadith": {
+  "other": "{n}段圣训"
+ },
+ "count.books": {
+  "other": "{n}篇"
  },
  "search.noResultsFor": "未找到与“{q}”相关的结果",
  "section.completed": "已完成",
@@ -281,7 +302,7 @@
  "extra.abu-darda.summary": "伊本·巴兹谢赫判定此圣训为弱圣训。他说，若有人为求裨益而念诵它，这是一则很好的记念词，前提是不认为它是圣行，也不认为借此能获得圣训中所提到的回赐。",
  "offline.title": "离线内容",
  "offline.manage": "离线内容",
- "offline.manageHint": "保存古兰经、译文和音频，无需联网即可使用",
+ "offline.manageHint": "保存古兰经、圣训典籍、译文和音频，无需联网即可使用",
  "offline.intro": "在这里保存的内容无需联网即可使用。直播电台始终需要联网。",
  "offline.save": "离线保存",
  "offline.saveAll": "全部保存",
@@ -320,6 +341,7 @@
  "offline.open": "打开",
  "offline.size": "大小：{size}",
  "offline.mushafPages": "印刷版古兰经页面",
+ "offline.hadith": "圣训典籍",
  "player.prev": "上一章",
  "player.next": "下一章",
  "player.close": "关闭播放器",

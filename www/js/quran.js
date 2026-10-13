@@ -3,7 +3,7 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.5.1";
+import * as off from "./offline.js?v=1.6.2";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -586,6 +586,7 @@ export function setupQuran(ctx) {
     const trKey = await within(currentTr(), 3000, state.trChosen ? state.tr || "" : ""); const tm = await within(trMeta(trKey), 3000, null);
     const trUrls = trKey ? Array.from({ length: 114 }, (_, i) => trUrl(trKey, i + 1)) : [];
     const recs = LS.get("offline:recs", {});
+    const hadithRows = (row, part) => ctx.hadith().offlineRows(fmt, part, row).catch(() => `<div class="about">${esc(t("common.loadFailed"))}</div>`);
     const [storage, riwSaved, trSaved, itemsSaved, chSaved, recRows] = await Promise.all([
       off.storageInfo(),
       Promise.all(INDEX.riwayat.map(async r => (await off.savedSet(off.STORES.QURAN, [r.data, r.font])).size === 2)),
@@ -598,6 +599,7 @@ export function setupQuran(ctx) {
     const btn = (act, label, ic, cls = "ghost") => `<button class="btn ${cls} small" data-act="${act}">${icon(ic)} ${esc(t(label))}</button>`;
     const row = (title, subText, act, saved, extra = "") => `<div class="setting"><div class="lbl">${esc(title)}<small>${subText}</small></div>${extra}${saved ? btn("del:" + act, "offline.delete", "trash", "danger") : ""}${saved !== "full" ? btn("save:" + act, "offline.save", "download", "") : ""}</div>`;
     const part = (done, total) => done === 0 ? false : done === total ? "full" : "part";
+    const hadithHtml = await hadithRows(row, part); if (stale(hash)) return;
     view.innerHTML = `
       <p class="riwayah-note">${esc(t("offline.intro"))}</p>
       <div class="card"><div class="about">${esc(t("offline.storage", { used: fmt(storage.usage), quota: fmt(storage.quota) }))}<br><small>${esc(t(storage.persisted ? "offline.persisted" : "offline.notPersisted"))}</small></div><div id="job"></div></div>
@@ -606,6 +608,8 @@ export function setupQuran(ctx) {
         ${riwSaved.some(x => !x) ? `<div class="setting"><div class="lbl"></div>${btn("save:riw:all", "offline.saveAll", "download", "")}</div>` : ""}</div>
       <h2 class="section-title">${esc(t("offline.mushafPages"))}</h2>
       <div class="card">${Object.keys(EDITIONS).map(e2 => row(t("mushaf.ed" + e2), esc(t("offline.progress", { done: pagesSaved[e2].size, total: 604 })) + `${sep()}${esc(t("offline.size", { size: fmt(PAGES.fonts[EDITIONS[e2].v].bytes) }))}`, "pages:" + e2, part(pagesSaved[e2].size, 604))).join("")}</div>
+      <h2 class="section-title">${esc(t("offline.hadith"))}</h2>
+      <div class="card">${hadithHtml}</div>
       <h2 class="section-title">${esc(t("offline.translation"))}</h2>
       <div class="card">${trKey
         ? row(tm ? trLabel(tm) : trKey, esc(t("offline.progress", { done: trSaved.size, total: 114 })), "tr", part(trSaved.size, 114))
@@ -627,6 +631,7 @@ export function setupQuran(ctx) {
     const targets = {
       tr: [off.STORES.TR, trUrls], items: [off.STORES.AUDIO, audio.items], chapters: [off.STORES.AUDIO, audio.chapters],
       pages: id => [off.STORES.PAGES, pageFontUrls(id)],
+      hadith: id => ctx.hadith().offlineTarget(id) || [],
     };
     view.querySelectorAll("[data-act]").forEach(b => b.onclick = async () => {
       // data-act is "<save|del>:<kind>[:<id>]"; the id may itself contain ":" (reciter server URLs).

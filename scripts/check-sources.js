@@ -1,7 +1,7 @@
 // Checks every outside service the app relies on, so a broken source is noticed before users report it.
 // Run daily by .github/workflows/sources.yml (a failed run emails the repository owner). Usage: npm run check:sources
 //   errors   (exit 1): adhkar audio (hisnmuslim.com), Mushaf page fonts (static.qurancdn.com),
-//                      recitations API (mp3quran.net), translations API (quranenc.com)
+//                      recitations API (mp3quran.net), translations API (quranenc.com), hadith books (jsDelivr)
 //   warnings (exit 0): live radio stations, changed audio sizes
 const fs = require("fs"), path = require("path");
 const { probe } = require("./check-radios.js");
@@ -115,6 +115,21 @@ async function translations() {
   } catch (e) { error(G, e.message); }
 }
 
+async function hadithBooks() {
+  const G = "Hadith books (cdn.jsdelivr.net)";
+  const { source, books } = readJson("hadith/index.json");
+  try {
+    // Pinned to a commit, so the files never change: every book's first section and its whole-book file must answer.
+    for (const b of books) {
+      const sec = await getJSON(`${source.cdn}/ara-${b.id}/sections/${b.sections[0][0]}.min.json`);
+      if (!Array.isArray(sec.hadiths) || !sec.hadiths.some(h => h.text)) throw new Error(`${b.id}: first section has no hadith text`);
+      const whole = await request(`${source.cdn}/ara-${b.id}1.min.json`, { method: "HEAD" });
+      if (!whole.ok) throw new Error(`${b.id}: whole-book file gave HTTP ${whole.status}`);
+    }
+    pass(G, `${books.length} books answer`);
+  } catch (e) { error(G, e.message); }
+}
+
 async function liveRadios() {
   const G = "Live radios";
   const { live } = readJson("data/radios.json");
@@ -125,7 +140,7 @@ async function liveRadios() {
 }
 
 (async () => {
-  await Promise.all([adhkarAudio(), mushafPageFonts(), recitations(), translations(), liveRadios()]);
+  await Promise.all([adhkarAudio(), mushafPageFonts(), recitations(), translations(), hadithBooks(), liveRadios()]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);

@@ -39,7 +39,22 @@
  "hub.searchPlaceholder": "ズィクルとクルアーンを検索…",
  "hub.searchQuran": "クルアーンの節から「{q}」を検索",
  "hub.soon": "近日公開",
- "hadith.soonText": "真正なハディース集を追加しています。検証済みの本文と、各ハディースの判定を掲載します。",
+ "hadith.books": "ハディース集",
+ "hadith.sahihBook": "二大サヒーフ集の一つ",
+ "hadith.sahihShort": "真正（サヒーフ）",
+ "hadith.position": "{book}：{section}、ハディース {n}",
+ "hadith.search": "{book}を検索…",
+ "hadith.loadingSearch": "検索用に本文を読み込み中…",
+ "hadith.noMatches": "一致するハディースはありません",
+ "hadith.manyResults": "最初の{n}件の結果です。別の語を追加して検索を絞り込んでください。",
+ "hadith.showTr": "翻訳の表示／非表示",
+ "hadith.number": "ハディース {n}",
+ "hadith.gradings": "学者たちによる判定",
+ "hadith.gradesNote": "注：判定は出典に記載されているとおりに引用しています。中には簡略化され、学者による詳しい区別が省かれているものがあります。たとえば、ハディースの冒頭部分を真正と判定しつつ、その中の追加部分を弱いと判定している場合などです。確認のため、その学者自身の著作を参照してください。",
+ "hadith.showMore": "さらに表示",
+ "hadith.ref": "{book}、ハディース番号 {n}",
+ "hadith.source": "ハディースの本文と判定は、オープンプロジェクト hadith-api によるものです。書名と章名は hadith-json によるものです。",
+ "hadith.trSource": "翻訳は hadith-api プロジェクトによるものです。",
  "home.greetMorning": "おはようございます",
  "home.greetEvening": "こんばんは",
  "home.greetNight": "祝福に満ちた夜を",
@@ -71,6 +86,12 @@
  },
  "count.items": {
   "other": "{n}件"
+ },
+ "count.hadith": {
+  "other": "{n}件のハディース"
+ },
+ "count.books": {
+  "other": "{n}編"
  },
  "search.noResultsFor": "「{q}」に一致する結果はありません",
  "section.completed": "完了",
@@ -281,7 +302,7 @@
  "extra.abu-darda.summary": "イブン・バーズ師はこのハディースを弱いと判定しました。そして、それをスンナだと信じたり、ハディースに述べられた報奨がそれによって得られると信じたりすることなく、益を願って唱える人にとっては良いズィクルである、と述べています。",
  "offline.title": "オフラインコンテンツ",
  "offline.manage": "オフラインコンテンツ",
- "offline.manageHint": "クルアーン、翻訳、音声を保存すると、インターネットなしで使えます",
+ "offline.manageHint": "クルアーン、ハディース集、翻訳、音声を保存すると、インターネットなしで使えます",
  "offline.intro": "ここで保存したものはインターネットなしで使えます。ライブラジオには常にインターネット接続が必要です。",
  "offline.save": "オフライン用に保存",
  "offline.saveAll": "すべて保存",
@@ -320,6 +341,7 @@
  "offline.open": "開く",
  "offline.size": "サイズ：{size}",
  "offline.mushafPages": "印刷版クルアーンのページ",
+ "offline.hadith": "ハディース集",
  "player.prev": "前の章",
  "player.next": "次の章",
  "player.close": "プレーヤーを閉じる",

@@ -1,8 +1,9 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.5.1";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.5.1";
+import { setupQuran } from "./quran.js?v=1.6.2";
+import { setupHadith } from "./hadith.js?v=1.6.2";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.6.2";
 
-const VERSION = "1.5.1";
+const VERSION = "1.6.2";
 
 // ---------- storage ----------
 const LS = {
@@ -140,6 +141,11 @@ const shareText = (title, text) => share(title, `${text}\n\n— ${title} | ${t("
 const Q = setupQuran({
   view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, LS, copyText, share,
   adhkarAudio: () => ({ items: DB.categories.flatMap(c => c.items.map(i => i.audio)).filter(Boolean), chapters: DB.categories.map(c => c.audio).filter(Boolean) }),
+  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hadith: () => H,
+});
+// ---------- hadith books ----------
+const H = setupHadith({
+  view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, stripTashkeel, tashkeel: () => settings.tashkeel,
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
 
@@ -190,9 +196,11 @@ function route() {
     case "mushaf": return Q.mushaf(parts[1], Number(parts[2]));
     case "search": return renderHub(params.get("q") || "");
     case "adhkar": return renderHome(params.get("q") || "");
-    case "hadith": return renderHadith();
+    case "hadith": return H.render(parts.slice(1), params);
     case "more": return renderMore();
-    default: location.hash = "#/";
+    // Unknown address (for example a link to a newer version's page): show Home but keep the address,
+    // so the page opens once the app updates instead of the link being lost.
+    default: return renderHub();
   }
 }
 window.addEventListener("hashchange", route);
@@ -223,7 +231,7 @@ function adhkarSearch(query, limit = 60) {
 const HUB_TILES = [
   { href: "#/adhkar", icon: "sun", label: () => t("nav.adhkar") },
   { href: "#/quran", icon: "quran", label: () => t("nav.quran") },
-  { href: "#/hadith", icon: "books", label: () => t("nav.hadith"), soon: true },
+  { href: "#/hadith", icon: "books", label: () => t("hadith.books") },
   { href: "#/listen", icon: "headphones", label: () => t("listen.recitations") },
   { href: "#/radio", icon: "radio", label: () => t("listen.radios") },
   { href: "#/tasbih", icon: "beads", label: () => t("nav.tasbih") },
@@ -277,11 +285,6 @@ function renderMore() {
     ["#/fav", "star", t("common.favorites")], ["#/extras", "book", t("extra.section")], ["#/offline", "download", t("offline.title")], ["#/settings", "settings", t("nav.settings")],
   ];
   view.innerHTML = `<div class="list">${rows.map(([href, ic, label]) => `<a href="${href}"><div class="num">${icon(ic)}</div><div class="lbl">${esc(label)}</div>${icon("back", "chev")}</a>`).join("")}</div>`;
-}
-
-function renderHadith() {
-  setNav("hadith"); setHeader(t("nav.hadith"));
-  view.innerHTML = `<div class="empty">${icon("books")}<h2 style="margin:8px 0 4px;font-size:1.1rem">${T("hub.soon")}</h2><div>${T("hadith.soonText")}</div></div>`;
 }
 
 function renderHome(q = "") {

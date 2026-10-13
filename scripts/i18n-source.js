@@ -48,7 +48,23 @@ const S = {
   "hub.searchPlaceholder": ["ابحث في الأذكار والمصحف…", "Search the adhkar and the Quran…"],
   "hub.searchQuran": ["البحث في آيات المصحف عن «{q}»", "Search the Quran verses for “{q}”"],
   "hub.soon": ["قريبًا", "Coming soon"],
-  "hadith.soonText": ["نعمل على إضافة كتب الصحاح من السنة النبوية، بنصوص موثّقة ودرجة كل حديث.", "We’re adding the authentic hadith collections, with verified texts and the grading of each hadith."],
+
+  "hadith.books": ["كتب السنة", "Hadith books"],
+  "hadith.sahihBook": ["من الصحيحين", "One of the two Sahihs"],
+  "hadith.sahihShort": ["صحيح", "Sahih"],
+  "hadith.position": ["{book}: {section}، الحديث {n}", "{book}: {section}, hadith {n}"],
+  "hadith.search": ["ابحث في {book}…", "Search {book}…"],
+  "hadith.loadingSearch": ["جارٍ تحميل نص الكتاب للبحث…", "Loading the book text for searching…"],
+  "hadith.noMatches": ["لا توجد أحاديث مطابقة", "No matching hadith"],
+  "hadith.manyResults": ["أول {n} نتيجة، أضف كلمة أخرى لتضييق البحث", "First {n} results. Add another word to narrow the search."],
+  "hadith.showTr": ["إظهار الترجمة أو إخفاؤها", "Show or hide the translation"],
+  "hadith.number": ["حديث {n}", "Hadith {n}"],
+  "hadith.gradings": ["أحكام العلماء على الحديث", "Scholars’ gradings"],
+  "hadith.gradesNote": ["تنبيه: الأحكام منقولة كما وردت في المصدر، وبعضها مختصر لا يذكر تفصيل العالم، كأن يصحّح أول الحديث ويضعّف زيادة فيه. ارجع إلى كتب العالم نفسه للتثبت.", "Note: gradings are quoted as they appear in the source. Some are shortened and leave out the scholar’s details, for example when he authenticates the start of a hadith but grades an addition weak. Check the scholar’s own books to be sure."],
+  "hadith.showMore": ["عرض المزيد", "Show more"],
+  "hadith.ref": ["{book}، حديث رقم {n}", "{book}, hadith {n}"],
+  "hadith.source": ["نصوص الأحاديث وأحكامها من مشروع hadith-api المفتوح، وأسماء الكتب والأبواب من hadith-json.", "Hadith texts and gradings come from the open hadith-api project. Book and chapter names come from hadith-json."],
+  "hadith.trSource": ["الترجمة من مشروع hadith-api.", "The translation comes from the hadith-api project."],
 
   "home.greetMorning": ["صباح الخير", "Good morning"],
   "home.greetEvening": ["مساء الخير", "Good evening"],
@@ -83,6 +99,12 @@ const S = {
   "count.items": [
     { zero: "{n} عنصر", one: "عنصر واحد", two: "عنصران", few: "{n} عناصر", many: "{n} عنصرًا", other: "{n} عنصر" },
     { one: "{n} item", other: "{n} items" }],
+  "count.hadith": [
+    { zero: "{n} حديث", one: "حديث واحد", two: "حديثان", few: "{n} أحاديث", many: "{n} حديثًا", other: "{n} حديث" },
+    { one: "{n} hadith", other: "{n} hadith" }],
+  "count.books": [
+    { zero: "{n} كتاب", one: "كتاب واحد", two: "كتابان", few: "{n} كتب", many: "{n} كتابًا", other: "{n} كتاب" },
+    { one: "{n} book", other: "{n} books" }],
 
   "search.noResultsFor": ["لا توجد نتائج لـ «{q}»", "No results for “{q}”"],
 
@@ -245,6 +267,7 @@ const S = {
   "mushaf.fontNeedsNet": ["خط هذه الصفحة غير محفوظ على الجهاز. اتصل بالإنترنت مرة لعرضها، أو احفظ الطبعة من «المحتوى دون اتصال».", "This page’s font isn’t saved on the device. Connect to the internet once to show it, or save the print from Offline content."],
   "mushaf.source": ["الصفحات وخطوطها مطابقة لطبعة مجمع الملك فهد لطباعة المصحف الشريف برواية حفص، عبر Quran.com", "Pages and fonts match the King Fahd Glorious Quran Printing Complex print (Hafs), via Quran.com"],
   "offline.mushafPages": ["صفحات المصحف المطبوع", "Printed Mushaf pages"],
+  "offline.hadith": ["كتب السنة", "Hadith books"],
 
   "riwayah.hafs": ["حفص عن عاصم", "Hafs from ʿAsim"],
   "riwayah.shouba": ["شعبة عن عاصم", "Shuʿbah from ʿAsim"],
@@ -308,7 +331,7 @@ const S = {
 
   "offline.title": ["المحتوى دون اتصال", "Offline content"],
   "offline.manage": ["المحتوى دون اتصال", "Offline content"],
-  "offline.manageHint": ["احفظ المصحف والترجمة والصوتيات لاستخدامها دون إنترنت", "Save the Quran, translations and audio to use without internet"],
+  "offline.manageHint": ["احفظ المصحف وكتب السنة والترجمة والصوتيات لاستخدامها دون إنترنت", "Save the Quran, hadith books, translations and audio to use without internet"],
   "offline.intro": ["ما تحفظه هنا يعمل دون إنترنت. الإذاعات المباشرة تحتاج اتصالًا دائمًا.", "Whatever you save here works without internet. Live radio always needs a connection."],
   "offline.save": ["حفظ دون اتصال", "Save offline"],
   "offline.saveAll": ["حفظ الكل", "Save all"],
