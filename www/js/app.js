@@ -1,9 +1,9 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.6.1";
-import { setupHadith } from "./hadith.js?v=1.6.1";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.6.1";
+import { setupQuran } from "./quran.js?v=1.6.4";
+import { setupHadith } from "./hadith.js?v=1.6.4";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.6.4";
 
-const VERSION = "1.6.1";
+const VERSION = "1.6.4";
 
 // ---------- storage ----------
 const LS = {
@@ -145,7 +145,7 @@ const Q = setupQuran({
 });
 // ---------- hadith books ----------
 const H = setupHadith({
-  view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, stripTashkeel, tashkeel: () => settings.tashkeel,
+  view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, stripTashkeel, tashkeel: () => settings.tashkeel, player: Q.player,
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
 
