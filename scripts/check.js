@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg"])
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
 

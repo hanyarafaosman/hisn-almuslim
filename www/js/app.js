@@ -1,8 +1,8 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.3.1";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.3.1";
+import { setupQuran } from "./quran.js?v=1.3.2";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.3.2";
 
-const VERSION = "1.3.1";
+const VERSION = "1.3.2";
 
 // ---------- storage ----------
 const LS = {
@@ -30,7 +30,8 @@ const $ = (s, r = document) => r.querySelector(s);
 const view = $("#view"), titleEl = $("#title"), actionsEl = $("#actions"), backBtn = $("#btn-back"), toastEl = $("#toast"), audio = $("#audio");
 const esc = s => String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const icon = (n, cls = "") => `<svg class="${cls}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
-const vibrate = (ms = 12) => { if (settings.vibrate && navigator.vibrate) navigator.vibrate(ms); };
+// Browsers only allow vibration after a real user tap on the page.
+const vibrate = (ms = 12) => { if (settings.vibrate && navigator.vibrate && (navigator.userActivation?.hasBeenActive ?? true)) navigator.vibrate(ms); };
 const T = (k, p) => esc(t(k, p)); // escaped translation for HTML templates
 
 let toastTimer;
@@ -64,8 +65,11 @@ const plainText = s => s.replace(/\(\(/g, "«").replace(/\)\)/g, "»");
 
 // ---------- data ----------
 let DB = null; const catById = new Map(); const sectionOfCat = new Map();
+// Adhkar that are not in Hisn al-Muslim, shown in a separate section with their grading.
+let EXTRAS = [];
 async function loadData() {
-  const res = await fetch("data/hisn.json"); DB = await res.json();
+  const [res, extras] = await Promise.all([fetch("data/hisn.json"), fetch("data/extras.json").then(r => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] }))]);
+  DB = await res.json(); EXTRAS = extras.items || [];
   DB.categories.forEach(c => catById.set(c.id, c));
   DB.sections.forEach(s => s.cats.forEach(id => sectionOfCat.set(id, s)));
 }
@@ -174,6 +178,7 @@ function route() {
     case "section": return renderSection(parts[1]);
     case "cat": return renderCategory(Number(parts[1]));
     case "fav": return renderFavorites();
+    case "extras": return renderExtras();
     case "tasbih": return renderTasbih();
     case "settings": return renderSettings();
     case "quran": return Q.quran(parts.slice(1), params);
@@ -219,7 +224,8 @@ function renderHome(q = "") {
   const input = $("#q"), results = $("#results");
   const renderSections = () => {
     results.innerHTML = `<h2 class="section-title">${T("home.sections")}</h2><div class="grid">` + DB.sections.map(s =>
-      `<a class="tile" href="#/section/${s.id}"><div class="ic">${icon(s.icon)}</div><div class="t">${esc(sectionTitle(s))}</div><div class="c">${T("count.chapters", { n: s.cats.length })}</div></a>`).join("") + `</div>`;
+      `<a class="tile" href="#/section/${s.id}"><div class="ic">${icon(s.icon)}</div><div class="t">${esc(sectionTitle(s))}</div><div class="c">${T("count.chapters", { n: s.cats.length })}</div></a>`).join("") + `</div>`
+      + (EXTRAS.length ? `<a class="extra-link" href="#/extras">${icon("book")}<div><b>${T("extra.section")}</b><span>${T("extra.sectionHint")}</span></div>${icon("back", "chev")}</a>` : "");
   };
   const doSearch = () => {
     const nq = normalizeSearch(input.value); if (nq.length < 2) return renderSections();
@@ -311,7 +317,8 @@ function renderCategory(id) {
         <button role="tab" data-p="evening" class="${currentPeriod() === "evening" ? "on" : ""}">${icon("moon")} ${T("cat.evening")}</button></div></div>` : ""}
       <div class="progress-row"><div class="progress"><div style="width:${p.pct}%"></div></div><span id="pct">${T("common.percent", { n: p.pct })}</span></div>
       <div id="cards">${itemsFor(cat).map(i => dhikrCard(cat, i)).join("")}</div>
-      <div id="finish" class="finish" ${p.pct === 100 ? "" : "hidden"}>${icon("check")}${T("cat.finished", { title: catTitle(cat) })}</div>`;
+      <div id="finish" class="finish" ${p.pct === 100 ? "" : "hidden"}>${icon("check")}${T("cat.finished", { title: catTitle(cat) })}</div>
+      ${is27 && EXTRAS.some(x => (x.periods || []).includes(currentPeriod())) ? `<a class="info" href="#/extras">${icon("book")}<div>${T("extra.seeAlso")}</div></a>` : ""}`;
     const cards = $("#cards");
     bindCards(cards, () => { const p2 = catProgress(cat); $(".progress > div").style.width = p2.pct + "%"; $("#pct").textContent = t("common.percent", { n: p2.pct }); $("#finish").hidden = p2.pct !== 100; if (p2.pct === 100) vibrate([40, 60, 40]); });
     if (is27) view.querySelectorAll("[data-p]").forEach(b => b.onclick = () => { periodOverride = b.dataset.p; draw(); });
@@ -321,6 +328,46 @@ function renderCategory(id) {
   if (want) { const el = document.getElementById("item-" + want); if (el) setTimeout(() => { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.style.outline = "2px solid var(--accent)"; setTimeout(() => el.style.outline = "", 1800); }, 60); }
   $("#a-reset").onclick = () => { itemsFor(cat).forEach(i => { delete progress.counts[itemKey(cat, i)]; }); saveProgress(); draw(); toast(t("cat.countReset")); };
   const ab = $("#a-audio"); if (ab) ab.onclick = () => togglePlay(cat.audio, ab);
+}
+
+function renderExtras() {
+  setNav("home"); setHeader(t("extra.section"), { back: true });
+  const period = currentPeriod();
+  const key = x => `x:${x.id}` + ((x.periods || []).length ? ":" + period : "");
+  view.innerHTML = `<p class="riwayah-note">${T("extra.sectionHint")}</p><div id="extras">${EXTRAS.map(x => {
+    const n = getCount(key(x)); const done = n >= x.repeat;
+    return `<article class="dhikr extra ${done ? "done" : ""}" data-x="${esc(x.id)}">
+      <div class="badges"><span class="badge warn">${T("extra.notInBook")}</span>${x.grade === "weak" ? `<span class="badge danger">${T("extra.weak")}</span>` : ""}${(x.periods || []).length === 2 ? `<span class="badge">${T("extra.morningEvening")}</span>` : ""}</div>
+      <h3 class="extra-title">${T("extra." + x.id + ".title")}</h3>
+      <div class="dhikr-text" lang="ar" dir="rtl" role="button" tabindex="0" aria-label="${T("dhikr.tapToCount")}">${formatText(x.text)}</div>
+      <div class="ruling"><b>${T("extra.ruling")}</b>
+        <blockquote lang="ar" dir="rtl">«${esc(x.ruling.quote)}» <cite>— ${esc(x.ruling.by)}، ${esc(x.ruling.source)}</cite></blockquote>
+        ${getLang() !== "ar" ? `<p>${T("extra." + x.id + ".summary")}</p>` : ""}
+        <a href="${esc(x.ruling.url)}" target="_blank" rel="noopener">${T("extra.readFatwa")}</a></div>
+      <div class="dhikr-bar">
+        <button class="count-btn" type="button" data-act="count" aria-label="${T("dhikr.count")}"><span class="big">${done ? icon("check") : num(x.repeat - n)}</span>${x.repeat > 1 ? `<span class="of">/ ${num(x.repeat)}</span>` : ""}</button>
+        <span class="spacer"></span>
+        <button class="icon-btn" data-act="copy" type="button" aria-label="${T("common.copy")}">${icon("copy")}</button>
+        <button class="icon-btn" data-act="share" type="button" aria-label="${T("common.share")}">${icon("share")}</button>
+      </div></article>`; }).join("")}</div>`;
+  $("#extras").addEventListener("click", e => {
+    if (e.target.closest("a, blockquote")) return;
+    const card = e.target.closest("[data-x]"); if (!card) return;
+    const x = EXTRAS.find(y => y.id === card.dataset.x); const act = e.target.closest("[data-act]")?.dataset.act;
+    // Copies always say where the text comes from and its grading.
+    const plain = `${x.text}
+
+(${t("extra.notInBook")}${sep()}${t("extra.weak")}: ${x.ruling.by})`;
+    if (act === "copy") return copyText(plain);
+    if (act === "share") return shareText(t("extra." + x.id + ".title"), plain);
+    if (act === "count" || e.target.closest(".dhikr-text")) {
+      if (window.getSelection && String(window.getSelection()).length) return;
+      let n = getCount(key(x)); if (n >= x.repeat) return;
+      progress.counts[key(x)] = ++n; saveProgress(); vibrate(n >= x.repeat ? 40 : 12);
+      card.classList.toggle("done", n >= x.repeat);
+      $(".count-btn .big", card).innerHTML = n >= x.repeat ? icon("check") : num(x.repeat - n);
+    }
+  });
 }
 
 function renderFavorites() {
@@ -347,7 +394,8 @@ function renderTasbih() {
       saveTasbih(); $(".tasbih .num").textContent = num(tasbih.count); $(".stat").textContent = t("tasbih.total", { n: tasbih.total });
     };
     view.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { tasbih.target = Number(b.dataset.t); tasbih.count = 0; saveTasbih(); draw(); });
-    view.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => { tasbih.phrase = Number(b.dataset.ph); saveTasbih(); draw(); });
+    // Choosing another dhikr starts its count from zero (the overall total is kept).
+    view.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => { const ph = Number(b.dataset.ph); if (ph !== tasbih.phrase) tasbih.count = 0; tasbih.phrase = ph; saveTasbih(); draw(); });
   };
   draw();
   $("#a-reset").onclick = () => { tasbih.count = 0; saveTasbih(); $(".tasbih .num").textContent = num(0); toast(t("tasbih.wasReset")); };

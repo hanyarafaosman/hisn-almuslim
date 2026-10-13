@@ -373,4 +373,23 @@ a.setting:active { background: var(--surface-2); }
 .saved-flag svg { width: 14px; height: 14px; vertical-align: -2px; }
 .dl-status { margin-top: 10px; font-size: .85rem; opacity: .95; min-height: 1.2em; }
 .setting .progress { margin-top: 6px; }
+
+/* ===== أذكار من خارج حصن المسلم ===== */
+.extra-link { display: flex; align-items: center; gap: 12px; margin-top: 12px; padding: 14px 16px; border-radius: var(--radius); background: var(--surface); border: 1px dashed color-mix(in srgb, var(--accent) 60%, var(--border)); }
+.extra-link > svg:first-child { color: var(--accent); width: 28px; height: 28px; }
+.extra-link div { flex: 1; }
+.extra-link b { display: block; }
+.extra-link span { color: var(--muted); font-size: .82rem; }
+a.info { color: inherit; }
+.dhikr.extra { border-style: dashed; border-color: color-mix(in srgb, var(--accent) 55%, var(--border)); }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; padding: 14px 18px 0; }
+.badge { font-size: .75rem; font-weight: 700; padding: 3px 10px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+.badge.warn { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); color: color-mix(in srgb, var(--accent) 70%, var(--text)); }
+.badge.danger { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); color: var(--danger); }
+.extra-title { margin: 8px 18px 0; font-size: 1.05rem; }
+.ruling { margin: 0 18px 12px; padding: 12px 14px; border-radius: 12px; background: var(--surface-2); font-size: .9rem; line-height: 1.7; }
+.ruling blockquote { margin: 6px 0; font-family: var(--font-text); font-size: 1.05rem; line-height: 1.9; }
+.ruling cite { display: block; font-style: normal; font-family: var(--font-ui); font-size: .8rem; color: var(--muted); }
+.ruling p { margin: 6px 0; }
+.ruling a { color: var(--primary); font-weight: 700; }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }

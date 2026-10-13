@@ -270,6 +270,17 @@ const S = {
   "station.om-quran": ["إذاعة القرآن الكريم", "Holy Quran Radio"],
   "station.mp3quran-mix": ["إذاعة mp3quran المنوّعة", "mp3quran mixed station"],
 
+  "extra.section": ["أذكار من خارج حصن المسلم", "Adhkar from outside Hisn al-Muslim"],
+  "extra.sectionHint": ["أذكار ليست في كتاب حصن المسلم، تُعرض منفصلة ومع كل ذكر حكمه", "Supplications that are not in the book Hisn al-Muslim, shown separately with their grading"],
+  "extra.notInBook": ["ليس من حصن المسلم", "Not from Hisn al-Muslim"],
+  "extra.weak": ["حديث ضعيف", "Weak hadith"],
+  "extra.ruling": ["الحكم", "Grading"],
+  "extra.readFatwa": ["قراءة الفتوى كاملة", "Read the full fatwa"],
+  "extra.morningEvening": ["يُقال صباحًا ومساءً", "Said in the morning and evening"],
+  "extra.seeAlso": ["ذكر آخر يُقال صباحًا ومساءً، ليس من حصن المسلم وحديثه ضعيف", "Another morning and evening supplication, not from Hisn al-Muslim, with a weak hadith"],
+  "extra.abu-darda.title": ["دعاء أبي الدرداء رضي الله عنه", "The supplication of Abu al-Darda (may Allah be pleased with him)"],
+  "extra.abu-darda.summary": ["حكم عليه الشيخ ابن باز بالضعف، وقال إنه ذكر طيب لمن قاله رجاء النفع، من غير اعتقاد أنه سنة أو أنه يحصل به الفضل المذكور في الحديث.", "Shaykh Ibn Baz graded this hadith weak. He said it is a good dhikr for anyone who says it hoping for benefit, without believing it is a Sunnah or that it brings the reward mentioned in the narration."],
+
   "offline.title": ["المحتوى دون اتصال", "Offline content"],
   "offline.manage": ["المحتوى دون اتصال", "Offline content"],
   "offline.manageHint": ["احفظ المصحف والترجمة والصوتيات لاستخدامها دون إنترنت", "Save the Quran, translations and audio to use without internet"],
