@@ -1,10 +1,10 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.8.0";
-import { setupHadith } from "./hadith.js?v=1.8.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.8.0";
-import { mirrorOf } from "./mirror.js?v=1.8.0";
+import { setupQuran } from "./quran.js?v=1.8.1";
+import { setupHadith } from "./hadith.js?v=1.8.1";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.8.1";
+import { mirrorOf } from "./mirror.js?v=1.8.1";
 
-const VERSION = "1.8.0";
+const VERSION = "1.8.1";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -19,7 +19,7 @@ const LS = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode etc. */ } },
 };
 const RETURNING = ["settings", "progress", "favorites", "quran", "tasbih"].some(k => { try { return localStorage.getItem(k) !== null; } catch { return false; } });
-const DEFAULTS = { theme: "auto", scale: 1, vibrate: true, tashkeel: true, autoNext: true, wakeLock: false, countMode: "down" };
+const DEFAULTS = { theme: "auto", scale: 1, vibrate: true, tashkeel: true, autoNext: true, wakeLock: false, countMode: "up" };
 const settings = Object.assign({}, DEFAULTS, LS.get("settings", {}));
 const saveSettings = () => LS.set("settings", settings);
 
@@ -359,7 +359,7 @@ function renderSection(id) {
 const isEveningText = (cat, item) => cat.id === 27 && !!item.evening && currentPeriod() === "evening";
 const textFor = (cat, item) => isEveningText(cat, item) ? item.evening : item.text;
 
-// Adhkar counter: "down" shows how many times are left (7, 6 … 1), "up" shows how many were said (0, 1 … 6). A check mark when done.
+// Adhkar counter: "up" (the default) shows how many times were said (0, 1 … 6), "down" shows how many are left (7, 6 … 1). A check mark when done.
 const countShown = (n, repeat) => n >= repeat ? icon("check") : num(settings.countMode === "up" ? n : repeat - n);
 const countBtn = (n, repeat, attrs = "") => `<button class="count-btn" type="button"${attrs} aria-label="${T("dhikr.count")}"><span class="big">${countShown(n, repeat)}</span>${repeat > 1 ? `<span class="of">/ ${num(repeat)}</span>` : ""}</button>`;
 
@@ -547,7 +547,7 @@ function renderSettings() {
     </div>
     <h2 class="section-title">${T("settings.reading")}</h2>
     <div class="card">
-      <div class="setting"><span class="ic">${icon("beads")}</span><div class="lbl">${T("settings.countMode")}<small>${T("settings.countModeHint")}</small></div><div class="segmented">${[["down", "settings.countDown"], ["up", "settings.countUp"]].map(([v, l]) => `<button data-count="${v}" class="${settings.countMode === v ? "on" : ""}">${T(l)}</button>`).join("")}</div></div>
+      <div class="setting"><span class="ic">${icon("beads")}</span><div class="lbl">${T("settings.countMode")}<small>${T("settings.countModeHint")}</small></div><div class="segmented">${[["up", "settings.countUp"], ["down", "settings.countDown"]].map(([v, l]) => `<button data-count="${v}" class="${settings.countMode === v ? "on" : ""}">${T(l)}</button>`).join("")}</div></div>
       ${sw("tashkeel", "settings.tashkeel", "settings.tashkeelHint", "book")}
       ${sw("vibrate", "settings.vibrate", "settings.vibrateHint", "settings")}
       ${sw("autoNext", "settings.autoNext", "settings.autoNextHint", "back")}
