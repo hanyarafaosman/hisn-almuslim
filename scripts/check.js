@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -42,6 +42,13 @@ for (const r of qi.riwayat) {
   if (!r.basmala) fail(`${r.id}: missing basmala`);
 }
 
+// Interface fonts are shipped with the app: css/fonts.css, www/fonts/ and the FONTS precache list in sw.js must agree
+const fontFiles = fs.readdirSync(path.join(root, "fonts")).filter(n => n.endsWith(".woff2")).map(n => "fonts/" + n).sort();
+const cssFonts = [...fs.readFileSync(path.join(root, "css/fonts.css"), "utf8").matchAll(/url\(\.\.\/(fonts\/[^)]+)\)/g)].map(m => m[1]).sort();
+const swFonts = [...(/const FONTS = \[([^\]]+)\]/.exec(fs.readFileSync(path.join(root, "sw.js"), "utf8")) || [, ""])[1].matchAll(/"\.\/(fonts\/[^"]+)"/g)].map(m => m[1]).sort();
+if (!fontFiles.length || String(fontFiles) !== String(cssFonts) || String(fontFiles) !== String(swFonts)) fail("fonts: www/fonts, css/fonts.css and FONTS in sw.js differ — rerun scripts/fetch-fonts.js and update sw.js");
+if (/fonts\.googleapis|fonts\.gstatic/.test(fs.readFileSync(path.join(root, "index.html"), "utf8"))) fail("index.html still loads Google Fonts");
+
 // Radios must be HTTPS (the app is served over HTTPS)
 const radios = readJson("data/radios.json");
 radios.live.forEach(r => { if (!r.url.startsWith("https://")) fail("radio must be https: " + r.id); });
@@ -68,7 +75,7 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/i18n.js", "js/offline.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/build-site.js", "../scripts/make-og.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/i18n.js", "js/offline.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-site.js", "../scripts/make-og.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }
