@@ -1,4 +1,4 @@
-// Sanity checks: required files, adhkar data, Mushaf data, radios list, JS syntax.
+// Sanity checks: required files, adhkar data, Mushaf data, hadith index, radios list, JS syntax.
 const fs = require("fs"), path = require("path"), { spawnSync } = require("child_process");
 const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
@@ -45,6 +45,20 @@ for (const r of qi.riwayat) {
 const radios = readJson("data/radios.json");
 radios.live.forEach(r => { if (!r.url.startsWith("https://")) fail("radio must be https: " + r.id); });
 
+// Hadith books: pinned source, contiguous hadith ranges per book, sizes known, translations only for UI languages.
+const hx = readJson("hadith/index.json"); let hadithCount = 0;
+if (!/@[0-9a-f]{40}\/editions$/.test(hx.source.cdn)) fail("hadith: source must be pinned to a commit");
+for (const b of hx.books) {
+  hadithCount += b.count;
+  if (!b.ar || !b.en || !b.count || !(b.bytes > 0) || !b.sections.length) fail("hadith: incomplete book " + b.id);
+  b.sections.forEach(x => { if (!x[1] || !x[2] || !(x[3] <= x[4]) || !(x[5] > 0)) fail(`hadith: bad section ${b.id}:${x[0]}`); });
+  if (b.sections.reduce((a, x) => a + x[5], 0) !== b.count) fail(`hadith: section counts do not add up for ${b.id}`);
+  for (const [l, ed] of Object.entries(b.langs)) {
+    if (!fs.existsSync(path.join(root, "i18n", l + ".json"))) fail(`hadith: translation for unknown UI language ${l}`);
+    if (!ed.endsWith("-" + b.id) || !(b.trBytes[l] > 0)) fail(`hadith: bad translation ${b.id}:${l}`);
+  }
+}
+
 // Interface languages: every language listed in js/i18n.js has a strings file that passes check-i18n.js
 // LANGS entries look like ["fr", "Français"]; other arrays in the file do not end right after the second string.
 const langs = [...new Set([...fs.readFileSync(path.join(root, "js/i18n.js"), "utf8").matchAll(/\["([a-z]{2,3})", "[^"]+"\]/g)].map(m => m[1]))];
@@ -53,12 +67,12 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "sw.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/i18n.js", "js/offline.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }
 
 console.log(ok
-  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${radios.live.length} live radios)`
+  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${radios.live.length} live radios)`
   : "checks failed");
 process.exit(ok ? 0 : 1);
