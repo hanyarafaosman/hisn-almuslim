@@ -5,3 +5,4 @@ ios/
 Thumbs.db
 *.log
 .cache/
+_site/

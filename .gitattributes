@@ -2,3 +2,4 @@
 www/quran/** -text
 *.woff2 binary
 *.png binary
+*.jpg binary

@@ -1,6 +1,7 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "hisn-dev", "runtimeExecutable": "node", "runtimeArgs": ["scripts/serve.js"], "port": 5173 }
+    { "name": "hisn-dev", "runtimeExecutable": "node", "runtimeArgs": ["scripts/serve.js"], "port": 5173 },
+    { "name": "hisn-site", "runtimeExecutable": "node", "runtimeArgs": ["scripts/serve.js", "_site"], "port": 5174, "autoPort": true }
   ]
 }

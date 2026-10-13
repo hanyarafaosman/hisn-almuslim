@@ -3,7 +3,7 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.6.1";
+import * as off from "./offline.js?v=1.7.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -25,7 +25,7 @@ const MP3Q_LANG = { ar: "ar", en: "eng", fr: "fr", ru: "ru", de: "de", es: "es",
 const KUFI_AYAT = 6236; // QuranEnc numbering follows the Kufan count (Hafs, Shuʿbah)
 
 export function setupQuran(ctx) {
-  const { view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, setHeader, setNav, LS, copyText, share, adhkarAudio } = ctx;
+  const { view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, setHeader, setNav, LS, copyText, share, SITE, adhkarAudio } = ctx;
   const state = Object.assign({ riwayah: "hafs", last: null, bookmark: null, reciters: {}, tab: "surahs" }, LS.get("quran", {}));
   const save = () => LS.set("quran", state);
   const stale = hash => location.hash !== hash; // user navigated away while we were loading
@@ -358,7 +358,8 @@ export function setupQuran(ctx) {
           toast(t(on ? "quran.bmSaved" : "quran.bmRemoved")); closeTools(); return;
         }
         if (act.dataset.act === "copy") { copyText(`${plain(n)}\n${ref(n)}`); closeTools(); return; }
-        if (act.dataset.act === "share") { share(t("quran.surah", { name }), `${plain(n)}\n${ref(n)}`); closeTools(); return; }
+        // The website has a page for every surah in Hafs; other riwayat link into the app.
+        if (act.dataset.act === "share") { share(t("quran.surah", { name }), `${plain(n)}\n${ref(n)}\n${meta.id === "hafs" ? `${SITE}surah/${s}/#a-${n}` : `${SITE}#/quran/${meta.id}/${s}?a=${n}`}`); closeTools(); return; }
       }
       const aya = e.target.closest(".aya"); if (!aya) return;
       if (window.getSelection && String(window.getSelection()).length) return;

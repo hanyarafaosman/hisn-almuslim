@@ -1,9 +1,16 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.6.1";
-import { setupHadith } from "./hadith.js?v=1.6.1";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.6.1";
+import { setupQuran } from "./quran.js?v=1.7.0";
+import { setupHadith } from "./hadith.js?v=1.7.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.7.0";
 
-const VERSION = "1.6.1";
+const VERSION = "1.7.0";
+// Public address of the website: shared links point here (scripts/build-site.js reads it too).
+const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
+// Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
+// which route they show, and carry a search-friendly <title> that is kept while that route is shown.
+const { pageLang: PAGE_LANG, pageRoute: PAGE_ROUTE } = document.documentElement.dataset;
+const PAGE_TITLE = document.title;
+const ownRoute = () => (location.hash || "#/").replace(/[?&](item|a)=\d+$/, "") === PAGE_ROUTE; // #item-N / #a-N links included
 
 // ---------- storage ----------
 const LS = {
@@ -135,17 +142,21 @@ async function share(title, text) {
   if (navigator.share) { try { await navigator.share({ title, text }); } catch { /* cancelled */ } }
   else copyText(text);
 }
-const shareText = (title, text) => share(title, `${text}\n\n— ${title} | ${t("app.name")}`);
+// The link goes inside the text (not navigator.share's url field, which some apps share instead of the text),
+// so chat apps show the page preview and the dhikr text is always kept.
+const shareText = (title, text, url) => share(title, `${text}\n\n— ${title} | ${t("app.name")}` + (url ? `\n${url}` : ""));
+// Website page of a chapter (the morning and evening adhkar have one page each), optionally at one dhikr.
+const catUrl = (cat, item) => `${SITE}adhkar/${cat.id === 27 ? currentPeriod() : cat.id}/${item ? "#item-" + item.id : ""}`;
 
 // ---------- Mushaf / listening / radios ----------
 const Q = setupQuran({
-  view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, LS, copyText, share,
+  view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, LS, copyText, share, SITE,
   adhkarAudio: () => ({ items: DB.categories.flatMap(c => c.items.map(i => i.audio)).filter(Boolean), chapters: DB.categories.map(c => c.audio).filter(Boolean) }),
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hadith: () => H,
 });
 // ---------- hadith books ----------
 const H = setupHadith({
-  view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, stripTashkeel, tashkeel: () => settings.tashkeel,
+  view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel,
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
 
@@ -171,7 +182,8 @@ function pickLanguage() {
 // ---------- router ----------
 function setHeader(title, { back = false, actions = "" } = {}) {
   titleEl.textContent = title; backBtn.hidden = !back; actionsEl.innerHTML = actions;
-  document.title = title === t("app.name") ? title : `${title} — ${t("app.name")}`;
+  document.title = PAGE_ROUTE && ownRoute() && getLang() === PAGE_LANG ? PAGE_TITLE
+    : title === t("app.name") ? title : `${title} — ${t("app.name")}`;
 }
 backBtn.addEventListener("click", () => { if (history.length > 1) history.back(); else location.hash = "#/"; });
 // Bottom bar: Home, Quran, Adhkar, Hadith, More. Pages reached from "More" highlight that tab.
@@ -184,7 +196,7 @@ function route() {
   if (!parts.length) return renderHub(params.get("q") || "");
   switch (parts[0]) {
     case "section": return renderSection(parts[1]);
-    case "cat": return renderCategory(Number(parts[1]));
+    case "cat": return renderCategory(Number(parts[1]), params);
     case "fav": return renderFavorites();
     case "extras": return renderExtras();
     case "tasbih": return renderTasbih();
@@ -370,7 +382,7 @@ function bindCards(root, onCount) {
       saveFav(); btn.classList.toggle("active", favorites.has(k)); btn.innerHTML = icon(favorites.has(k) ? "star-f" : "star"); return;
     }
     if (act === "copy") return copyText(dhikrPlain(cat, item));
-    if (act === "share") return shareText(catTitle(cat), dhikrPlain(cat, item));
+    if (act === "share") return shareText(catTitle(cat), dhikrPlain(cat, item), catUrl(cat, item));
     if (act === "play") return togglePlay(item.audio, e.target.closest("[data-act]"));
     if (e.target.closest(".dhikr-text") || e.target.closest(".count-btn")) {
       if (window.getSelection && String(window.getSelection()).length) return; // user is selecting text
@@ -390,8 +402,10 @@ function count(card, cat, item, onCount) {
   onCount && onCount(done);
 }
 
-function renderCategory(id) {
+function renderCategory(id, params) {
   const cat = catById.get(id); if (!cat) { location.hash = "#/"; return; }
+  // ?p=morning / ?p=evening: the website's separate morning and evening pages open on their own period.
+  const p = params?.get("p"); if (cat.id === 27 && (p === "morning" || p === "evening")) periodOverride = p;
   setNav("adhkar");
   const is27 = cat.id === 27;
   setHeader(catTitle(cat), { back: true, actions: `${cat.audio ? `<button class="icon-btn" id="a-audio" aria-label="${T("cat.listenAll")}">${icon("play")}</button>` : ""}<button class="icon-btn" id="a-reset" aria-label="${T("cat.resetCount")}">${icon("reset")}</button>` });
@@ -445,7 +459,7 @@ function renderExtras() {
 
 (${t("extra.notInBook")}${sep()}${t("extra.weak")}: ${x.ruling.by})`;
     if (act === "copy") return copyText(plain);
-    if (act === "share") return shareText(t("extra." + x.id + ".title"), plain);
+    if (act === "share") return shareText(t("extra." + x.id + ".title"), plain, `${SITE}#/extras`);
     if (act === "count" || e.target.closest(".dhikr-text")) {
       if (window.getSelection && String(window.getSelection()).length) return;
       let n = getCount(key(x)); if (n >= x.repeat) return;
@@ -587,10 +601,21 @@ function registerSW() {
   }).catch(() => {});
 }
 
+// Someone arriving on a website page sees it in the page's language. If their device uses another language
+// the app has, offer it once (in that language) instead of switching by itself.
+async function offerDeviceLang() {
+  const code = browserLang();
+  if (!PAGE_LANG || settings.lang || RETURNING || getLang() !== PAGE_LANG || !code || code === PAGE_LANG || LS.get("langOffered", false)) return;
+  LS.set("langOffered", true);
+  const hint = await fetch(`i18n/${code}.json?v=${VERSION}`).then(r => r.json()).then(d => d["settings.languageHint"]).catch(() => null);
+  const name = LANGS.find(l => l.code === code).name;
+  toast(hint || name, { label: name, fn: () => changeLang(code) });
+}
+
 // ---------- boot ----------
 applyTheme();
-const startLang = detect(settings.lang, RETURNING);
+const startLang = detect(settings.lang, RETURNING, PAGE_LANG);
 if (new URLSearchParams(location.search).get("lang") === startLang) { settings.lang = startLang; saveSettings(); }
 Promise.all([setLang(startLang, VERSION).catch(() => setLang("ar", VERSION)), loadData()])
-  .then(async () => { if (showAdhkarTr() || getLang() !== "ar") await loadEN().catch(() => {}); applyStatic(); route(); registerSW(); })
+  .then(async () => { if (showAdhkarTr() || getLang() !== "ar") await loadEN().catch(() => {}); applyStatic(); route(); registerSW(); offerDeviceLang(); })
   .catch(err => { view.innerHTML = `<div class="empty">Could not load the data · تعذّر تحميل البيانات<br><small>${esc(err.message)}</small><br><br><button class="btn" onclick="location.reload()">↻</button></div>`; });
