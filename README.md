@@ -67,6 +67,8 @@ npm run dev
 | `npm run check` | فحص البيانات والملفات وصياغة JavaScript |
 | `npm run quran` | إعادة بناء بيانات المصحف من ملفات المجمع |
 | `npm run check:radios` | التحقق من أن بث الإذاعات المباشرة يعمل |
+| `npm run check:sources` | فحص كل المصادر الخارجية (صوتيات الأذكار، خطوط صفحات المصحف، التلاوات، الترجمات، كتب الحديث، الإذاعات) |
+| `npm run fonts` | نسخ خطوط الواجهة (Amiri و Noto Naskh Arabic) من Google Fonts إلى `www/fonts/` |
 | `npm run icons` | توليد الأيقونات |
 | `npm run hisn:fix` | تطبيق تصحيحات بيانات الأذكار (أعداد التكرار، أذكار الصباح فقط والمساء فقط) من `scripts/hisn-corrections.js` |
 | `npm run measure:audio` | قياس حجم صوتيات الأذكار لعرضه قبل التنزيل |
@@ -98,6 +100,10 @@ npm run dev
 
 القائمة في `www/data/radios.json`. كل رابط يجب أن يكون https ويعمل من صفحة https. شغّل `npm run check:radios` دوريًا، واحذف أي إذاعة تتوقف.
 
+## المصادر الخارجية
+
+نصوص الأذكار والمصحف وخطوط الواجهة مضمّنة في التطبيق. أما صوتيات الأذكار (hisnmuslim.com)، وخطوط صفحات المصحف المطبوع (static.qurancdn.com)، والتلاوات (mp3quran.net)، وترجمات المعاني (quranenc.com)، وكتب الحديث (cdn.jsdelivr.net)، والإذاعات، فتأتي من مصادرها عند الاستخدام، إلا ما حفظه المستخدم دون اتصال. يفحصها `.github/workflows/sources.yml` يوميًا، وإذا تعطّل مصدر أو تغيّرت ملفاته يفشل الفحص ويصل بريد لصاحب المستودع.
+
 ## النشر
 
 أي دفع إلى فرع `main` يُنشر تلقائيًا على GitHub Pages. ارفع رقم `VERSION` في `www/sw.js` مع كل تحديث للواجهة، وارفع `QURAN_CACHE` فقط عند تغيير بيانات المصحف.
@@ -118,6 +124,8 @@ npm run cap:open:android  # أو cap:open:ios
 www/
   index.html            هيكل التطبيق + أيقونات SVG + المشغّل
   css/app.css           التنسيق (RTL، سمات، استجابة)
+  css/fonts.css         خطوط الواجهة (يولّدها scripts/fetch-fonts.js)
+  fonts/                ملفات خطوط الواجهة
   js/app.js             الأذكار، السبحة، الإعدادات، التوجيه
   js/quran.js           المصحف، ترجمة المعاني، الاستماع، الإذاعات، المشغّل
   js/i18n.js            اللغات: النصوص، الجمع، الأرقام، الاتجاه

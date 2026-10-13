@@ -16,7 +16,9 @@ async function probe(r) {
   finally { clearTimeout(t); }
 }
 
-(async () => {
+module.exports = { probe };
+
+if (require.main === module) (async () => {
   let bad = 0;
   for (const r of live) {
     const { ok, info } = await probe(r); if (!ok) bad++;

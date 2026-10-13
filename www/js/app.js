@@ -1,9 +1,9 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.6.1";
-import { setupHadith } from "./hadith.js?v=1.6.1";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.6.1";
+import { setupQuran } from "./quran.js?v=1.6.2";
+import { setupHadith } from "./hadith.js?v=1.6.2";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.6.2";
 
-const VERSION = "1.6.1";
+const VERSION = "1.6.2";
 
 // ---------- storage ----------
 const LS = {
