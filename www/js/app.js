@@ -31,7 +31,8 @@ let progress = LS.get("progress", null);
 if (!progress || progress.date !== todayKey()) progress = { date: todayKey(), counts: {} };
 const saveProgress = () => LS.set("progress", progress);
 
-const tasbih = Object.assign({ count: 0, target: 33, total: 0, phrase: 0 }, LS.get("tasbih", {}));
+const tasbih = Object.assign({ count: 0, target: 33, phrase: 0 }, LS.get("tasbih", {}));
+delete tasbih.total; // older versions kept an overall total of every tap; it is no longer shown or saved
 const saveTasbih = () => LS.set("tasbih", tasbih);
 
 // ---------- DOM helpers ----------
@@ -498,15 +499,14 @@ function renderTasbih() {
       <div class="phrases" dir="rtl">${PHRASES.map((p, i) => `<button class="chip ${tasbih.phrase === i ? "on" : ""}" data-ph="${i}" lang="ar">${p}</button>`).join("")}</div>
       <button class="big-btn" id="tap" type="button" aria-label="${T("tasbih.tap")}"><div><div class="num">${num(tasbih.count)}</div><div class="lbl">${tasbih.target ? T("tasbih.target", { n: tasbih.target }) : T("tasbih.noLimit")}</div></div></button>
       <div class="targets">${[33, 100, 1000, 0].map(x => `<button class="chip ${tasbih.target === x ? "on" : ""}" data-t="${x}">${x ? num(x) : "∞"}</button>`).join("")}</div>
-      <p class="stat">${T("tasbih.total", { n: tasbih.total })}</p>
     </section>`;
     $("#tap").onclick = () => {
-      tasbih.count++; tasbih.total++;
+      tasbih.count++;
       if (tasbih.target && tasbih.count >= tasbih.target) { vibrate([40, 60, 40]); toast(t("tasbih.completed", { n: tasbih.target })); tasbih.count = 0; } else vibrate(10);
-      saveTasbih(); $(".tasbih .num").textContent = num(tasbih.count); $(".stat").textContent = t("tasbih.total", { n: tasbih.total });
+      saveTasbih(); $(".tasbih .num").textContent = num(tasbih.count);
     };
     view.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { tasbih.target = Number(b.dataset.t); tasbih.count = 0; saveTasbih(); draw(); });
-    // Choosing another dhikr starts its count from zero (the overall total is kept).
+    // Choosing another dhikr starts its count from zero.
     view.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => { const ph = Number(b.dataset.ph); if (ph !== tasbih.phrase) tasbih.count = 0; tasbih.phrase = ph; saveTasbih(); draw(); });
   };
   draw();

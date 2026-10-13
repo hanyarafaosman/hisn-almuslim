@@ -143,7 +143,6 @@ const S = {
   "tasbih.tap": ["سبّح", "Count"],
   "tasbih.target": ["الهدف {n}", "Goal {n}"],
   "tasbih.noLimit": ["بلا حدّ", "No limit"],
-  "tasbih.total": ["المجموع الكلي: {n}", "Total: {n}"],
   "tasbih.completed": ["أتممت {n}", "You completed {n}"],
   "tasbih.wasReset": ["تم التصفير", "Counter reset"],
 

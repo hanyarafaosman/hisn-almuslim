@@ -126,7 +126,6 @@
  "tasbih.tap": "数える",
  "tasbih.target": "目標 {n}",
  "tasbih.noLimit": "上限なし",
- "tasbih.total": "合計：{n}",
  "tasbih.completed": "{n}回を完了しました",
  "tasbih.wasReset": "カウンターをリセットしました",
  "settings.install": "アプリをインストール",

@@ -135,7 +135,6 @@
  "tasbih.tap": "Say",
  "tasbih.target": "Hedef {n}",
  "tasbih.noLimit": "Sınırsız",
- "tasbih.total": "Toplam: {n}",
  "tasbih.completed": "{n} tamamlandı",
  "tasbih.wasReset": "Sayaç sıfırlandı",
  "settings.install": "Uygulamayı yükle",
