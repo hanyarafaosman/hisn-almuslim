@@ -1,8 +1,9 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.5.1";
-import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.5.1";
+import { setupQuran } from "./quran.js?v=1.5.2";
+import { LANGS, setLang, getLang, detect, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.5.2";
+import { mirrorOf } from "./mirror.js?v=1.5.2";
 
-const VERSION = "1.5.1";
+const VERSION = "1.5.2";
 
 // ---------- storage ----------
 const LS = {
@@ -117,12 +118,23 @@ function togglePlay(url, btn) {
   if (!navigator.onLine && !audio.src.includes(url)) toast(t("audio.needsInternet"));
   if (playingBtn) setPlaying(playingBtn, false);
   document.getElementById("qaudio")?.pause();
-  playingBtn = btn; audio.src = url; audio.play().then(() => setPlaying(btn, true)).catch(() => { toast(t("audio.playFailed")); setPlaying(btn, false); playingBtn = null; });
+  playingBtn = btn; start(btn, url);
+}
+function start(btn, url, at = 0) {
+  audio.src = url; audio.currentTime = at; const src = audio.src;
+  audio.play().then(() => { if (audio.src === src) setPlaying(btn, true); })
+    .catch(() => { if (audio.src !== src || playingBtn !== btn) return; /* moved to the backup copy or another clip */ toast(t("audio.playFailed")); setPlaying(btn, false); playingBtn = null; });
 }
 function setPlaying(btn, on) { btn.classList.toggle("playing", on); btn.innerHTML = icon(on ? "pause" : "play"); btn.setAttribute("aria-label", t(on ? "common.stop" : "common.listen")); }
 audio.addEventListener("pause", () => { if (playingBtn) setPlaying(playingBtn, false); });
 audio.addEventListener("ended", () => { if (playingBtn) setPlaying(playingBtn, false); playingBtn = null; });
-audio.addEventListener("error", () => { if (playingBtn) { setPlaying(playingBtn, false); playingBtn = null; toast(t("audio.loadFailed")); } });
+// The source failed (before or during playback): continue from its backup copy, once, at the same moment.
+audio.addEventListener("error", () => {
+  if (!playingBtn) return;
+  const alt = mirrorOf(audio.src);
+  if (alt) { start(playingBtn, alt, audio.currentTime || 0); return; }
+  setPlaying(playingBtn, false); playingBtn = null; toast(t("audio.loadFailed"));
+});
 const stopAudio = () => { if (!audio.paused) audio.pause(); playingBtn = null; };
 
 // ---------- share / copy ----------

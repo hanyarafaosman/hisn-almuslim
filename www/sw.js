@@ -1,8 +1,8 @@
 /* Service worker: offline-first app shell for حصن المسلم */
-const VERSION = "hisn-v1.5.1";
+const VERSION = "hisn-v1.5.2";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
+  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
   "./i18n/ar.json", "./i18n/en.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png", "./icons/favicon.svg"
 ];
@@ -24,6 +24,8 @@ const QURAN_CACHE = "hisn-quran-v1";
 const TR_CACHE = "hisn-tr-v1";
 // Page fonts of the printed Madinah Mushaf (KFGQPC QCF, one per page), from the Quran.com CDN.
 const MUSHAF_FONTS = "hisn-mushaf-fonts-v1";
+// Backup copies of outside files (MIRROR in js/mirror.js). On GitHub Pages they share the app's origin.
+const MIRROR = new URL("https://hanyarafaosman.github.io/hisn-almuslim-assets/");
 const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS];
 
 self.addEventListener("install", e => {
@@ -43,6 +45,11 @@ self.addEventListener("message", e => { if (e.data === "SKIP_WAITING") self.skip
 self.addEventListener("fetch", e => {
   const req = e.request; if (req.method !== "GET") return;
   const url = new URL(req.url);
+  if (url.origin === MIRROR.origin && url.pathname.startsWith(MIRROR.pathname)) {
+    // Page fonts join the saved Mushaf fonts; backup audio goes straight to the network like its source.
+    if (url.pathname.startsWith(MIRROR.pathname + "qurancdn/fonts/")) e.respondWith(cacheFirst(req, MUSHAF_FONTS));
+    return;
+  }
   if (url.origin === location.origin) {
     const quranFile = (/\/quran\/(fonts\/[a-z]+\.woff2|[a-z]+\.json)$/.test(url.pathname) && !url.pathname.endsWith("/index.json"))
       || /\/mushaf\/[a-z]+\.json$/.test(url.pathname);

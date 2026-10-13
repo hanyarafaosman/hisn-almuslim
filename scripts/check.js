@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg"])
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
 
@@ -48,6 +48,10 @@ const swFonts = [...(/const FONTS = \[([^\]]+)\]/.exec(fs.readFileSync(path.join
 if (!fontFiles.length || String(fontFiles) !== String(cssFonts) || String(fontFiles) !== String(swFonts)) fail("fonts: www/fonts, css/fonts.css and FONTS in sw.js differ — rerun scripts/fetch-fonts.js and update sw.js");
 if (/fonts\.googleapis|fonts\.gstatic/.test(fs.readFileSync(path.join(root, "index.html"), "utf8"))) fail("index.html still loads Google Fonts");
 
+// The service worker routes the backup copy by the same address as js/mirror.js
+const mirrorBase = (/export const MIRROR = "([^"]+)"/.exec(fs.readFileSync(path.join(root, "js/mirror.js"), "utf8")) || [])[1];
+if (!mirrorBase || !fs.readFileSync(path.join(root, "sw.js"), "utf8").includes(`new URL("${mirrorBase}/")`)) fail("sw.js MIRROR differs from js/mirror.js");
+
 // Radios must be HTTPS (the app is served over HTTPS)
 const radios = readJson("data/radios.json");
 radios.live.forEach(r => { if (!r.url.startsWith("https://")) fail("radio must be https: " + r.id); });
@@ -60,7 +64,7 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "sw.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }

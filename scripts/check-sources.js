@@ -1,10 +1,12 @@
 // Checks every outside service the app relies on, so a broken source is noticed before users report it.
 // Run daily by .github/workflows/sources.yml (a failed run emails the repository owner). Usage: npm run check:sources
 //   errors   (exit 1): adhkar audio (hisnmuslim.com), Mushaf page fonts (static.qurancdn.com),
-//                      recitations API (mp3quran.net), translations API (quranenc.com)
+//                      recitations API (mp3quran.net), translations API (quranenc.com),
+//                      backup copy of the audio and page fonts (hisn-almuslim-assets, see www/js/mirror.js)
 //   warnings (exit 0): live radio stations, changed audio sizes
 const fs = require("fs"), path = require("path");
 const { probe } = require("./check-radios.js");
+const { loadMirror } = require("./build-mirror.js");
 const WWW = path.join(__dirname, "..", "www");
 const readJson = f => JSON.parse(fs.readFileSync(path.join(WWW, f), "utf8"));
 const ORIGIN = "https://hanyarafaosman.github.io"; // the app fetches cross-origin, so CORS must allow it
@@ -48,6 +50,8 @@ async function headAll(urls, accept) {
   return { bytes, bad, size };
 }
 const mb = n => (n / 1048576).toFixed(1) + " MB";
+// Files that have a backup copy, with their size at the source when it answered.
+const backed = [], sourceSize = new Map();
 const listBad = bad => bad.slice(0, 5).join(", ") + (bad.length > 5 ? ` … and ${bad.length - 5} more` : "");
 
 async function adhkarAudio() {
@@ -56,6 +60,7 @@ async function adhkarAudio() {
   const chapters = db.categories.map(c => c.audio).filter(Boolean), items = db.categories.flatMap(c => c.items.map(i => i.audio)).filter(Boolean);
   const urls = [...new Set([...chapters, ...items])];
   const { bytes, bad, size } = await headAll(urls, /audio|mpeg|octet-stream/i);
+  backed.push(...urls); size.forEach((n, u) => sourceSize.set(u, n));
   if (bad.length) error(G, `${bad.length} of ${urls.length} files unavailable: ${listBad(bad)}`);
   else pass(G, `${urls.length} files, ${mb(bytes)}`);
   // Same sum as scripts/measure-audio.js (a file used both as chapter and item counts twice).
@@ -68,12 +73,30 @@ async function mushafPageFonts() {
   const { fonts } = readJson("mushaf/madinah.json");
   for (const [v, f] of Object.entries(fonts)) {
     const urls = Array.from({ length: 604 }, (_, i) => f.url.replace("{n}", i + 1));
-    const { bytes, bad } = await headAll(urls, /font|woff|octet-stream/i);
+    const { bytes, bad, size } = await headAll(urls, /font|woff|octet-stream/i);
+    backed.push(...urls); size.forEach((n, u) => sourceSize.set(u, n));
     if (bad.length) error(G, `${v}: ${bad.length} of 604 pages unavailable: ${listBad(bad)}`);
     // The glyph codes in mushaf/madinah.json only fit these exact fonts: a size change means the source replaced them.
     else if (bytes !== f.bytes) error(G, `${v}: fonts changed at the source (${bytes} bytes, built with ${f.bytes}); check the pages and rebuild with npm run mushaf:pages`);
     else pass(G, `${v}: 604 pages, ${mb(bytes)}, unchanged`);
   }
+}
+
+// Every file must be in the backup, with the size its source has today and the size listed in manifest.json.
+async function backup() {
+  const G = "Backup copy (hisn-almuslim-assets)";
+  try {
+    const { MIRROR, mirrorOf } = await loadMirror();
+    const rel = u => mirrorOf(u).slice(MIRROR.length + 1);
+    const { files } = await getJSON(`${MIRROR}/manifest.json`);
+    const stale = backed.filter(u => !files[rel(u)] || (sourceSize.has(u) && files[rel(u)].bytes !== sourceSize.get(u)));
+    if (stale.length) error(G, `${stale.length} files missing or older than their source: ${listBad(stale)}; run npm run mirror and push hisn-almuslim-assets`);
+    const { bytes, bad, size } = await headAll(backed.map(mirrorOf), /audio|mpeg|font|woff|octet-stream/i);
+    const wrong = [...size].filter(([u, n]) => n !== files[u.slice(MIRROR.length + 1)]?.bytes).map(([u]) => u);
+    if (bad.length) error(G, `${bad.length} of ${backed.length} files unavailable: ${listBad(bad)}`);
+    if (wrong.length) error(G, `${wrong.length} files differ from manifest.json: ${listBad(wrong)}`);
+    if (!stale.length && !bad.length && !wrong.length) pass(G, `${backed.length} files, ${mb(bytes)}, same as the sources`);
+  } catch (e) { error(G, e.message); }
 }
 
 async function recitations() {
@@ -125,7 +148,7 @@ async function liveRadios() {
 }
 
 (async () => {
-  await Promise.all([adhkarAudio(), mushafPageFonts(), recitations(), translations(), liveRadios()]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), recitations(), translations(), liveRadios()]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);
