@@ -3,7 +3,7 @@
 //   errors   (exit 1): adhkar audio (hisnmuslim.com), Mushaf page fonts (static.qurancdn.com),
 //                      recitations API (mp3quran.net), translations API (quranenc.com), hadith books (jsDelivr),
 //                      backup copy of the audio and page fonts (hisn-almuslim-assets, see www/js/mirror.js)
-//   warnings (exit 0): live radio stations, changed audio sizes
+//   warnings (exit 0): live radio stations, hadith radio stations, changed audio sizes
 const fs = require("fs"), path = require("path");
 const { probe } = require("./check-radios.js");
 const { loadMirror } = require("./build-mirror.js");
@@ -153,17 +153,16 @@ async function hadithBooks() {
   } catch (e) { error(G, e.message); }
 }
 
-async function liveRadios() {
-  const G = "Live radios";
-  const { live } = readJson("data/radios.json");
+async function radioList(G, list) {
   const bad = [];
-  for (const r of live) { let res = await probe(r); if (!res.ok) res = await probe(r); if (!res.ok) bad.push(`${r.name} (${res.info})`); }
-  if (bad.length) warn(G, `${bad.length} of ${live.length} stations not responding: ${bad.join(", ")}`);
-  else pass(G, `${live.length} stations responding`);
+  for (const r of list) { let res = await probe(r); if (!res.ok) res = await probe(r); if (!res.ok) bad.push(`${r.name} (${res.info})`); }
+  if (bad.length) warn(G, `${bad.length} of ${list.length} stations not responding: ${bad.join(", ")}`);
+  else pass(G, `${list.length} stations responding`);
 }
+const { live, sunnah = [] } = readJson("data/radios.json");
 
 (async () => {
-  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), recitations(), translations(), hadithBooks(), liveRadios()]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), recitations(), translations(), hadithBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah)]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);

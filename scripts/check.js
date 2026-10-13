@@ -70,6 +70,12 @@ for (const b of hx.books) {
     if (!ed.endsWith("-" + b.id) || !(b.trBytes[l] > 0)) fail(`hadith: bad translation ${b.id}:${l}`);
   }
 }
+// Hadith radios: HTTPS, and named after a hadith book in the index or by their own interface string.
+const enStrings = readJson("i18n/en.json");
+(radios.sunnah || []).forEach(r => {
+  if (!r.url.startsWith("https://")) fail("radio must be https: sunnah " + r.id);
+  if (!hx.books.some(b => b.id === r.id) && !enStrings["hadith.radio." + r.id]) fail(`sunnah radio ${r.id}: not a hadith book and no hadith.radio.${r.id} string`);
+});
 
 // Interface languages: every language listed in js/i18n.js has a strings file that passes check-i18n.js
 // LANGS entries look like ["fr", "Français"]; other arrays in the file do not end right after the second string.
@@ -85,6 +91,6 @@ for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/i18n.js", "js/o
 }
 
 console.log(ok
-  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${radios.live.length} live radios)`
+  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios)`
   : "checks failed");
 process.exit(ok ? 0 : 1);

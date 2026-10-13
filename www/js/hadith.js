@@ -1,7 +1,7 @@
 /* ===== كتب الحديث: الكتب الستة والأربعون النووية والقدسية ===== */
 // Texts: fawazahmed0/hadith-api (Unlicense), loaded per section from a pinned, immutable jsDelivr release.
 // Arabic book and section titles: AhmedBaset/hadith-json. Built by scripts/build-hadith-index.js.
-import * as off from "./offline.js?v=1.7.1";
+import * as off from "./offline.js?v=1.7.2";
 
 const HADITH_STORE = off.STORES.HADITH;
 
@@ -33,7 +33,7 @@ const NOT_MARFU = /mursal|maqtu|mauquf|muquf/i;
 const tone = grade => WEAK.test(grade) ? "danger" : NOT_MARFU.test(grade) ? "" : /^(isnaad |hasan|sahih)/i.test(grade.trim()) ? "good" : "";
 
 export function setupHadith(ctx) {
-  const { view, $, esc, icon, t, num, sep, getLang, setHeader, setNav, LS, copyText, share, SITE } = ctx;
+  const { view, $, esc, icon, t, num, sep, getLang, setHeader, setNav, LS, copyText, share, SITE, player } = ctx;
   const showText = s => ctx.tashkeel() ? s : ctx.stripTashkeel(s);
   const state = Object.assign({ last: null, tr: true }, LS.get("hadith", {}));
   const save = () => LS.set("hadith", state);
@@ -57,6 +57,11 @@ export function setupHadith(ctx) {
     }
     return memo.get(url);
   }
+  // Hadith radios (data/radios.json → sunnah): mp3quran.net streams named after a book in the index, or by their own string.
+  let RADIOS = null;
+  const loadRadios = async () => RADIOS || (RADIOS = await fetch("data/radios.json").then(r => r.ok ? r.json() : null).then(j => j?.sunnah || null).catch(() => null)) || [];
+  const radioName = r => book(r.id) ? bookTitle(book(r.id)) : t("hadith.radio." + r.id);
+  const playRadio = r => player.radio({ id: "sunnah:" + r.id, url: r.url, name: radioName(r), sub: t("radio.mp3quran") });
   const loading = (msg = t("common.loading")) => `<div class="empty"><div class="spinner"></div><div>${esc(msg)}</div></div>`;
   const failed = (err, retry) => {
     const offline = !navigator.onLine || err instanceof TypeError || err?.name === "AbortError";
@@ -89,13 +94,18 @@ export function setupHadith(ctx) {
   async function renderBooks() {
     setNav("hadith"); setHeader(t("hadith.books"), { actions: `<a class="icon-btn" href="#/offline" aria-label="${esc(t("offline.title"))}">${icon("download")}</a>` });
     const hash = location.hash; view.innerHTML = loading();
-    try { await loadIndex(); } catch (e) { return stale(hash) || failed(e, renderBooks); }
+    let radios;
+    try { [, radios] = await Promise.all([loadIndex(), loadRadios()]); } catch (e) { return stale(hash) || failed(e, renderBooks); }
     if (stale(hash)) return;
     const last = state.last && book(state.last.b);
     view.innerHTML = `
       ${last ? `<div class="resume-row"><a class="resume" href="#/hadith/${last.id}/${state.last.s}?h=${state.last.h}">${icon("books")}<div><b>${esc(t("quran.continue"))}</b><span>${esc(t("hadith.position", { book: bookTitle(last), section: secTitle(last.sections.find(s => s[0] === state.last.s) || ["", "", ""]), n: hadithNo({ arabicnumber: state.last.a ?? state.last.h }) }))}</span></div></a></div>` : ""}
+      ${radios.length ? `<section class="hadith-radios" id="hradios"><div class="hr-head">${icon("radio")}<div><b>${esc(t("hadith.radios"))}</b><span>${esc(t("hadith.radioNote"))}</span></div></div>
+        <div class="chips">${radios.map(r => `<button class="chip" data-radio="${esc(r.id)}" data-playing="radio:sunnah:${esc(r.id)}" aria-label="${esc(t("hadith.listenRadio", { book: radioName(r) }))}">${icon("play")}<span>${esc(radioName(r))}</span></button>`).join("")}</div></section>` : ""}
       <div class="list">${IX.books.map(b => `<a href="#/hadith/${b.id}"><div class="num">${icon("books")}</div><div class="lbl">${esc(bookTitle(b))}<span class="sub">${[isAr() ? b.author : b.ar, t("count.hadith", { n: b.count })].filter(Boolean).map(esc).join(sep())}${b.sahih ? `${sep()}${esc(t("hadith.sahihBook"))}` : ""}</span></div>${icon("back", "chev")}</a>`).join("")}</div>
       <p class="source-note">${esc(t("hadith.source"))}</p>`;
+    $("#hradios")?.addEventListener("click", e => { const r = radios.find(x => x.id === e.target.closest("[data-radio]")?.dataset.radio); if (r) playRadio(r); });
+    player.refresh();
   }
 
   // ---------- one book: its sections and search ----------
@@ -103,14 +113,17 @@ export function setupHadith(ctx) {
   async function renderBook(id) {
     setNav("hadith"); const hash = location.hash;
     setHeader(t("hadith.books"), { back: true }); view.innerHTML = loading();
-    try { await loadIndex(); } catch (e) { return stale(hash) || failed(e, () => renderBook(id)); }
+    let radios;
+    try { [, radios] = await Promise.all([loadIndex(), loadRadios()]); } catch (e) { return stale(hash) || failed(e, () => renderBook(id)); }
     if (stale(hash)) return;
     const b = book(id); if (!b) { location.hash = "#/hadith"; return; }
     setHeader(bookTitle(b), { back: true });
     const single = b.sections.length === 1;
     if (single) { location.replace(`#/hadith/${b.id}/${b.sections[0][0]}`); return; }
+    const radio = radios.find(r => r.id === b.id);
     view.innerHTML = `
       <p class="riwayah-note">${(isAr() ? b.author : b.ar) ? esc(isAr() ? b.author : b.ar) + sep() : ""}${esc(t("count.books", { n: b.sections.length }))}${sep()}${esc(t("count.hadith", { n: b.count }))}</p>
+      ${radio ? `<div class="list"><button class="row" id="hradio" data-playing="radio:sunnah:${esc(radio.id)}"><div class="num">${icon("radio")}</div><div class="lbl">${esc(t("hadith.listenRadio", { book: bookTitle(b) }))}<span class="sub">${esc(t("hadith.radioNote"))}</span></div>${icon("play", "chev-play")}</button></div>` : ""}
       <div class="searchbox">${icon("search")}<input id="hq" type="search" placeholder="${esc(t("hadith.search", { book: bookTitle(b) }))}" value="${esc(queries[id] || "")}" autocomplete="off" enterkeyhint="search"></div>
       <div id="hlist"></div>`;
     const sectionsHtml = () => `<div class="list">${b.sections.map(s => `<a href="#/hadith/${b.id}/${s[0]}"><div class="num">${num(s[0])}</div><div class="lbl">${esc(secTitle(s))}<span class="sub">${esc(t("count.hadith", { n: s[5] }))}</span></div>${icon("back", "chev")}</a>`).join("")}</div>`;
@@ -136,6 +149,7 @@ export function setupHadith(ctx) {
     };
     input.oninput = () => { clearTimeout(timer); timer = setTimeout(run, 300); };
     run();
+    if (radio) { $("#hradio").onclick = () => playRadio(radio); player.refresh(); }
   }
   // The section a hadith is read in: its reference, or for hadith without one, the section it was attached to (see build-hadith-index.js).
   const secOf = (b, h) => b.sections.find(s => s[0] === h.reference?.book) || b.sections.find(s => s[6]?.includes(h.hadithnumber))

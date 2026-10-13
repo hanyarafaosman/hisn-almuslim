@@ -1,6 +1,6 @@
 {
-  "checked": "2026-10-12",
-  "note": "Live Quran radio stations. Each stream was verified to play from an HTTPS page on the date above. Re-check with: npm run check:radios",
+  "checked": "2026-10-13",
+  "note": "Live Quran radio stations (live), and the mp3quran.net stations that read hadith books (sunnah, shown in the Hadith section). Each stream was verified to play from an HTTPS page on the date above. Re-check with: npm run check:radios",
   "live": [
     {
       "id": "eg-cairo",
@@ -58,6 +58,23 @@
       "url": "https://qurango.net/radio/mix",
       "flag": "📻",
       "country": "تلاوات متنوعة"
+    }
+  ],
+  "sunnah": [
+    {
+      "id": "bukhari",
+      "name": "صحيح البخاري",
+      "url": "https://qurango.net/radio/saheh-bokharee"
+    },
+    {
+      "id": "muslim",
+      "name": "صحيح مسلم",
+      "url": "https://qurango.net/radio/saheh-muslim"
+    },
+    {
+      "id": "riyad",
+      "name": "رياض الصالحين",
+      "url": "https://qurango.net/radio/riyad"
     }
   ]
 }

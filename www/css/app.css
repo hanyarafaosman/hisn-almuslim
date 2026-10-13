@@ -455,3 +455,12 @@ a.info { color: inherit; }
   background: color-mix(in srgb, var(--accent) 12%, var(--surface)); border: 1px solid color-mix(in srgb, var(--accent) 35%, var(--border)); color: var(--text); }
 .grades-notice svg { flex: none; width: 18px; height: 18px; margin-top: 3px; color: color-mix(in srgb, var(--accent) 75%, var(--text)); }
 .grades-note { margin: 6px 0 0; font-size: .8rem; line-height: 1.7; color: var(--muted); }
+.hadith-radios { padding: 12px 14px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.hadith-radios .hr-head { display: flex; align-items: center; gap: 12px; }
+.hadith-radios .hr-head > svg { color: var(--primary); width: 28px; height: 28px; }
+.hadith-radios .hr-head b { display: block; }
+.hadith-radios .hr-head span { color: var(--muted); font-size: .82rem; line-height: 1.6; }
+.hadith-radios .chips { flex-wrap: wrap; overflow: visible; margin-top: 10px; padding-bottom: 2px; }
+.hadith-radios .chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
+.hadith-radios .chip svg { width: 16px; height: 16px; color: var(--primary); }
+.hadith-radios .chip.on, .hadith-radios .chip.on svg { color: var(--on-primary); }

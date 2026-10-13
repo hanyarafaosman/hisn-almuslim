@@ -65,6 +65,10 @@ const S = {
   "hadith.ref": ["{book}، حديث رقم {n}", "{book}, hadith {n}"],
   "hadith.source": ["نصوص الأحاديث وأحكامها من مشروع hadith-api المفتوح، وأسماء الكتب والأبواب من hadith-json.", "Hadith texts and gradings come from the open hadith-api project. Book and chapter names come from hadith-json."],
   "hadith.trSource": ["الترجمة من مشروع hadith-api.", "The translation comes from the hadith-api project."],
+  "hadith.radios": ["إذاعات السنة", "Hadith radio stations"],
+  "hadith.radio.riyad": ["رياض الصالحين", "Riyad as-Salihin"],
+  "hadith.listenRadio": ["استمع إلى إذاعة {book}", "Listen to the {book} station"],
+  "hadith.radioNote": ["بث متواصل على مدار الساعة من mp3quran.net، يُسمع من حيث وصل البث، ولا يمكن اختيار حديث بعينه.", "A 24-hour stream from mp3quran.net. You hear it from wherever the broadcast has reached, and you cannot pick a particular hadith."],
 
   "home.greetMorning": ["صباح الخير", "Good morning"],
   "home.greetEvening": ["مساء الخير", "Good evening"],
