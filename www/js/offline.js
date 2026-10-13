@@ -1,7 +1,10 @@
 /* ===== Offline storage: saving Quran data, translations, hadith books and recorded audio on the device ===== */
 // Files are stored with the Cache API under the exact URL the app requests, so the service worker
 // can answer from them when there is no connection (see sw.js). Recorded audio is served with
-// byte-range support so seeking works offline.
+// byte-range support so seeking works offline. A file whose source is down is taken from its backup copy
+// (js/mirror.js) but still saved under the original URL.
+
+import { fetchWithMirror } from "./mirror.js?v=1.6.3";
 
 export const STORES = { QURAN: "hisn-quran-v1", TR: "hisn-tr-v1", AUDIO: "hisn-offline-audio-v1", PAGES: "hisn-mushaf-fonts-v1", HADITH: "hisn-hadith-v1" };
 const supported = typeof caches !== "undefined";
@@ -42,7 +45,7 @@ async function persist() { try { await navigator.storage?.persist?.(); } catch {
 export async function remoteSize(urls, concurrency = 6) {
   const q = [...urls]; let bytes = 0;
   await Promise.all(Array.from({ length: concurrency }, async () => {
-    while (q.length) { const u = q.shift(); try { const r = await fetch(u, { method: "HEAD", mode: "cors" }); bytes += Number(r.headers.get("content-length")) || 0; } catch { /* unknown size */ } }
+    while (q.length) { const u = q.shift(); try { const r = await fetchWithMirror(u, { method: "HEAD", mode: "cors" }); bytes += Number(r.headers.get("content-length")) || 0; } catch { /* unknown size */ } }
   }));
   return bytes;
 }
@@ -56,7 +59,7 @@ function emit(force = true) {
   window.dispatchEvent(new CustomEvent("offline-progress", { detail: job && { ...job } }));
 }
 async function fetchInto(cache, url, onBytes, signal) {
-  const res = await fetch(url, { mode: "cors", signal });
+  const res = await fetchWithMirror(url, { mode: "cors", signal });
   if (!res.ok) throw new Error("HTTP " + res.status);
   if (!res.body) { await cache.put(url, res); return; }
   const [store, count] = res.body.tee();
