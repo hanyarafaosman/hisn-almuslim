@@ -1,9 +1,9 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.7.1";
-import { setupHadith } from "./hadith.js?v=1.7.1";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.7.1";
+import { setupQuran } from "./quran.js?v=1.8.0";
+import { setupHadith } from "./hadith.js?v=1.8.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.8.0";
 
-const VERSION = "1.7.1";
+const VERSION = "1.8.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -18,7 +18,7 @@ const LS = {
   set(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch { /* private mode etc. */ } },
 };
 const RETURNING = ["settings", "progress", "favorites", "quran", "tasbih"].some(k => { try { return localStorage.getItem(k) !== null; } catch { return false; } });
-const DEFAULTS = { theme: "auto", scale: 1, vibrate: true, tashkeel: true, autoNext: true, wakeLock: false };
+const DEFAULTS = { theme: "auto", scale: 1, vibrate: true, tashkeel: true, autoNext: true, wakeLock: false, countMode: "down" };
 const settings = Object.assign({}, DEFAULTS, LS.get("settings", {}));
 const saveSettings = () => LS.set("settings", settings);
 
@@ -346,6 +346,10 @@ function renderSection(id) {
 const isEveningText = (cat, item) => cat.id === 27 && !!item.evening && currentPeriod() === "evening";
 const textFor = (cat, item) => isEveningText(cat, item) ? item.evening : item.text;
 
+// Adhkar counter: "down" shows how many times are left (7, 6 … 1), "up" shows how many were said (0, 1 … 6). A check mark when done.
+const countShown = (n, repeat) => n >= repeat ? icon("check") : num(settings.countMode === "up" ? n : repeat - n);
+const countBtn = (n, repeat, attrs = "") => `<button class="count-btn" type="button"${attrs} aria-label="${T("dhikr.count")}"><span class="big">${countShown(n, repeat)}</span>${repeat > 1 ? `<span class="of">/ ${num(repeat)}</span>` : ""}</button>`;
+
 function dhikrCard(cat, item, { showWhere = false } = {}) {
   const key = itemKey(cat, item); const n = getCount(key); const done = n >= item.repeat; const fav = favorites.has(`${cat.id}:${item.id}`);
   const tr = showAdhkarTr() && EN?.items[item.id];
@@ -355,7 +359,7 @@ function dhikrCard(cat, item, { showWhere = false } = {}) {
     <div class="dhikr-text" lang="ar" dir="rtl" role="button" tabindex="0" aria-label="${T("dhikr.tapToCount")}">${formatText(textFor(cat, item))}</div>
     ${tr ? `<div class="dhikr-tr" lang="en" dir="ltr">${evening ? `<p class="trnote" dir="auto">${T("dhikr.trMorning")}</p>` : ""}${tr.n ? `<p class="translit">${esc(tr.n)}</p>` : ""}${tr.t ? `<p>${esc(tr.t)}</p>` : ""}</div>` : ""}
     <div class="dhikr-bar">
-      <button class="count-btn" type="button" aria-label="${T("dhikr.count")}"><span class="big">${done ? icon("check") : num(item.repeat - n)}</span>${item.repeat > 1 ? `<span class="of">/ ${num(item.repeat)}</span>` : ""}</button>
+      ${countBtn(n, item.repeat)}
       <span class="spacer"></span>
       <button class="icon-btn ${fav ? "active" : ""}" data-act="fav" type="button" aria-label="${T(fav ? "fav.remove" : "fav.add")}">${icon(fav ? "star-f" : "star")}</button>
       <button class="icon-btn" data-act="copy" type="button" aria-label="${T("common.copy")}">${icon("copy")}</button>
@@ -397,7 +401,7 @@ function count(card, cat, item, onCount) {
   const key = card.dataset.key; let n = getCount(key);
   if (n >= item.repeat) return; n++; progress.counts[key] = n; saveProgress(); vibrate(n >= item.repeat ? 40 : 12);
   const done = n >= item.repeat; card.classList.toggle("done", done);
-  $(".count-btn .big", card).innerHTML = done ? icon("check") : num(item.repeat - n);
+  $(".count-btn .big", card).innerHTML = countShown(n, item.repeat);
   if (done && settings.autoNext) { const next = card.nextElementSibling; if (next && next.classList.contains("dhikr")) setTimeout(() => next.scrollIntoView({ behavior: "smooth", block: "center" }), 250); }
   onCount && onCount(done);
 }
@@ -445,7 +449,7 @@ function renderExtras() {
         ${getLang() !== "ar" ? `<p>${T("extra." + x.id + ".summary")}</p>` : ""}
         <a href="${esc(x.ruling.url)}" target="_blank" rel="noopener">${T("extra.readFatwa")}</a></div>
       <div class="dhikr-bar">
-        <button class="count-btn" type="button" data-act="count" aria-label="${T("dhikr.count")}"><span class="big">${done ? icon("check") : num(x.repeat - n)}</span>${x.repeat > 1 ? `<span class="of">/ ${num(x.repeat)}</span>` : ""}</button>
+        ${countBtn(n, x.repeat, ' data-act="count"')}
         <span class="spacer"></span>
         <button class="icon-btn" data-act="copy" type="button" aria-label="${T("common.copy")}">${icon("copy")}</button>
         <button class="icon-btn" data-act="share" type="button" aria-label="${T("common.share")}">${icon("share")}</button>
@@ -465,7 +469,7 @@ function renderExtras() {
       let n = getCount(key(x)); if (n >= x.repeat) return;
       progress.counts[key(x)] = ++n; saveProgress(); vibrate(n >= x.repeat ? 40 : 12);
       card.classList.toggle("done", n >= x.repeat);
-      $(".count-btn .big", card).innerHTML = n >= x.repeat ? icon("check") : num(x.repeat - n);
+      $(".count-btn .big", card).innerHTML = countShown(n, x.repeat);
     }
   });
 }
@@ -531,6 +535,7 @@ function renderSettings() {
     </div>
     <h2 class="section-title">${T("settings.reading")}</h2>
     <div class="card">
+      <div class="setting"><span class="ic">${icon("beads")}</span><div class="lbl">${T("settings.countMode")}<small>${T("settings.countModeHint")}</small></div><div class="segmented">${[["down", "settings.countDown"], ["up", "settings.countUp"]].map(([v, l]) => `<button data-count="${v}" class="${settings.countMode === v ? "on" : ""}">${T(l)}</button>`).join("")}</div></div>
       ${sw("tashkeel", "settings.tashkeel", "settings.tashkeelHint", "book")}
       ${sw("vibrate", "settings.vibrate", "settings.vibrateHint", "settings")}
       ${sw("autoNext", "settings.autoNext", "settings.autoNextHint", "back")}
@@ -563,6 +568,7 @@ function renderSettings() {
     if (k === "vibrate") vibrate(20);
     if (k === "adhkarTr" && settings[k]) loadEN().catch(() => toast(t("common.loadFailed")));
   });
+  view.querySelectorAll("[data-count]").forEach(b => b.onclick = () => { settings.countMode = b.dataset.count; saveSettings(); view.querySelectorAll("[data-count]").forEach(x => x.classList.toggle("on", x === b)); });
   view.querySelectorAll("[data-theme]").forEach(b => b.onclick = () => { settings.theme = b.dataset.theme; saveSettings(); applyTheme(); view.querySelectorAll("[data-theme]").forEach(x => x.classList.toggle("on", x === b)); });
   const range = $("#scale"); const setScale = v => { settings.scale = Math.min(1.8, Math.max(0.8, Math.round(v * 20) / 20)); range.value = settings.scale; saveSettings(); applyTheme(); };
   range.oninput = () => setScale(Number(range.value));
