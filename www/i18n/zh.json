@@ -130,7 +130,6 @@
  "tasbih.tap": "计数",
  "tasbih.target": "目标 {n}",
  "tasbih.noLimit": "无上限",
- "tasbih.total": "总计：{n}",
  "tasbih.completed": "你已完成 {n} 次",
  "tasbih.wasReset": "计数器已归零",
  "settings.install": "安装应用",

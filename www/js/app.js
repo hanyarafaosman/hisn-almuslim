@@ -2,6 +2,7 @@
 import { setupQuran } from "./quran.js?v=1.8.0";
 import { setupHadith } from "./hadith.js?v=1.8.0";
 import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.8.0";
+import { mirrorOf } from "./mirror.js?v=1.8.0";
 
 const VERSION = "1.8.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
@@ -30,7 +31,8 @@ let progress = LS.get("progress", null);
 if (!progress || progress.date !== todayKey()) progress = { date: todayKey(), counts: {} };
 const saveProgress = () => LS.set("progress", progress);
 
-const tasbih = Object.assign({ count: 0, target: 33, total: 0, phrase: 0 }, LS.get("tasbih", {}));
+const tasbih = Object.assign({ count: 0, target: 33, phrase: 0 }, LS.get("tasbih", {}));
+delete tasbih.total; // older versions kept an overall total of every tap; it is no longer shown or saved
 const saveTasbih = () => LS.set("tasbih", tasbih);
 
 // ---------- DOM helpers ----------
@@ -125,12 +127,23 @@ function togglePlay(url, btn) {
   if (!navigator.onLine && !audio.src.includes(url)) toast(t("audio.needsInternet"));
   if (playingBtn) setPlaying(playingBtn, false);
   document.getElementById("qaudio")?.pause();
-  playingBtn = btn; audio.src = url; audio.play().then(() => setPlaying(btn, true)).catch(() => { toast(t("audio.playFailed")); setPlaying(btn, false); playingBtn = null; });
+  playingBtn = btn; start(btn, url);
+}
+function start(btn, url, at = 0) {
+  audio.src = url; audio.currentTime = at; const src = audio.src;
+  audio.play().then(() => { if (audio.src === src) setPlaying(btn, true); })
+    .catch(() => { if (audio.src !== src || playingBtn !== btn) return; /* moved to the backup copy or another clip */ toast(t("audio.playFailed")); setPlaying(btn, false); playingBtn = null; });
 }
 function setPlaying(btn, on) { btn.classList.toggle("playing", on); btn.innerHTML = icon(on ? "pause" : "play"); btn.setAttribute("aria-label", t(on ? "common.stop" : "common.listen")); }
 audio.addEventListener("pause", () => { if (playingBtn) setPlaying(playingBtn, false); });
 audio.addEventListener("ended", () => { if (playingBtn) setPlaying(playingBtn, false); playingBtn = null; });
-audio.addEventListener("error", () => { if (playingBtn) { setPlaying(playingBtn, false); playingBtn = null; toast(t("audio.loadFailed")); } });
+// The source failed (before or during playback): continue from its backup copy, once, at the same moment.
+audio.addEventListener("error", () => {
+  if (!playingBtn) return;
+  const alt = mirrorOf(audio.src);
+  if (alt) { start(playingBtn, alt, audio.currentTime || 0); return; }
+  setPlaying(playingBtn, false); playingBtn = null; toast(t("audio.loadFailed"));
+});
 const stopAudio = () => { if (!audio.paused) audio.pause(); playingBtn = null; };
 
 // ---------- share / copy ----------
@@ -490,15 +503,14 @@ function renderTasbih() {
       <div class="phrases" dir="rtl">${PHRASES.map((p, i) => `<button class="chip ${tasbih.phrase === i ? "on" : ""}" data-ph="${i}" lang="ar">${p}</button>`).join("")}</div>
       <button class="big-btn" id="tap" type="button" aria-label="${T("tasbih.tap")}"><div><div class="num">${num(tasbih.count)}</div><div class="lbl">${tasbih.target ? T("tasbih.target", { n: tasbih.target }) : T("tasbih.noLimit")}</div></div></button>
       <div class="targets">${[33, 100, 1000, 0].map(x => `<button class="chip ${tasbih.target === x ? "on" : ""}" data-t="${x}">${x ? num(x) : "∞"}</button>`).join("")}</div>
-      <p class="stat">${T("tasbih.total", { n: tasbih.total })}</p>
     </section>`;
     $("#tap").onclick = () => {
-      tasbih.count++; tasbih.total++;
+      tasbih.count++;
       if (tasbih.target && tasbih.count >= tasbih.target) { vibrate([40, 60, 40]); toast(t("tasbih.completed", { n: tasbih.target })); tasbih.count = 0; } else vibrate(10);
-      saveTasbih(); $(".tasbih .num").textContent = num(tasbih.count); $(".stat").textContent = t("tasbih.total", { n: tasbih.total });
+      saveTasbih(); $(".tasbih .num").textContent = num(tasbih.count);
     };
     view.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { tasbih.target = Number(b.dataset.t); tasbih.count = 0; saveTasbih(); draw(); });
-    // Choosing another dhikr starts its count from zero (the overall total is kept).
+    // Choosing another dhikr starts its count from zero.
     view.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => { const ph = Number(b.dataset.ph); if (ph !== tasbih.phrase) tasbih.count = 0; tasbih.phrase = ph; saveTasbih(); draw(); });
   };
   draw();
