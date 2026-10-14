@@ -3,8 +3,8 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.9.2";
-import { mirrorOf } from "./mirror.js?v=1.9.2";
+import * as off from "./offline.js?v=1.10.0";
+import { mirrorOf } from "./mirror.js?v=1.10.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -21,14 +21,46 @@ export const quranKey = s => s.normalize("NFC").replace(AYA_NUM, "")
   .replace(/[ٱأإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/ؤ/g, "و").replace(/ئ/g, "ي")
   .replace(/[^ء-ي]/g, "").replace(/ا/g, "");
 
+// The same key built letter by letter, with where each key letter is in the text and which word holds it,
+// so a match can be shown on the words of the verse. Words without letters (verse numbers, ۞) are not counted.
+const WAW = ch(0x648), MAQSURA = ch(0x649), SMALL_YEH = ch(0x6E7);
+const MARK = new RegExp("^" + MARKS.source + "$");
+const FOLD = { "ٱ": "", "أ": "", "إ": "", "آ": "", "ا": "", "ى": "ي", "ة": "ه", "ؤ": "و", "ئ": "ي" };
+export function keyChars(text) {
+  const s = text.normalize("NFC"); let key = ""; const at = [], word = []; let w = 0, inWord = false;
+  for (let i = 0; i < s.length; i++) {
+    let c = s[i]; const n = s[i + 1];
+    if (c === " ") { if (inWord) { w++; inWord = false; } continue; }
+    if (c === WAW && n === DAGGER) { i++; continue; }
+    if (c === MAQSURA && n === DAGGER) { i++; c = "ي"; }
+    else if (c === DAGGER) continue;
+    else if (c === SMALL_YEH) c = "ي";
+    else if (MARK.test(c)) continue;
+    else if (c in FOLD) c = FOLD[c];
+    if (!c || c < "ء" || c > "ي") continue;
+    key += c; at.push(i); word.push(w); inWord = true;
+  }
+  return { key, at, word, words: w + (inWord ? 1 : 0) };
+}
+const hasLetters = tok => keyChars(tok).key.length > 0;
+const matchedWords = (text, k) => {
+  const { key, word, words } = keyChars(text); const hit = new Set();
+  for (let i = key.indexOf(k); i >= 0; i = key.indexOf(k, i + 1)) for (let j = i; j < i + k.length; j++) hit.add(word[j]);
+  return { hit, words };
+};
+
 // mp3quran.net localises reciter and riwayah names in these languages; everything else uses English.
 const MP3Q_LANG = { ar: "ar", en: "eng", fr: "fr", ru: "ru", de: "de", es: "es", tr: "tr", zh: "cn", ur: "ur", bn: "bn", bs: "bs", fa: "fa", id: "id", pt: "pt", ha: "ha", sw: "sw" };
 const KUFI_AYAT = 6236; // QuranEnc numbering follows the Kufan count (Hafs, Shuʿbah)
 
 export function setupQuran(ctx) {
   const { view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, setHeader, setNav, LS, copyText, share, SITE, adhkarAudio } = ctx;
-  const state = Object.assign({ riwayah: "hafs", last: null, bookmark: null, reciters: {}, tab: "surahs" }, LS.get("quran", {}));
+  const state = Object.assign({ riwayah: "hafs", last: null, reciters: {}, tab: "surahs" }, LS.get("quran", {}));
   const save = () => LS.set("quran", state);
+  // Bookmarks: any number of verses, newest first. Versions before 1.10 kept a single one (state.bookmark).
+  if (!Array.isArray(state.marks)) {
+    const b = state.bookmark; state.marks = b ? [{ r: b.r, s: b.s, a: b.a, t: Date.now() }] : []; delete state.bookmark; save();
+  }
   const stale = hash => location.hash !== hash; // user navigated away while we were loading
   const isAr = () => getLang() === "ar";
   const lower = s => String(s).toLocaleLowerCase();
@@ -72,17 +104,19 @@ export function setupQuran(ctx) {
   };
 
   // ---------- bottom sheet ----------
-  function sheet(title, bodyHtml) {
+  function sheet(title, bodyHtml, { tall = false } = {}) {
     closeSheet();
     const wrap = document.createElement("div"); wrap.className = "sheet-backdrop"; wrap.id = "sheet";
-    wrap.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sheet-head"><h3>${esc(title)}</h3><button class="icon-btn" data-close aria-label="${esc(t("common.close"))}">${icon("close")}</button></div><div class="sheet-body">${bodyHtml}</div></div>`;
+    wrap.innerHTML = `<div class="sheet${tall ? " tall" : ""}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><div class="sheet-head"><h3>${esc(title)}</h3><button class="icon-btn" data-close aria-label="${esc(t("common.close"))}">${icon("close")}</button></div><div class="sheet-body">${bodyHtml}</div></div>`;
     wrap.addEventListener("click", e => { if (e.target === wrap || e.target.closest("[data-close]")) closeSheet(); });
     document.body.appendChild(wrap); document.body.classList.add("no-scroll");
     return $(".sheet-body", wrap);
   }
   function closeSheet() { const s = document.getElementById("sheet"); if (s) s.remove(); document.body.classList.remove("no-scroll"); }
-  document.addEventListener("keydown", e => { if (e.key === "Escape") closeSheet(); });
-  window.addEventListener("hashchange", closeSheet);
+  // The tools bar of a verse selected on a printed page.
+  function closeAyabar() { document.getElementById("ayabar")?.remove(); document.querySelectorAll(".mpage span.sel").forEach(x => x.classList.remove("sel")); }
+  document.addEventListener("keydown", e => { if (e.key === "Escape") { if (document.getElementById("sheet")) closeSheet(); else closeAyabar(); } });
+  window.addEventListener("hashchange", () => { closeSheet(); closeAyabar(); });
 
   // ---------- remote JSON (memory cache, last copy kept in storage for offline listing) ----------
   const remote = new Map();
@@ -207,6 +241,193 @@ export function setupQuran(ctx) {
     } catch (err) { body.innerHTML = `<div class="empty">${esc(t("quran.recitersFailed"))}<br><small>${esc(err.message)}</small></div>`; }
   }
   const surahList = x => String(x.list || "").split(",").map(Number).filter(Boolean);
+  function playSurah(meta, s, then) {
+    const go = x => { player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}` }); then?.(x); };
+    const r = state.reciters[meta.id]; r ? go(r) : pickReciter(meta, go);
+  }
+
+  // ---------- the printed Madinah pages of Hafs: page of every verse, quarters of a hizb (mushaf/ayat.json) ----------
+  let AYAT = null;
+  function loadAyat() {
+    AYAT ||= fetch("mushaf/ayat.json").then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(j => {
+      const page = new Map(); j.pages.forEach((runs, i) => runs.forEach(([s, a]) => { if (!page.has(s * 1000 + a)) page.set(s * 1000 + a, i + 1); }));
+      return { pages: j.pages, rub: j.rub, pageOf: (s, a) => page.get(s * 1000 + a) || 1 };
+    }).catch(e => { AYAT = null; throw e; });
+    return AYAT;
+  }
+  const before = (s1, a1, s2, a2) => s1 < s2 || (s1 === s2 && a1 < a2);
+  const quarterOf = (A, s, a) => { let q = 0; while (q < 239 && !before(s, a, ...A.rub[q + 1])) q++; return q; };
+  const hizbLabel = q => t(["quran.hizb", "quran.hizbQ1", "quran.hizbQ2", "quran.hizbQ3"][q % 4], { n: Math.floor(q / 4) + 1 });
+  const qmark = q => `<span class="qmark" style="--q:${q % 4 || 4}" aria-hidden="true"></span>`;
+  const juzOfMeta = (meta, s, a) => { let j = 1; meta.juz.forEach(([js, ja], i) => { if (!before(s, a, js, ja)) j = i + 1; }); return j; };
+  // First words of a verse, for the list of quarters.
+  const firstWords = (text, n = 5) => { const w = text.replace(AYA_NUM, "").split(" ").filter(hasLetters); return w.slice(0, n).join(" ") + (w.length > n ? " …" : ""); };
+
+  // ---------- bookmarks ----------
+  const markIndex = (r, s, a) => state.marks.findIndex(m => m.r === r && m.s === s && m.a === a);
+  const isMarked = (r, s, a) => markIndex(r, s, a) >= 0;
+  function toggleMark(r, s, a) {
+    const i = markIndex(r, s, a);
+    if (i >= 0) state.marks.splice(i, 1); else state.marks.unshift({ r, s, a, t: Date.now() });
+    save(); toast(t(i < 0 ? "quran.bmSaved" : "quran.bmRemoved")); return i < 0;
+  }
+
+  // Where a place opens. mode "pages": the printed page (Hafs only, with the verse marked when flash is set);
+  // mode "text": the reader, verse by verse.
+  function placeHref(mode, rid, s, a, { A, flash = true } = {}) {
+    if (mode === "pages" && rid === "hafs" && A) return pageHref(state.mushafEd || "1421", A.pageOf(s, a), flash ? `${s}:${a}` : "");
+    return `#/quran/${rid}/${s}` + (a > 1 ? `?a=${a}` : "");
+  }
+  // Surahs chosen on the Quran page open on the printed page (Hafs) or verse by verse, as the reader chose;
+  // Arabic readers start with the printed page, others with the verses and their translation.
+  const homeMode = A => A && (state.view || (isAr() ? "pages" : "text")) === "pages" ? "pages" : "text";
+  // The latest reading place: a printed page or a verse in a reader, whichever was opened last.
+  const surahOfPage = p => { let s = 1; riw("hafs").surahs.forEach((x, i) => { if (x[2] <= p) s = i + 1; }); return s; };
+  function resumeInfo() {
+    const v = state.last && INDEX.riwayat.some(r => r.id === state.last.r) ? state.last : null; const p = state.lastPage;
+    if (p && (!v || (p.t || 0) >= (v.t || 0))) return { kind: "page", href: pageHref(p.ed, p.p), icon: "quran", text: `${t("quran.surah", { name: surahName(surahOfPage(p.p), riw("hafs")) })}${sep()}${t("quran.page", { n: p.p })}` };
+    if (v) return { kind: "aya", href: `#/quran/${v.r}/${v.s}?a=${v.a}`, icon: "book", text: t("quran.position", { surah: surahName(v.s, riw(v.r)), aya: v.a, riwayah: rShort(riw(v.r)) }) };
+    return null;
+  }
+
+  // ---------- index and search, shared by the Quran page, the readers and the printed pages ----------
+  const toAscii = s => String(s).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+  const latinKey = s => lower(s).normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]/g, "");
+  // Surahs a query names: by number, Arabic name (any spelling) or transliterated name.
+  function surahMatches(meta, q) {
+    const k = quranKey(q), n = Number(toAscii(q).trim()), latin = latinKey(q);
+    return meta.surahs.map((s, i) => i).filter(i => (n >= 1 && n <= 114 && i + 1 === n) || (k.length > 1 && quranKey(meta.surahs[i][0]).includes(k))
+      || (latin.length > 1 && latinKey(meta.surahs[i][3] || "").includes(latin)));
+  }
+  async function verseIndex(meta) {
+    const { data } = await loadRiwayah(meta.id);
+    if (!searchIdx.has(meta.id)) searchIdx.set(meta.id, data.s.map((ayat, si) => ayat.map((x, ai) => quranKey(data.e ? data.e[si][ai] : x[0]))));
+    return { data, idx: searchIdx.get(meta.id) };
+  }
+  // The words of a verse that hold the match. Hafs is searched in its plain spelling, whose words line up
+  // with the Uthmani words in most verses; otherwise the Uthmani text itself is matched.
+  function markHit(text, plain, k) {
+    // The verse number is joined to the last word by a no-break space: keep it outside the marks.
+    const full = text.normalize("NFC"); const tail = AYA_NUM.exec(full); const s = tail ? full.slice(0, tail.index) : full;
+    let { hit, words } = matchedWords(s, k);
+    if (!hit.size && plain) { const p = matchedWords(plain, k); if (p.words === words) hit = p.hit; }
+    let html = "", w = -1, prev = false;
+    s.split(" ").forEach((tok, i) => {
+      const on = hasLetters(tok) && hit.has(++w);
+      if (i) html += on && prev ? " " : prev ? "</mark> " : " ";
+      if (on && !prev) html += "<mark>";
+      html += esc(tok); prev = on;
+    });
+    return (prev ? html + "</mark>" : html) + (tail ? esc(tail[0]) : "");
+  }
+  const chev = () => icon("back", "chev");
+  const surahRow = (meta, i, href, on) => { const [, count, page] = meta.surahs[i]; return `<a href="${href}" class="${on ? "on" : ""}"><div class="num">${num(i + 1)}</div><div class="lbl">${esc(surahName(i + 1, meta))}${isAr() ? "" : ` <span class="ar-name" lang="ar" dir="rtl">${esc(meta.surahs[i][0])}</span>`}<span class="sub">${esc(t("quran.surahMeta", { ayat: t("count.ayat", { n: count }), page }))}</span></div>${chev()}</a>`; };
+
+  // Places a query names directly: "2:255", "البقرة 255", a page or a juz number; then the surahs it names.
+  function refRows(q, o) {
+    const { meta, mode, A } = o; const a = toAscii(q).trim(); const rows = []; const seen = new Set();
+    const aya = (s, v) => { if (s < 1 || s > 114 || v < 1 || v > meta.surahs[s - 1][1] || seen.has(s + ":" + v)) return; seen.add(s + ":" + v);
+      rows.push(`<a href="${placeHref(mode, meta.id, s, v, { A })}"><div class="num">${icon("book")}</div><div class="lbl">${esc(t("quran.gotoAya", { surah: surahName(s, meta), aya: v }))}${A && meta.id === "hafs" ? `<span class="sub">${esc(t("quran.page", { n: A.pageOf(s, v) }))}</span>` : ""}</div>${chev()}</a>`); };
+    let m = /^(\d{1,3})\s*[:：.\/\-]\s*(\d{1,3})$/.exec(a);
+    if (m) aya(+m[1], +m[2]);
+    m = /^(.*[^\d\s])\s*(\d{1,3})$/.exec(a);
+    if (m) surahMatches(meta, m[1].trim()).slice(0, 3).forEach(i => aya(i + 1, +m[2]));
+    if (/^\d{1,3}$/.test(a)) {
+      const n = +a;
+      if (meta.id === "hafs" && n <= 604 && n >= 1) rows.push(`<a href="${pageHref(state.mushafEd || "1421", n)}"><div class="num">${icon("quran")}</div><div class="lbl">${esc(t("quran.gotoPage", { n }))}<span class="sub">${esc(t("quran.surah", { name: surahName(surahOfPage(n), meta) }))}</span></div>${chev()}</a>`);
+      if (n >= 1 && n <= meta.juz.length) { const [s, v] = meta.juz[n - 1]; rows.push(`<a href="${placeHref(mode, meta.id, s, v, { A, flash: false })}"><div class="num">${icon("layers")}</div><div class="lbl">${esc(t("quran.juz", { n }))}<span class="sub">${esc(t("quran.juzStart", { surah: surahName(s, meta), aya: v }))}</span></div>${chev()}</a>`); }
+    }
+    const names = surahMatches(meta, m ? m[1].trim() : q);
+    return (rows.length ? `<div class="list">${rows.join("")}</div>` : "")
+      + (names.length ? `<h2 class="section-title">${esc(t("quran.surahs"))}</h2><div class="list">${names.map(i => surahRow(meta, i, placeHref(mode, meta.id, i + 1, 1, { A, flash: false }))).join("")}</div>` : "");
+  }
+
+  // Search results: the places the query names, then every verse that contains it, 40 at a time.
+  async function drawSearch(box, q, o) {
+    const mine = (box._seq = (box._seq || 0) + 1); const live = () => box._seq === mine && document.body.contains(box);
+    const { meta, mode, A } = o; const k = quranKey(q);
+    let html = refRows(q, o);
+    // A number names a place (page, juz, verse), never words of the text.
+    if (/\d/.test(toAscii(q))) { box.innerHTML = html || `<div class="empty">${esc(t("common.noResults"))}</div>`; return; }
+    if (k.length < 3) { box.innerHTML = html || `<div class="empty">${esc(t("quran.typeLonger"))}</div>`; return; }
+    box.innerHTML = html + loading(t("quran.searching"));
+    let res; try { res = await verseIndex(meta); } catch { if (live()) box.innerHTML = html + `<div class="empty">${esc(t("quran.searchLoadFailed"))}</div>`; return; }
+    if (!live()) return;
+    const hits = []; res.idx.forEach((ayat, si) => ayat.forEach((x, ai) => { if (x.includes(k)) hits.push([si, ai]); }));
+    html += `<h2 class="section-title">${esc(hits.length ? t("count.ayat", { n: hits.length }) : t("quran.noMatches"))}</h2>`;
+    box.innerHTML = html + (hits.length ? `<div class="list hits" style="--qfont:'kfgqpc-${meta.id}'"></div><div class="more-row"></div>` : "");
+    if (!hits.length) return;
+    const list = $(".hits", box), more = $(".more-row", box); let shown = 0;
+    const row = ([si, ai]) => { const x = res.data.s[si][ai]; return `<a href="${placeHref(mode, meta.id, si + 1, ai + 1, { A })}"><div class="lbl"><span class="hit-text" lang="ar" dir="rtl">${markHit(x[0], res.data.e?.[si][ai], k)}</span><span class="sub">${esc(t("quran.surah", { name: surahName(si + 1, meta) }))}${sep()}${esc(t("quran.ayaRef", { aya: ai + 1, page: x[1] }))}</span></div></a>`; };
+    const next = () => {
+      list.insertAdjacentHTML("beforeend", hits.slice(shown, shown + 40).map(row).join("")); shown = Math.min(hits.length, shown + 40);
+      more.innerHTML = shown < hits.length ? `<button class="btn ghost" data-more>${esc(t("quran.showMore", { n: hits.length - shown }))}</button>` : "";
+    };
+    more.onclick = e => { if (e.target.closest("[data-more]")) next(); };
+    next();
+  }
+
+  // Index lists. cur says where the reader is now: { surahs: Set, juz, q } (q: quarter of a hizb, Hafs).
+  const TABS = { surahs: "quran.surahs", juz: "quran.juzs", hizb: "quran.hizbs", marks: "quran.marks" };
+  async function indexRows(tab, o) {
+    const { meta, mode, A, cur = {} } = o; const hafsPages = meta.id === "hafs" && A;
+    const pageNote = (s, a) => hafsPages ? `${sep()}${t("quran.page", { n: A.pageOf(s, a) })}` : "";
+    if (tab === "juz") return `<div class="list">${meta.juz.map(([s, a], j) => `<a href="${placeHref(mode, meta.id, s, a, { A, flash: false })}" class="${cur.juz === j + 1 ? "on" : ""}"><div class="num">${num(j + 1)}</div><div class="lbl">${esc(t("quran.juz", { n: j + 1 }))}<span class="sub">${esc(t("quran.juzStart", { surah: surahName(s, meta), aya: a }) + pageNote(s, a))}</span></div>${chev()}</a>`).join("")}</div>`;
+    if (tab === "hizb") {
+      const { data } = await loadRiwayah("hafs");
+      return `<div class="list" style="--qfont:'kfgqpc-hafs'">${A.rub.map(([s, a], q) => (q % 8 ? "" : `<div class="idx-head">${esc(t("quran.juz", { n: q / 8 + 1 }))}</div>`)
+        + `<a href="${placeHref(mode, "hafs", s, a, { A })}" class="${cur.q === q ? "on" : ""}"><div class="num">${qmark(q)}</div><div class="lbl">${esc(hizbLabel(q))}<span class="snip" lang="ar" dir="rtl">${esc(firstWords(data.s[s - 1][a - 1][0]))}</span><span class="sub">${esc(t("quran.surah", { name: surahName(s, meta) }) + sep() + t("quran.ayaRef", { aya: a, page: A.pageOf(s, a) }))}</span></div>${chev()}</a>`).join("")}</div>`;
+    }
+    if (tab === "marks") {
+      if (!state.marks.length) return `<div class="empty">${icon("bookmark")}<div>${esc(t("quran.noMarks"))}</div></div>`;
+      const ok = state.marks.filter(m => INDEX.riwayat.some(r => r.id === m.r));
+      return `<div class="list">${ok.map(m => { const mm = riw(m.r); return `<div class="row split"><a class="row-main" href="${placeHref(mode, m.r, m.s, m.a, { A })}"><div class="num">${icon("bookmark-f")}</div><div class="lbl">${esc(t("quran.position", { surah: surahName(m.s, mm), aya: m.a, riwayah: rShort(mm) }))}${m.r === "hafs" && A ? `<span class="sub">${esc(t("quran.page", { n: A.pageOf(m.s, m.a) }))}</span>` : ""}</div></a><button class="icon-btn dl-btn" data-unmark="${esc(m.r)}:${m.s}:${m.a}" aria-label="${esc(t("quran.bmRemove"))}">${icon("trash")}</button></div>`; }).join("")}</div>`;
+    }
+    return `<div class="list">${meta.surahs.map((_, i) => surahRow(meta, i, placeHref(mode, meta.id, i + 1, 1, { A, flash: false }), cur.surahs?.has(i + 1))).join("")}</div>`;
+  }
+
+  // Index and search in one place: with an empty box it lists surahs, juz, quarters and bookmarks;
+  // typing shows the places named (surah, page, verse number) and every verse that contains the words.
+  // o: { meta, mode, A, cur, query, onQuery, inSheet }
+  function finder(root, o) {
+    const tabs = Object.keys(TABS).filter(x => x !== "hizb" || (o.meta.id === "hafs" && o.A));
+    let tab = tabs.includes(state.tab) ? state.tab : "surahs";
+    root.innerHTML = `<div class="f-top"><div class="searchbox${o.inSheet ? " small" : ""}">${icon("search")}<input type="search" class="f-q" placeholder="${esc(t("quran.searchPlaceholder"))}" value="${esc(o.query || "")}" autocomplete="off" enterkeyhint="search" aria-label="${esc(t("quran.searchTitle"))}"></div>
+      <p class="f-hint">${esc(t("quran.searchHint"))}</p>
+      <div class="tabs-row f-tabs"><div class="segmented" role="tablist">${tabs.map(x => `<button data-tab="${x}" role="tab" class="${x === tab ? "on" : ""}" aria-selected="${x === tab}">${esc(t(TABS[x]))}</button>`).join("")}</div></div></div>
+      <div class="f-list"></div>`;
+    const input = $(".f-q", root), list = $(".f-list", root), tabsRow = $(".f-tabs", root), hint = $(".f-hint", root);
+    const draw = async () => {
+      const q = input.value.trim(); tabsRow.hidden = hint.hidden = !!q;
+      if (q) return drawSearch(list, q, o);
+      const mine = (list._seq = (list._seq || 0) + 1);
+      if (tab === "hizb") list.innerHTML = loading();
+      const html = await indexRows(tab, o).catch(() => `<div class="empty">${esc(t("common.loadFailed"))}</div>`);
+      if (list._seq !== mine) return;
+      list.innerHTML = html;
+      if (o.inSheet) list.querySelector(".on")?.scrollIntoView({ block: "center" });
+    };
+    let timer;
+    input.oninput = () => { o.onQuery?.(input.value); clearTimeout(timer); timer = setTimeout(draw, 200); };
+    tabsRow.onclick = e => {
+      const b = e.target.closest("[data-tab]"); if (!b) return;
+      tab = state.tab = b.dataset.tab; save(); tabsRow.querySelectorAll("[data-tab]").forEach(x => { x.classList.toggle("on", x === b); x.setAttribute("aria-selected", x === b); }); draw();
+    };
+    list.addEventListener("click", e => {
+      const u = e.target.closest("[data-unmark]");
+      if (u) { const [r, s, a] = u.dataset.unmark.split(":"); toggleMark(r, Number(s), Number(a)); draw(); return; }
+      // A link to the place already shown changes nothing in the address: just close the sheet.
+      const link = e.target.closest("a[href]"); if (link && o.inSheet && link.getAttribute("href") === location.hash) closeSheet();
+    });
+    draw();
+    return input;
+  }
+  let sheetQuery = "";
+  function openFinder(o, { search = false } = {}) {
+    const body = sheet(t(search ? "quran.searchTitle" : "quran.index"), "", { tall: true });
+    const input = finder(body, { ...o, inSheet: true, query: search ? sheetQuery : "", onQuery: q => { sheetQuery = q; } });
+    if (search) setTimeout(() => input.focus(), 60);
+  }
 
   // ---------- Mushaf home ----------
   let homeQuery = "";
@@ -214,19 +435,22 @@ export function setupQuran(ctx) {
     setNav("quran"); setHeader(t("quran.title"), { actions: `<button class="icon-btn" id="q-tr-pick" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><a class="icon-btn" href="#/offline" aria-label="${esc(t("offline.title"))}">${icon("download")}</a>` });
     const hash = location.hash; view.innerHTML = loading();
     try { await loadIndex(); } catch (e) { return failed(e, renderHome); }
+    const meta = riw(state.riwayah);
+    const A = meta.id === "hafs" ? await loadAyat().catch(() => null) : null;
     if (stale(hash)) return;
     $("#q-tr-pick").onclick = () => pickTranslation(renderHome);
-    const meta = riw(state.riwayah);
-    const cont = state.last && INDEX.riwayat.some(r => r.id === state.last.r) ? state.last : null;
-    const bm = state.bookmark && INDEX.riwayat.some(r => r.id === state.bookmark.r) ? state.bookmark : null;
-    const pos = (p, label, ic) => `<a class="resume" href="#/quran/${p.r}/${p.s}?a=${p.a}">${icon(ic)}<div><b>${esc(label)}</b><span>${esc(t("quran.position", { surah: surahName(p.s, riw(p.r)), aya: p.a, riwayah: rShort(riw(p.r)) }))}</span></div></a>`;
+    const mode = homeMode(A);
+    const res = resumeInfo(); const lp = state.lastPage || { ed: state.mushafEd || "1421", p: 1 };
     view.innerHTML = `
       <div class="chips" role="tablist" aria-label="${esc(t("quran.riwayah"))}">${INDEX.riwayat.map(r => `<button class="chip ${r.id === meta.id ? "on" : ""}" data-r="${r.id}" role="tab" aria-selected="${r.id === meta.id}">${esc(rShort(r))}</button>`).join("")}</div>
       <p class="riwayah-note">${esc(t("quran.riwayahOf", { name: rName(meta) }))}${sep()}${esc(t("count.ayat", { n: meta.ayat }))} <span id="cached"></span></p>
-      <div class="resume-row"><a class="resume" href="#/mushaf/${state.lastPage?.ed || state.mushafEd || 1421}/${state.lastPage?.p || 1}">${icon("quran")}<div><b>${esc(t("mushaf.pages"))}</b><span>${esc(t("mushaf.ed" + (state.lastPage?.ed || state.mushafEd || 1421)))}${sep()}${esc(t("quran.page", { n: state.lastPage?.p || 1 }))}</span></div></a><a class="resume" href="#/tafsir">${icon("tafsir")}<div><b>${esc(t("tafsir.books"))}</b><span>${esc(t("tafsir.homeHint"))}</span></div></a>${cont ? pos(cont, t("quran.continue"), "book") : ""}${bm ? pos(bm, t("quran.bookmark"), "bookmark") : ""}</div>
-      <div class="searchbox">${icon("search")}<input id="qq" type="search" placeholder="${esc(t("quran.searchPlaceholder"))}" value="${esc(homeQuery)}" autocomplete="off" enterkeyhint="search"></div>
-      <div class="tabs-row"><div class="segmented" id="qtabs"><button data-t="surahs" class="${state.tab === "surahs" ? "on" : ""}">${esc(t("quran.surahs"))}</button><button data-t="juz" class="${state.tab === "juz" ? "on" : ""}">${esc(t("quran.juzs"))}</button></div></div>
-      <div id="qlist"></div>`;
+      <div class="resume-row">
+        ${res ? `<a class="resume main" href="${res.href}">${icon(res.icon)}<div><b>${esc(t("quran.continue"))}</b><span>${esc(res.text)}</span></div></a>` : ""}
+        ${res?.kind !== "page" ? `<a class="resume" href="${pageHref(lp.ed, lp.p)}">${icon("quran")}<div><b>${esc(t("mushaf.pages"))}</b><span>${esc(t("mushaf.ed" + lp.ed))}${sep()}${esc(t("quran.page", { n: lp.p }))}</span></div></a>` : ""}
+        <a class="resume" href="#/tafsir">${icon("tafsir")}<div><b>${esc(t("tafsir.books"))}</b><span>${esc(t("tafsir.homeHint"))}</span></div></a>
+      </div>
+      ${A ? `<div class="open-in"><span>${esc(t("quran.openIn"))}</span><div class="segmented" id="q-view"><button data-v="pages" class="${mode === "pages" ? "on" : ""}">${icon("quran")} ${esc(t("mushaf.pages"))}</button><button data-v="text" class="${mode === "text" ? "on" : ""}">${icon("list", "flip")} ${esc(t("quran.viewText"))}</button></div></div>` : ""}
+      <div id="finder"></div>`;
     const showSaved = () => { const x = document.getElementById("cached"); if (x) x.innerHTML = `${sep()}${icon("check")} ${esc(t("quran.savedOffline"))}`; };
     isCached(meta).then(c => {
       if (c) return showSaved();
@@ -235,38 +459,8 @@ export function setupQuran(ctx) {
       $("#save-riw").onclick = async () => { $("#save-riw").textContent = t("offline.saving"); try { await saveRiwayah(meta); showSaved(); toast(t("offline.done")); } catch { toast(t("offline.needOnce")); } };
     });
     view.querySelectorAll("[data-r]").forEach(b => b.onclick = () => { state.riwayah = b.dataset.r; save(); renderHome(); });
-    view.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { state.tab = b.dataset.t; save(); view.querySelectorAll("[data-t]").forEach(x => x.classList.toggle("on", x === b)); drawList(); });
-    const input = $("#qq"); let timer;
-    input.oninput = () => { homeQuery = input.value; clearTimeout(timer); timer = setTimeout(drawList, 200); };
-    drawList();
-
-    async function drawList() {
-      const box = $("#qlist"); if (!box) return;
-      const q = homeQuery.trim(); $("#qtabs").parentElement.hidden = !!q;
-      const surahRow = i => { const [, count, page] = meta.surahs[i]; return `<a href="#/quran/${meta.id}/${i + 1}"><div class="num">${num(i + 1)}</div><div class="lbl">${esc(surahName(i + 1, meta))}${isAr() ? "" : ` <span class="ar-name" lang="ar" dir="rtl">${esc(meta.surahs[i][0])}</span>`}<span class="sub">${esc(t("quran.surahMeta", { ayat: t("count.ayat", { n: count }), page }))}</span></div>${icon("back", "chev")}</a>`; };
-      if (!q) {
-        box.innerHTML = state.tab === "juz"
-          ? `<div class="list">${meta.juz.map(([s, a], j) => `<a href="#/quran/${meta.id}/${s}?a=${a}"><div class="num">${num(j + 1)}</div><div class="lbl">${esc(t("quran.juz", { n: j + 1 }))}<span class="sub">${esc(t("quran.juzStart", { surah: surahName(s, meta), aya: a }))}</span></div>${icon("back", "chev")}</a>`).join("")}</div>`
-          : `<div class="list">${meta.surahs.map((_, i) => surahRow(i)).join("")}</div>`;
-        return;
-      }
-      const k = quranKey(q); const n = Number(q.replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)));
-      const latin = lower(q).normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]/g, "");
-      const names = meta.surahs.map((s, i) => i).filter(i => (n >= 1 && n <= 114 && i + 1 === n) || (k && quranKey(meta.surahs[i][0]).includes(k))
-        || (latin.length > 1 && lower(meta.surahs[i][3] || "").normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]/g, "").includes(latin)));
-      let html = names.length ? `<h2 class="section-title">${esc(t("quran.surahs"))}</h2><div class="list">${names.map(i => surahRow(i)).join("")}</div>` : "";
-      if (k.length < 3) { box.innerHTML = html || `<div class="empty">${esc(t("quran.typeLonger"))}</div>`; return; }
-      box.innerHTML = html + loading(t("quran.searching"));
-      let res; try { res = await loadRiwayah(meta.id); } catch (e) { box.innerHTML = html + `<div class="empty">${esc(t("quran.searchLoadFailed"))}</div>`; return; }
-      if (homeQuery.trim() !== q || !document.body.contains(box)) return;
-      if (!searchIdx.has(meta.id)) searchIdx.set(meta.id, res.data.s.map((ayat, si) => ayat.map((x, ai) => quranKey(res.data.e ? res.data.e[si][ai] : x[0]))));
-      const idx = searchIdx.get(meta.id); const hits = [];
-      for (let si = 0; si < idx.length && hits.length < 200; si++) for (let ai = 0; ai < idx[si].length; ai++) if (idx[si][ai].includes(k)) hits.push([si, ai]);
-      html += `<h2 class="section-title">${esc(hits.length ? (hits.length >= 200 ? t("quran.moreThan", { n: 200 }) : t("count.ayat", { n: hits.length })) : t("quran.noMatches"))}</h2>`;
-      if (hits.length) html += `<div class="list hits" style="--qfont:'kfgqpc-${meta.id}'">${hits.slice(0, 60).map(([si, ai]) => `<a href="#/quran/${meta.id}/${si + 1}?a=${ai + 1}"><div class="lbl"><span class="hit-text" lang="ar" dir="rtl">${esc(res.data.s[si][ai][0])}</span><span class="sub">${esc(t("quran.surah", { name: surahName(si + 1, meta) }))}${sep()}${esc(t("quran.ayaRef", { aya: ai + 1, page: res.data.s[si][ai][1] }))}</span></div></a>`).join("")}</div>`;
-      if (hits.length > 60) html += `<p class="stat center">${esc(t("quran.showingFirst", { n: 60 }))}</p>`;
-      box.innerHTML = html;
-    }
+    view.querySelectorAll("#q-view [data-v]").forEach(b => b.onclick = () => { state.view = b.dataset.v; save(); renderHome(); });
+    finder($("#finder"), { meta, mode, A, query: homeQuery, onQuery: q => { homeQuery = q; } });
   }
 
   // ---------- reader ----------
@@ -281,20 +475,25 @@ export function setupQuran(ctx) {
     if (meta.id !== rid) { location.replace(`#/quran/${meta.id}/${s}`); return; }
     if (state.riwayah !== meta.id) { state.riwayah = meta.id; save(); }
     const ayat = data.s[s - 1]; const arName = meta.surahs[s - 1][0]; const name = surahName(s, meta);
-    setHeader(t("quran.surah", { name }), { back: true, actions: `${meta.id === "hafs" ? `<button class="icon-btn" id="q-page" aria-label="${esc(t("mushaf.openPage"))}">${icon("book")}</button>` : ""}<button class="icon-btn" id="q-play" aria-label="${esc(t("quran.listenSurah"))}">${icon("headphones")}</button><button class="icon-btn" id="q-tr" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><button class="icon-btn" id="q-riw" aria-label="${esc(t("quran.changeRiwayah"))}">${icon("layers")}</button>` });
+    // The aya at the top of the screen (the saved reading place), for the index and the printed page.
+    const curAya = () => (state.last && state.last.r === meta.id && state.last.s === s) ? state.last.a : 1;
+    const openIdx = async (search = false) => {
+      const A = meta.id === "hafs" ? await loadAyat().catch(() => null) : null; const a = curAya();
+      openFinder({ meta, mode: "text", A, cur: { surahs: new Set([s]), juz: juzOfMeta(meta, s, a), q: A ? quarterOf(A, s, a) : -1 } }, { search });
+    };
+    setHeader(t("quran.surah", { name }), { back: true, onTitle: () => openIdx(), actions: `<button class="icon-btn" id="q-idx" aria-label="${esc(t("quran.index"))}">${icon("list", "flip")}</button><button class="icon-btn" id="q-search" aria-label="${esc(t("quran.searchTitle"))}">${icon("search")}</button><button class="icon-btn" id="q-play" aria-label="${esc(t("quran.listenSurah"))}">${icon("headphones")}</button><button class="icon-btn" id="q-tr" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button>` });
     const showBasmala = s !== 9 && !(s === 1 && meta.basmalaIsAya);
     const rec = state.reciters[meta.id];
     let lastJuz = s > 1 ? data.s[s - 2].at(-1)[2] : ayat[0][2];
-    const bm = state.bookmark;
     const parts = [];
     ayat.forEach(([text, page, juz], i) => {
       if (juz !== lastJuz) { parts.push(`<div class="juz-mark"><span>${esc(t("quran.juz", { n: juz }))}</span></div>`); lastJuz = juz; }
-      const marked = bm && bm.r === meta.id && bm.s === s && bm.a === i + 1;
-      parts.push(`<div class="aya ${marked ? "bm" : ""}" id="a-${i + 1}" data-a="${i + 1}" data-p="${page}" tabindex="0"><span class="aya-text" lang="ar" dir="rtl">${esc(text)}</span></div>`);
+      parts.push(`<div class="aya ${isMarked(meta.id, s, i + 1) ? "bm" : ""}" id="a-${i + 1}" data-a="${i + 1}" data-p="${page}" tabindex="0"><span class="aya-text" lang="ar" dir="rtl">${esc(text)}</span></div>`);
     });
     view.innerHTML = `
       <div class="reader-bar">
-        <span class="pill">${esc(t("quran.riwayahOf", { name: rShort(meta) }))}</span><span class="pill ghost">${esc(t("count.ayat", { n: ayat.length }))}</span><span class="pill ghost">${esc(t("quran.page", { n: ayat[0][1] }))}</span>
+        <button class="pill" id="q-riw" aria-label="${esc(t("quran.changeRiwayah"))}">${icon("layers")} ${esc(t("quran.riwayahOf", { name: rShort(meta) }))}</button><span class="pill ghost">${esc(t("count.ayat", { n: ayat.length }))}</span>${meta.id === "hafs"
+          ? `<button class="pill ghost" id="q-page" aria-label="${esc(t("mushaf.openPage"))}">${icon("quran")} ${esc(t("quran.page", { n: ayat[0][1] }))}</button>` : `<span class="pill ghost">${esc(t("quran.page", { n: ayat[0][1] }))}</span>`}
         <button class="link" id="q-rec">${icon("headphones")} <span dir="auto">${esc(rec ? rec.name : t("quran.chooseReciter"))}</span></button>
       </div>
       <div id="tr-note"></div>
@@ -311,7 +510,8 @@ export function setupQuran(ctx) {
       <p class="source-note" id="tr-source"></p>`;
 
     const playWith = x => { player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}` }); const b = $("#q-rec"); if (b) b.innerHTML = `${icon("headphones")} <span dir="auto">${esc(x.name)}</span>`; };
-    const qp = $("#q-page"); if (qp) qp.onclick = () => { const a = (state.last && state.last.r === meta.id && state.last.s === s) ? state.last.a : 1; location.hash = `#/mushaf/${state.mushafEd || 1421}/${ayat[a - 1][1]}`; };
+    const qp = $("#q-page"); if (qp) qp.onclick = () => { const a = curAya(); location.hash = pageHref(state.mushafEd || "1421", ayat[a - 1][1], `${s}:${a}`); };
+    $("#q-idx").onclick = () => openIdx(); $("#q-search").onclick = () => openIdx(true);
     $("#q-play").onclick = () => { const r = state.reciters[meta.id]; r ? playWith(r) : pickReciter(meta, playWith); };
     $("#q-rec").onclick = () => pickReciter(meta, playWith);
     $("#q-tr").onclick = () => pickTranslation(() => renderReader(meta.id, s, params));
@@ -352,12 +552,7 @@ export function setupQuran(ctx) {
       const act = e.target.closest("[data-act]");
       if (act) {
         const n = Number(act.closest(".aya-tools").dataset.a);
-        if (act.dataset.act === "bm") {
-          const on = !(state.bookmark && state.bookmark.r === meta.id && state.bookmark.s === s && state.bookmark.a === n);
-          state.bookmark = on ? { r: meta.id, s, a: n } : null; save();
-          mushaf.querySelectorAll(".aya.bm").forEach(x => x.classList.remove("bm")); if (on) document.getElementById("a-" + n).classList.add("bm");
-          toast(t(on ? "quran.bmSaved" : "quran.bmRemoved")); closeTools(); return;
-        }
+        if (act.dataset.act === "bm") { document.getElementById("a-" + n).classList.toggle("bm", toggleMark(meta.id, s, n)); closeTools(); return; }
         if (act.dataset.act === "copy") { copyText(`${plain(n)}\n${ref(n)}`); closeTools(); return; }
         if (act.dataset.act === "tafsir") { closeTools(); ctx.tafsir().openAyah({ s, a: n, rid: meta.id }); return; }
         // The website has a page for every surah in Hafs; other riwayat link into the app.
@@ -368,9 +563,9 @@ export function setupQuran(ctx) {
       const open = aya.nextElementSibling?.classList.contains("aya-tools");
       closeTools(); if (open) return;
       aya.classList.add("sel");
-      const n = Number(aya.dataset.a); const isBm = state.bookmark && state.bookmark.r === meta.id && state.bookmark.s === s && state.bookmark.a === n;
+      const n = Number(aya.dataset.a); const isBm = isMarked(meta.id, s, n);
       aya.insertAdjacentHTML("afterend", `<div class="aya-tools" dir="${document.documentElement.dir}" data-a="${n}"><span class="aya-ref">${esc(t("quran.ayaRef", { aya: n, page: Number(aya.dataset.p) }))}</span><span class="spacer"></span>
-        <button class="icon-btn ${isBm ? "active" : ""}" data-act="bm" aria-label="${esc(t(isBm ? "quran.bmRemove" : "quran.bmAdd"))}">${icon("bookmark")}</button>
+        <button class="icon-btn ${isBm ? "active" : ""}" data-act="bm" aria-label="${esc(t(isBm ? "quran.bmRemove" : "quran.bmAdd"))}">${icon(isBm ? "bookmark-f" : "bookmark")}</button>
         ${meta.ayat === KUFI_AYAT ? `<button class="icon-btn" data-act="tafsir" aria-label="${esc(t("tafsir.title"))}">${icon("tafsir")}</button>` : ""}
         <button class="icon-btn" data-act="copy" aria-label="${esc(t("common.copy"))}">${icon("copy")}</button>
         <button class="icon-btn" data-act="share" aria-label="${esc(t("common.share"))}">${icon("share")}</button></div>`);
@@ -384,7 +579,7 @@ export function setupQuran(ctx) {
     observer = new IntersectionObserver(entries => {
       const vis = entries.filter(x => x.isIntersecting).map(x => Number(x.target.dataset.a));
       if (!vis.length) return; clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => { if (stale(hash)) return; state.last = { r: meta.id, s, a: Math.min(...vis) }; save(); }, 600);
+      saveTimer = setTimeout(() => { if (stale(hash)) return; state.last = { r: meta.id, s, a: Math.min(...vis), t: Date.now() }; save(); }, 600);
     }, { rootMargin: "-80px 0px -60% 0px" });
     mushaf.querySelectorAll(".aya").forEach(x => observer.observe(x));
 
@@ -421,32 +616,43 @@ export function setupQuran(ctx) {
     }
     return pageFonts.get(fam);
   }
-  function juzOf(s, a) { const hafs = riw("hafs"); let j = 1; hafs.juz.forEach(([js, ja], i) => { if (s > js || (s === js && a >= ja)) j = i + 1; }); return j; }
-  function pageInfo(n) {
+  function pageInfo(n, A) {
     const [s, a] = pageFirst[n];
     const surahs = new Set([s]); PAGES.pages[n - 1].forEach(x => { if (x.h) surahs.add(x.h); });
-    return { surahs: [...surahs].sort((x, y) => x - y), juz: juzOf(s, a) };
+    return { first: [s, a], surahs, juz: juzOfMeta(riw("hafs"), s, a), q: A ? quarterOf(A, s, a) : -1 };
   }
-  const pageHref = (ed, n) => `#/mushaf/${ed}/${n}`;
+  const pageHref = (ed, n, v = "") => `#/mushaf/${ed}/${n}` + (v ? `?v=${v}` : "");
   const goPage = (ed, n) => { if (n >= 1 && n <= 604) location.replace(pageHref(ed, n)); };
 
-  async function renderPages(ed, n) {
+  let pageClick = null;
+  async function renderPages(ed, n, params = new URLSearchParams()) {
     setNav("quran"); const hash = location.hash;
     if (!EDITIONS[ed]) ed = state.mushafEd || "1421";
     n = Math.min(604, Math.max(1, n | 0 || 1));
     setHeader(t("mushaf.pages"), { back: true }); view.innerHTML = loading();
-    try { await Promise.all([loadIndex(), loadPages()]); loadFont(riw("hafs")); } catch (e) { return failed(e, () => renderPages(ed, n)); }
+    // The verse map (ayat.json) is optional: without it the page still shows, only verses cannot be selected.
+    let A = null;
+    try { [, , A] = await Promise.all([loadIndex(), loadPages(), loadAyat().catch(() => null)]); loadFont(riw("hafs")); } catch (e) { return failed(e, () => renderPages(ed, n, params)); }
     if (stale(hash)) return;
-    state.mushafEd = ed; state.lastPage = { ed, p: n }; save();
-    const info = pageInfo(n); const key = EDITIONS[ed].key; const hafs = riw("hafs");
-    setHeader(info.surahs.map(s => surahName(s, hafs)).join(sep()), { back: true, actions: `<button class="icon-btn" id="m-goto" aria-label="${esc(t("mushaf.goto"))}">${icon("search")}</button><button class="icon-btn" id="m-ed" aria-label="${esc(t("mushaf.chooseEdition"))}">${icon("layers")}</button>` });
+    state.mushafEd = ed; state.lastPage = { ed, p: n, t: Date.now() }; save();
+    const info = pageInfo(n, A); const key = EDITIONS[ed].key; const hafs = riw("hafs");
+    const runs = A ? A.pages[n - 1] : []; // verses on this page in reading order: [surah, aya, glyphs]
+    const marksHere = () => state.marks.filter(m => m.r === "hafs" && PAGES.verseStart[m.s + ":" + m.a] === n);
+    const bmBtn = () => { const on = marksHere().length > 0; return `<button class="icon-btn${on ? " active" : ""}" id="m-bm" aria-label="${esc(t(on ? "mushaf.bmPageRemove" : "mushaf.bmPage"))}">${icon(on ? "bookmark-f" : "bookmark")}</button>`; };
+    const finderOpts = { meta: hafs, mode: "pages", A, cur: info };
+    setHeader([...info.surahs].sort((x, y) => x - y).map(s => surahName(s, hafs)).join(sep()), { back: true, onTitle: () => openFinder(finderOpts),
+      actions: `<button class="icon-btn" id="m-idx" aria-label="${esc(t("quran.index"))}">${icon("list", "flip")}</button><button class="icon-btn" id="m-search" aria-label="${esc(t("quran.searchTitle"))}">${icon("search")}</button><span id="m-bm-wrap">${bmBtn()}</span>` });
+    // Every glyph carries the index of its verse in runs, so a tap selects the whole verse.
+    let vi = 0, left = runs[0]?.[2] ?? Infinity;
+    const glyph = g => { const v = vi; if (--left === 0) { vi++; left = runs[vi]?.[2] ?? Infinity; } return A ? `<span data-v="${v}">${g}</span>` : `<span>${g}</span>`; };
     const lines = PAGES.pages[n - 1].map(x =>
       x.h ? `<div class="mline mhead"><span>سورة ${esc(hafs.surahs[x.h - 1][0])}</span></div>`
       : x.b ? `<div class="mline mbasm">${esc(hafs.basmala)}</div>`
-      : `<div class="mline${n <= 2 ? " center" : ""}">${x[key].split(" ").map(g => `<span>${g}</span>`).join("")}</div>`).join("");
+      : `<div class="mline${n <= 2 ? " center" : ""}">${x[key].split(" ").map(glyph).join("")}</div>`).join("");
     view.innerHTML = `
-      <div class="reader-bar"><span class="pill">${esc(t("mushaf.ed" + ed))}</span><span class="pill ghost">${esc(t("quran.juz", { n: info.juz }))}</span><span class="pill ghost">${esc(t("quran.page", { n }))}</span></div>
-      <div class="mpage-wrap"><div class="mpage${n <= 2 ? " opening" : ""}" id="mpage" lang="ar" dir="rtl" style="--qfont:'kfgqpc-hafs'">${lines}<div class="mpage-msg" id="mpage-msg">${loading("")}</div></div></div>
+      <div class="reader-bar"><button class="pill" id="m-ed" aria-label="${esc(t("mushaf.chooseEdition"))}">${icon("layers")} ${esc(t("mushaf.ed" + ed))}</button><span class="pill ghost">${esc(t("quran.juz", { n: info.juz }))}</span>${info.q >= 0 ? `<span class="pill ghost">${esc(hizbLabel(info.q))}</span>` : ""}<span class="pill ghost">${esc(t("quran.page", { n }))}</span></div>
+      <div class="mpage-wrap"><div class="mpage${n <= 2 ? " opening" : ""}${A ? " tappable" : ""}" id="mpage" lang="ar" dir="rtl" style="--qfont:'kfgqpc-hafs'">${lines}<div class="mpage-msg" id="mpage-msg">${loading("")}</div></div></div>
+      <div class="mslider"><input type="range" id="m-range" min="1" max="604" step="1" value="${n}" aria-label="${esc(t("mushaf.slider"))}"><output id="m-range-out" for="m-range">${esc(t("mushaf.pageOf", { n, total: 604 }))}</output></div>
       <nav class="reader-nav">
         ${n > 1 ? `<a class="btn ghost" href="${pageHref(ed, n - 1)}" data-replace>${icon("back")} ${esc(t("mushaf.prev"))}</a>` : "<span></span>"}
         ${n < 604 ? `<a class="btn ghost" href="${pageHref(ed, n + 1)}" data-replace>${esc(t("mushaf.next"))} ${icon("back", "flip")}</a>` : "<span></span>"}
@@ -454,6 +660,19 @@ export function setupQuran(ctx) {
       <p class="source-note">${esc(t("mushaf.source"))}</p>`;
     view.querySelectorAll("[data-replace]").forEach(a => a.onclick = e => { e.preventDefault(); location.replace(a.getAttribute("href")); });
     const page = $("#mpage");
+    const paintMarks = () => { const on = new Set(marksHere().map(m => m.s + ":" + m.a)); runs.forEach(([s, a], i) => page.querySelectorAll(`span[data-v="${i}"]`).forEach(x => x.classList.toggle("bm", on.has(s + ":" + a)))); };
+    const refreshBm = () => { $("#m-bm-wrap").innerHTML = bmBtn(); $("#m-bm").onclick = toggleBm; paintMarks(); };
+    // The page bookmark is a bookmark on its first verse; removing it removes every bookmark on the page.
+    function toggleBm() {
+      const here = marksHere();
+      if (here.length) { here.forEach(m => state.marks.splice(state.marks.indexOf(m), 1)); save(); toast(t("quran.bmRemoved")); }
+      else toggleMark("hafs", ...info.first);
+      refreshBm();
+    }
+    $("#m-bm").onclick = toggleBm;
+    $("#m-idx").onclick = () => openFinder(finderOpts);
+    $("#m-search").onclick = () => openFinder(finderOpts, { search: true });
+    paintMarks();
     try {
       const fam = await loadPageFont(ed, n); if (stale(hash)) return;
       page.style.setProperty("--qcf", `'${fam}'`); page.classList.add("ready"); $("#mpage-msg").remove();
@@ -463,27 +682,70 @@ export function setupQuran(ctx) {
         const widest = Math.max(...ls.map(l => [...l.children].reduce((w, sp) => w + sp.getBoundingClientRect().width, 0)));
         if (widest > 0) page.style.setProperty("--fit", Math.min(1.35, Math.max(0.8, 0.97 * ls[0].clientWidth / widest)).toFixed(3));
       }
+      // Opened from a search result, a bookmark or a quarter: show which verse it was.
+      const want = /^(\d+):(\d+)$/.exec(params.get("v") || "");
+      const wi = want ? runs.findIndex(([s, a]) => s === +want[1] && a === +want[2]) : -1;
+      if (wi >= 0) {
+        const els = [...page.querySelectorAll(`span[data-v="${wi}"]`)];
+        els.forEach(x => x.classList.add("flash")); els[0]?.scrollIntoView({ block: "center" });
+        setTimeout(() => els.forEach(x => x.classList.remove("flash")), 2200);
+      }
+      if (A && !state.hintAya) { state.hintAya = true; save(); setTimeout(() => { if (!stale(hash)) toast(t("quran.ayaHint")); }, 900); }
     } catch { if (!stale(hash)) $("#mpage-msg").innerHTML = `<div class="empty">${icon("download")}<div>${esc(t("mushaf.fontNeedsNet"))}</div></div>`; }
     [n + 1, n - 1].filter(p => p >= 1 && p <= 604).forEach(p => loadPageFont(ed, p).catch(() => {}));
+
     // Arabic book: the next page is on the left, so swiping toward the right turns forward.
     let x0 = null;
     page.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
     page.addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 60) goPage(ed, dx > 0 ? n + 1 : n - 1); });
+
+    // Page slider: shows the page and its surah while dragging, opens the page on release.
+    const range = $("#m-range"), out = $("#m-range-out");
+    range.oninput = () => { const p = Number(range.value); out.textContent = `${t("mushaf.pageOf", { n: p, total: 604 })}${sep()}${surahName(pageFirst[p][0], hafs)}`; };
+    range.onchange = () => { const p = Number(range.value); if (p !== n) goPage(ed, p); };
+
     $("#m-ed").onclick = () => {
       const body = sheet(t("mushaf.chooseEdition"), `<div class="list flat">${Object.keys(EDITIONS).map(e2 => `<button class="row" data-ed="${e2}"><div class="lbl">${esc(t("mushaf.ed" + e2))}<span class="sub">${esc(t("offline.size", { size: off.fmtSize(PAGES.fonts[EDITIONS[e2].v].bytes, getLang()) }))}</span></div>${e2 === ed ? icon("check") : ""}</button>`).join("")}</div>`);
       body.onclick = e => { const b = e.target.closest("[data-ed]"); if (!b) return; closeSheet(); goPage(b.dataset.ed, n); };
     };
-    $("#m-goto").onclick = () => {
-      const body = sheet(t("mushaf.goto"), `<div class="goto"><input type="number" inputmode="numeric" min="1" max="604" id="goto-n" placeholder="${esc(t("mushaf.pagePrompt"))}"><button class="btn" id="goto-go">${esc(t("mushaf.go"))}</button></div>
-        <div class="list flat">${hafs.juz.map(([s, a], j) => `<button class="row" data-p="${PAGES.verseStart[s + ":" + a]}"><div class="num">${num(j + 1)}</div><div class="lbl">${esc(t("quran.juz", { n: j + 1 }))}<span class="sub">${esc(t("quran.page", { n: PAGES.verseStart[s + ":" + a] }))}</span></div></button>`).join("")}</div>`);
-      const go = () => { const v = Number($("#goto-n", body).value); if (v >= 1 && v <= 604) { closeSheet(); goPage(ed, v); } };
-      $("#goto-go", body).onclick = go; $("#goto-n", body).onkeydown = e => { if (e.key === "Enter") go(); };
-      body.onclick = e => { const b = e.target.closest("[data-p]"); if (b) { closeSheet(); goPage(ed, Number(b.dataset.p)); } };
-      setTimeout(() => $("#goto-n", body)?.focus(), 50);
+
+    // Tap a verse: it is marked on the page and its tools appear (tafsir, bookmark, copy, share, listen, verse by verse).
+    if (!A) return;
+    let sel = -1;
+    if (pageClick) document.removeEventListener("click", pageClick); // the page may be drawn again at the same address
+    const onDoc = pageClick = e => {
+      if (stale(hash)) { if (pageClick === onDoc) pageClick = null; return document.removeEventListener("click", onDoc); }
+      if (e.target.closest("#ayabar, #sheet")) return;
+      const sp = e.target.closest("#mpage span[data-v]");
+      if (!sp) { if (sel >= 0) { closeAyabar(); sel = -1; } return; }
+      const v = Number(sp.dataset.v); closeAyabar();
+      if (v === sel) { sel = -1; return; }
+      sel = v; select(v);
     };
+    document.addEventListener("click", onDoc);
+    function select(v) {
+      const [s, a] = runs[v]; const marked = isMarked("hafs", s, a);
+      page.querySelectorAll(`span[data-v="${v}"]`).forEach(x => x.classList.add("sel"));
+      const btn = (act, ic, label, cls = "") => `<button class="icon-btn ${cls}" data-act="${act}" aria-label="${esc(label)}" title="${esc(label)}">${icon(ic)}</button>`;
+      document.body.insertAdjacentHTML("beforeend", `<div class="ayabar" id="ayabar" role="toolbar" aria-label="${esc(t("quran.position", { surah: surahName(s, hafs), aya: a, riwayah: rShort(hafs) }))}">
+        <b class="ref">${esc(surahName(s, hafs))} <span>${esc(num(a))}</span></b>
+        ${btn("tafsir", "tafsir", t("tafsir.title"))}${btn("bm", marked ? "bookmark-f" : "bookmark", t(marked ? "quran.bmRemove" : "quran.bmAdd"), marked ? "active" : "")}${btn("copy", "copy", t("common.copy"))}${btn("share", "share", t("common.share"))}${btn("play", "headphones", t("quran.listenSurah"))}${btn("text", "translate", t("quran.openText"))}</div>`);
+      $("#ayabar").onclick = async e => {
+        const b = e.target.closest("[data-act]"); if (!b) return; const act = b.dataset.act;
+        if (act === "tafsir") { closeAyabar(); sel = -1; ctx.tafsir().openAyah({ s, a, rid: "hafs" }); return; }
+        if (act === "bm") { toggleMark("hafs", s, a); refreshBm(); closeAyabar(); sel = -1; return; }
+        if (act === "play") { playSurah(hafs, s); return; }
+        if (act === "text") { location.hash = `#/quran/hafs/${s}` + (a > 1 ? `?a=${a}` : ""); return; }
+        let text; try { text = (await loadRiwayah("hafs")).data.s[s - 1][a - 1][0]; } catch { toast(t("common.loadFailed")); return; }
+        const body = `${text.replace(AYA_NUM, "")} ﴿${num(a)}﴾\n${t("quran.copyRef", { surah: surahName(s, hafs), aya: a, riwayah: rName(hafs) })}`;
+        if (act === "copy") copyText(body);
+        if (act === "share") share(t("quran.surah", { name: surahName(s, hafs) }), `${body}\n${SITE}surah/${s}/#a-${a}`);
+        closeAyabar(); sel = -1;
+      };
+    }
   }
   document.addEventListener("keydown", e => {
-    const m = /^#\/mushaf\/(\d+)\/(\d+)/.exec(location.hash); if (!m || e.target?.closest?.("input, textarea, select")) return;
+    const m = /^#\/mushaf\/(\d+)\/(\d+)/.exec(location.hash); if (!m || e.target?.closest?.("input, textarea, select") || document.getElementById("sheet")) return;
     if (e.key === "ArrowLeft") goPage(m[1], Number(m[2]) + 1);
     if (e.key === "ArrowRight") goPage(m[1], Number(m[2]) - 1);
   });
@@ -699,15 +961,12 @@ export function setupQuran(ctx) {
     },
     // Surah names matching a query (Arabic, transliterated, or a number), for the Home search.
     async searchSurahs(q) {
-      await loadIndex(); const meta = riw(state.riwayah); const k = quranKey(q);
-      const n = Number(String(q).replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)));
-      const latin = lower(q).normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]/g, "");
-      return meta.surahs.map((s, i) => i).filter(i => (n >= 1 && n <= 114 && i + 1 === n) || (k.length > 1 && quranKey(meta.surahs[i][0]).includes(k))
-        || (latin.length > 1 && lower(meta.surahs[i][3] || "").normalize("NFD").replace(/\p{M}/gu, "").replace(/[^a-z0-9]/g, "").includes(latin)))
-        .map(i => ({ n: i + 1, name: surahName(i + 1, meta), href: `#/quran/${meta.id}/${i + 1}` }));
+      await loadIndex(); const meta = riw(state.riwayah); const A = meta.id === "hafs" ? await loadAyat().catch(() => null) : null; const mode = homeMode(A);
+      return surahMatches(meta, q).map(i => ({ n: i + 1, name: surahName(i + 1, meta), href: placeHref(mode, meta.id, i + 1, 1, { A, flash: false }) }));
     },
-    async describe(p) { await loadIndex(); const m = riw(p.r); return t("quran.position", { surah: surahName(p.s, m), aya: p.a, riwayah: rShort(m) }); },
-    listen: renderListen, radio: renderRadio, offline: renderOffline, mushaf: (ed, n) => renderPages(ed, n), player, sheet, closeSheet,
+    // The latest reading place (a printed page or a verse), for the Home page.
+    async resume() { await loadIndex(); const r = resumeInfo(); return r && { href: r.href, text: r.text }; },
+    listen: renderListen, radio: renderRadio, offline: renderOffline, mushaf: (ed, n, params) => renderPages(ed, n, params), player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
     // Quran text of a riwayah (with its font) and surah names, for the tafsir pages.
     textOf: id => loadRiwayah(id), surahName,
