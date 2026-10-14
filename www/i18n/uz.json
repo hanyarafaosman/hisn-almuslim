@@ -229,6 +229,7 @@
  "about.hisnAuthor": "Muallif: Shayx Saʼid ibn Ali ibn Vahf al-Qahtoniy (Alloh rahmatiga olgan boʻlsin).",
  "about.hisnSource": "Matnlar kitobning rasmiy saytidan ({link}) olingan: {chapters} va {adhkar}.",
  "about.offline": "Ilova birinchi ochilgandan soʻng internetsiz ishlaydi va hech qanday maʼlumot toʻplamaydi.",
+ "about.privacy": "Maxfiylik siyosati",
  "about.mushafTitle": "Qurʼoni karim",
  "about.mushafText": "Sakkiz rivoyatdagi Qurʼon matni va shriftlari quyidagi manbadan olingan: {source}. Ular nashr etilganidek, hech qanday oʻzgarishsiz koʻrsatiladi.",
  "about.mushafOffline": "Har bir rivoyat birinchi ochilgandan soʻng qurilmada saqlanadi va uni internetsiz oʻqish mumkin.",

@@ -1,5 +1,5 @@
 /* Service worker: offline-first app shell for حصن المسلم */
-const VERSION = "hisn-v1.9.0";
+const VERSION = "hisn-v1.9.2";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
@@ -65,7 +65,9 @@ self.addEventListener("fetch", e => {
   }
   if (url.hostname === "static.qurancdn.com" && url.pathname.startsWith("/fonts/quran/")) { e.respondWith(cacheFirst(req, MUSHAF_FONTS)); return; }
   if (url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/gh/fawazahmed0/hadith-api@")) { e.respondWith(cacheFirst(req, HADITH_CACHE)); return; }
-  if (url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/gh/spa5k/tafsir_api@")) { e.respondWith(cacheFirst(req, TAFSIR_CACHE)); return; }
+  // Tafsir files from jsDelivr, or from GitHub when jsDelivr refuses one (see js/mirror.js).
+  if ((url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/gh/spa5k/tafsir_api@"))
+    || (url.hostname === "raw.githubusercontent.com" && url.pathname.startsWith("/spa5k/tafsir_api/"))) { e.respondWith(cacheFirst(req, TAFSIR_CACHE)); return; }
   if (url.hostname === "quranenc.com" && url.pathname.startsWith("/api/v1/translation")) { e.respondWith(staleWhileRevalidate(req, TR_CACHE)); return; }
   // Recorded audio the user saved: answer from the device, with byte ranges so seeking works.
   // Everything else (and live radio streams) goes straight to the network.

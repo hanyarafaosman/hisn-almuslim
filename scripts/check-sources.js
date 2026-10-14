@@ -155,21 +155,28 @@ async function hadithBooks() {
 }
 
 async function tafsirBooks() {
-  const G = "Tafsir books (quranenc.com, cdn.jsdelivr.net)";
+  const G = "Tafsir books (quranenc.com, cdn.jsdelivr.net, raw.githubusercontent.com)";
   const { sources, books } = readJson("tafsir/index.json");
   try {
+    const { mirrorOf } = await loadMirror();
+    const refused = [];
     // Al-Fatihah from every book (whole surah), plus one verse file from each pinned spa5k book: the sheet reads those.
+    // jsDelivr refuses some spa5k files (the repository is over its 50 MB limit) and the app then reads GitHub,
+    // so only the GitHub copy failing is an error.
     for (const b of books) {
       if (b.src === "qe") {
         const rows = (await getJSON(`${sources.qe.api}/translation/sura/${b.key}/1`)).result || [];
         if (rows.length !== 7 || !rows.every(r => String(r.translation || "").trim())) throw new Error(`${b.id}: Al-Fatihah did not come back as 7 explained verses`);
-      } else {
-        const rows = await getJSON(`${sources.spa5k.cdn}/${b.key}/1.json`);
-        if (!Array.isArray(rows) || !rows.some(r => String(r.text || "").trim())) throw new Error(`${b.id}: Al-Fatihah has no text`);
-        const one = await getJSON(`${sources.spa5k.cdn}/${b.key}/2/255.json`);
-        if (!String(one.text || "").trim()) throw new Error(`${b.id}: verse file 2/255 has no text`);
+        continue;
+      }
+      for (const [file, ok] of [["1.json", j => Array.isArray(j) && j.some(r => String(r.text || "").trim())], ["2/255.json", j => String(j.text || "").trim()]]) {
+        const url = `${sources.spa5k.cdn}/${b.key}/${file}`;
+        if (!ok(await getJSON(mirrorOf(url)).catch(e => { throw new Error(`${b.id}: GitHub copy of ${file}: ${e.message}`); }))) throw new Error(`${b.id}: ${file} has no text`);
+        const cdn = await request(url, { tries: 1 }).catch(e => ({ ok: false, status: e.message }));
+        if (!cdn.ok) refused.push(`${b.id}/${file} (${cdn.status})`);
       }
     }
+    if (refused.length) warn(G, `jsDelivr refused ${refused.length} file(s), the app reads them from GitHub: ${refused.join(", ")}`);
     pass(G, `${books.length} books answer`);
   } catch (e) { error(G, e.message); }
 }
