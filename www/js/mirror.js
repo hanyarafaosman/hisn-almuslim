@@ -6,8 +6,13 @@
 export const MIRROR = "https://hanyarafaosman.github.io/hisn-almuslim-assets";
 const HOSTS = { "www.hisnmuslim.com": "hisnmuslim", "static.qurancdn.com": "qurancdn" };
 
+// Tafsir books (spa5k/tafsir_api) are read from jsDelivr at a pinned commit. The repository is larger than
+// jsDelivr's 50 MB package limit, so jsDelivr sometimes refuses a file (HTTP 403); GitHub serves the same commit.
+const TAFSIR_CDN = /^https:\/\/cdn\.jsdelivr\.net\/gh\/spa5k\/tafsir_api@([0-9a-f]{40})\//;
+
 // The backup URL of a file (same path under a folder per source), or "" when there is none.
 export function mirrorOf(url) {
+  if (TAFSIR_CDN.test(url)) return url.replace(TAFSIR_CDN, "https://raw.githubusercontent.com/spa5k/tafsir_api/$1/");
   try { const u = new URL(url); const key = HOSTS[u.hostname]; return key ? `${MIRROR}/${key}${u.pathname}` : ""; } catch { return ""; }
 }
 
