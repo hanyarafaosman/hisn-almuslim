@@ -1,9 +1,11 @@
 /* ===== التفسير: تفسير كل آية، ومكتبة كتب التفسير ===== */
 // Books and how each groups the verses: tafsir/index.json (scripts/build-tafsir-index.js).
 // Texts load from their sources and are shown as published: QuranEnc.com (al-Muyassar, al-Mukhtasar) and
-// spa5k/tafsir_api pinned to a release commit on jsDelivr (the classical books, from the Quranic Universal Library).
+// spa5k/tafsir_api pinned to a release commit on jsDelivr (the classical books, from the Quranic Universal Library);
+// a file jsDelivr refuses is read from GitHub at the same commit (js/mirror.js).
 // Verse numbers follow the Kufan count, so tafsir is offered in the Hafs and Shuʿbah readings.
 import * as off from "./offline.js?v=1.9.2";
+import { fetchWithMirror, mirrorOf } from "./mirror.js?v=1.9.2";
 
 const TAFSIR_STORE = off.STORES.TAFSIR;
 
@@ -29,12 +31,15 @@ export function setupTafsir(ctx) {
   function getJSON(url) {
     if (memo.has(url)) { const p = memo.get(url); memo.delete(url); memo.set(url, p); return p; }
     const ctrl = new AbortController(); const timer = setTimeout(() => ctrl.abort(), 30000);
-    const p = fetch(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer)).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).catch(e => { memo.delete(url); throw e; });
+    const p = fetchWithMirror(url, { signal: ctrl.signal }).finally(() => clearTimeout(timer)).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).catch(e => { memo.delete(url); throw e; });
     memo.set(url, p); while (memo.size > 8) memo.delete(memo.keys().next().value);
     return p;
   }
-  // The file as saved on this device, or null (no network request).
-  async function savedJSON(url) { try { const r = await caches.match(url); return r ? await r.json() : null; } catch { return null; } }
+  // The file as saved on this device (under its own address or its GitHub copy's), or null (no network request).
+  async function savedJSON(url) {
+    try { for (const u of [url, mirrorOf(url)].filter(Boolean)) { const r = await caches.match(u); if (r) return await r.json(); } } catch { /* storage unavailable */ }
+    return null;
+  }
 
   // Rows of one surah: verse number -> text.
   async function surahTexts(b, s, { network = true } = {}) {
