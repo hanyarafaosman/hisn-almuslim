@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "tafsir/index.json", "asma/book.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -86,6 +86,26 @@ const enStrings = readJson("i18n/en.json");
   if (!hx.books.some(b => b.id === r.id) && !enStrings["hadith.radio." + r.id]) fail(`sunnah radio ${r.id}: not a hadith book and no hadith.radio.${r.id} string`);
 });
 
+// Tafsir books: pinned source, every book has a string for its length, verse groups and moves inside the Hafs (Kufan) count.
+const tx = readJson("tafsir/index.json"); const kufi = qi.riwayat.find(r => r.id === "hafs").surahs.map(x => x[1]);
+if (!/@[0-9a-f]{40}\/tafsir$/.test(tx.sources.spa5k.cdn)) fail("tafsir: spa5k source must be pinned to a commit");
+if (new Set(tx.books.map(b => b.id)).size !== tx.books.length) fail("tafsir: duplicate book ids");
+for (const b of tx.books) {
+  if (!b.ar || !b.en || !b.by || !b.byEn || !b.key || !(b.bytes > 0) || !["qe", "spa5k"].includes(b.src)) fail("tafsir: incomplete book " + b.id);
+  if (!enStrings["tafsir.len." + b.len]) fail(`tafsir: ${b.id} has length "${b.len}" with no tafsir.len string`);
+  const inside = (s, a) => s >= 1 && s <= 114 && a >= 1 && a <= kufi[s - 1];
+  Object.entries(b.groups || {}).forEach(([s, gs]) => gs.forEach(([x, y]) => { if (!(x < y) || !inside(Number(s), x) || !inside(Number(s), y)) fail(`tafsir: ${b.id} bad group ${s}:${x}-${y}`); }));
+  Object.entries(b.missing || {}).forEach(([s, as]) => as.forEach(a => { if (!inside(Number(s), a)) fail(`tafsir: ${b.id} bad missing verse ${s}:${a}`); }));
+  (b.moves || []).forEach(m => { if (m.length !== 6 || !inside(m[0], m[1]) || !inside(m[4], m[5]) || !(m[2] > 0) || !["head", "tail"].includes(m[3])) fail(`tafsir: ${b.id} bad move ${m}`); });
+}
+// The Names of Allah: 99 names in order, each in one entry, every footnote reference has its note.
+const asma = readJson("asma/book.json");
+if (asma.names.length !== 99 || asma.names.some((x, i) => x.n !== i + 1 || !x.name || !x.plain || !asma.groups[x.g]?.names.includes(x.n))) fail("asma: names must be 1…99, each in its entry");
+for (const box of [...asma.groups, ...asma.chapters]) {
+  const refs = box.body.flatMap(x => [...String(x.p || "").matchAll(/⟦(\d+)⟧/g)].map(m => Number(m[1])));
+  if (refs.some(n => !box.notes[n - 1]) || (box.head || []).some(n => !box.notes[n - 1])) fail(`asma: footnote without a note in ${box.title || "names " + box.names}`);
+}
+
 // Interface languages: every language listed in js/i18n.js has a strings file that passes check-i18n.js
 // LANGS entries look like ["fr", "Français"]; other arrays in the file do not end right after the second string.
 const langs = [...new Set([...fs.readFileSync(path.join(root, "js/i18n.js"), "utf8").matchAll(/\["([a-z]{2,3})", "[^"]+"\]/g)].map(m => m[1]))];
@@ -94,12 +114,12 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }
 
 console.log(ok
-  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios)`
+  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${tx.books.length} tafsir books, ${asma.names.length} names of Allah, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios)`
   : "checks failed");
 process.exit(ok ? 0 : 1);

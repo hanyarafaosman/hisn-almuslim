@@ -464,3 +464,65 @@ a.info { color: inherit; }
 .hadith-radios .chip { display: inline-flex; align-items: center; gap: 6px; color: inherit; }
 .hadith-radios .chip svg { width: 16px; height: 16px; color: var(--primary); }
 .hadith-radios .chip.on, .hadith-radios .chip.on svg { color: var(--on-primary); }
+
+/* tafsir: the sheet over a verse, and reading a book */
+.tf-books { margin: 0 -2px; }
+.tf-books .chip { font-size: .85rem; padding: 6px 12px; }
+.tf-sheet-head { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.tf-sheet-head b { font-size: 1rem; }
+.tf-sheet-head span { color: var(--muted); font-size: .85rem; }
+.tf-ayat { font-family: var(--qfont), var(--font-text); font-size: calc(1.45rem * var(--scale)); line-height: 2.1; text-align: justify; text-align-last: start; background: var(--paper, var(--surface)); border: 1px solid var(--border); border-radius: 14px; padding: 8px 14px; user-select: text; }
+.tf-body { font-family: var(--font-text); font-size: calc(1.18rem * var(--scale)); line-height: 2; text-align: justify; text-align-last: start; user-select: text; overflow-wrap: anywhere; }
+.tf-body p { margin: 0 0 .7em; }
+.tf-body .q { color: var(--primary-2); font-weight: 700; }
+:root[data-theme="dark"] .tf-body .q, :root[data-theme="dark"] .asma-text .q { color: var(--primary); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tf-body .q, :root:not([data-theme="light"]) .asma-text .q { color: var(--primary); } }
+.tf-body .tf-ed { font-size: .78em; color: var(--muted); }
+.tf-body .tf-n { display: inline-block; font-family: var(--font-ui); font-size: .72em; color: var(--muted); border: 1px solid var(--border); border-radius: 8px; padding: 0 6px; line-height: 1.6; vertical-align: .15em; }
+.tf-body .empty { padding: 24px 0; }
+.tf-nav { display: flex; align-items: center; justify-content: space-between; gap: 6px; position: sticky; bottom: -16px; background: var(--bg); padding: 8px 0; border-top: 1px solid var(--border); }
+.tf-nav .icon-btn { color: var(--primary); }
+.tf-nav .btn[disabled] { opacity: .45; }
+.tf-surah { padding-bottom: 2px; }
+.tf-block { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden; margin-top: 12px; scroll-margin-top: calc(70px + var(--sat)); transition: background .4s; }
+.tf-block.flash { background: color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+.tf-block .tf-ayat { border: 0; border-radius: 0; border-bottom: 1px solid var(--border); padding: 10px 16px; }
+.tf-block .tf-label { color: var(--muted); font-size: .8rem; padding: 8px 18px 0; }
+.tf-block .tf-body { padding: 4px 18px 6px; }
+.tf-default { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin: 10px 0; }
+
+/* the Names of Allah */
+.asma-hero h2 { font-family: var(--font-text); font-size: 1.35rem; line-height: 1.7; }
+.asma-method { margin: 10px 0; }
+.asma-method summary { cursor: pointer; padding: 12px 16px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+.asma-method summary svg { width: 20px; height: 20px; flex: none; }
+.asma-method .about { font-family: var(--font-text); font-size: calc(1.05rem * var(--scale)); line-height: 1.9; color: var(--text); padding-top: 0; }
+.asma-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); gap: 8px; margin-top: 12px; }
+.asma-tile { position: relative; display: grid; place-items: center; min-height: 78px; padding: 18px 6px 10px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); text-align: center; }
+.asma-tile:active { transform: scale(.97); }
+.asma-tile .n { position: absolute; top: 6px; inset-inline-start: 8px; font-size: .72rem; color: var(--muted); }
+.asma-tile .nm { font-family: var(--font-text); font-size: calc(1.3rem * var(--scale)); font-weight: 700; color: var(--primary-2); line-height: 1.5; }
+:root[data-theme="dark"] .asma-tile .nm, :root[data-theme="dark"] .asma-name .nm { color: var(--primary); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .asma-tile .nm, :root:not([data-theme="light"]) .asma-name .nm { color: var(--primary); } }
+.asma-head { text-align: center; padding: 6px 0 2px; }
+.asma-names { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 8px; }
+.asma-name { display: inline-flex; flex-direction: column; align-items: center; padding: 8px 16px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface); }
+.asma-name.on { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); }
+.asma-name .n { font-size: .72rem; color: var(--muted); }
+.asma-name .nm { font-family: var(--font-text); font-size: calc(1.7rem * var(--scale)); font-weight: 700; color: var(--primary-2); line-height: 1.5; }
+.asma-together { color: var(--muted); font-size: .85rem; margin: 6px 0 0; }
+.asma-chapter { font-family: var(--font-text); font-size: 1.3rem; line-height: 1.7; color: var(--primary-2); margin: 6px 4px 0; }
+.asma-text { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 18px; margin-top: 12px; font-family: var(--font-text); font-size: calc(1.2rem * var(--scale)); line-height: 2; text-align: justify; text-align-last: start; user-select: text; }
+.asma-text p { margin: 0 0 .6em; }
+.asma-text .q { color: var(--primary-2); font-weight: 700; }
+.asma-h { font-size: 1.1em; color: var(--primary-2); margin: .6em 0 .3em; }
+.fn-ref { display: inline-block; min-width: 1.5em; padding: 0 3px; margin: 0 1px; border-radius: 6px; background: var(--surface-2); color: var(--primary); font-family: var(--font-ui); font-size: .62em; font-weight: 700; line-height: 1.6; vertical-align: super; cursor: pointer; }
+.asma-names .fn-ref { font-size: .8rem; vertical-align: top; margin-top: 6px; }
+.asma-notes { margin-top: 12px; padding: 10px 16px; border-radius: var(--radius); background: var(--surface-2); font-size: calc(.92rem * var(--scale)); line-height: 1.8; }
+.asma-notes h3 { margin: 0 0 6px; font-size: .9rem; color: var(--muted); }
+.asma-notes ol { list-style: none; margin: 0; padding: 0; }
+.asma-notes li { padding: 4px 6px; border-radius: 8px; transition: background .4s; scroll-margin-top: calc(80px + var(--sat)); }
+.asma-notes li.flash { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.asma-notes .fn-num { color: var(--primary); font-weight: 700; }
+.sheet .tf-ayat { font-size: calc(1.25rem * var(--scale)); line-height: 2; max-height: 30vh; overflow-y: auto; }
+.asma-hero + .riwayah-note { margin-top: 10px; }

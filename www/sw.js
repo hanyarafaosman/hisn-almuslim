@@ -1,8 +1,8 @@
 /* Service worker: offline-first app shell for حصن المسلم */
-const VERSION = "hisn-v1.8.2";
+const VERSION = "hisn-v1.9.2";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./hadith/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
+  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
   "./i18n/ar.json", "./i18n/en.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png", "./icons/favicon.svg"
 ];
@@ -27,9 +27,12 @@ const MUSHAF_FONTS = "hisn-mushaf-fonts-v1";
 // Hadith books (fawazahmed0/hadith-api at a pinned commit, so the files never change). Every section the
 // reader opens is kept, and whole books can be saved from the Offline content page.
 const HADITH_CACHE = "hisn-hadith-v1";
+// Tafsir books from spa5k/tafsir_api (pinned to a release commit, so the files never change): every surah or verse
+// the reader opens is kept, and whole books can be saved from the Offline content page. QuranEnc books use TR_CACHE.
+const TAFSIR_CACHE = "hisn-tafsir-v1";
 // Backup copies of outside files (MIRROR in js/mirror.js). On GitHub Pages they share the app's origin.
 const MIRROR = new URL("https://hanyarafaosman.github.io/hisn-almuslim-assets/");
-const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS, HADITH_CACHE];
+const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS, HADITH_CACHE, TAFSIR_CACHE];
 
 self.addEventListener("install", e => {
   // cache: "reload" bypasses the browser HTTP cache (GitHub Pages sends max-age=600), so a new version never stores stale files.
@@ -62,6 +65,7 @@ self.addEventListener("fetch", e => {
   }
   if (url.hostname === "static.qurancdn.com" && url.pathname.startsWith("/fonts/quran/")) { e.respondWith(cacheFirst(req, MUSHAF_FONTS)); return; }
   if (url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/gh/fawazahmed0/hadith-api@")) { e.respondWith(cacheFirst(req, HADITH_CACHE)); return; }
+  if (url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/gh/spa5k/tafsir_api@")) { e.respondWith(cacheFirst(req, TAFSIR_CACHE)); return; }
   if (url.hostname === "quranenc.com" && url.pathname.startsWith("/api/v1/translation")) { e.respondWith(staleWhileRevalidate(req, TR_CACHE)); return; }
   // Recorded audio the user saved: answer from the device, with byte ranges so seeking works.
   // Everything else (and live radio streams) goes straight to the network.

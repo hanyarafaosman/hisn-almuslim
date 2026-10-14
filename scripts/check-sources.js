@@ -2,6 +2,7 @@
 // Run daily by .github/workflows/sources.yml (a failed run emails the repository owner). Usage: npm run check:sources
 //   errors   (exit 1): adhkar audio (hisnmuslim.com), Mushaf page fonts (static.qurancdn.com),
 //                      recitations API (mp3quran.net), translations API (quranenc.com), hadith books (jsDelivr),
+//                      tafsir books (quranenc.com, jsDelivr),
 //                      backup copy of the audio and page fonts (hisn-almuslim-assets, see www/js/mirror.js)
 //   warnings (exit 0): live radio stations, hadith radio stations, changed audio sizes
 const fs = require("fs"), path = require("path");
@@ -153,6 +154,26 @@ async function hadithBooks() {
   } catch (e) { error(G, e.message); }
 }
 
+async function tafsirBooks() {
+  const G = "Tafsir books (quranenc.com, cdn.jsdelivr.net)";
+  const { sources, books } = readJson("tafsir/index.json");
+  try {
+    // Al-Fatihah from every book (whole surah), plus one verse file from each pinned spa5k book: the sheet reads those.
+    for (const b of books) {
+      if (b.src === "qe") {
+        const rows = (await getJSON(`${sources.qe.api}/translation/sura/${b.key}/1`)).result || [];
+        if (rows.length !== 7 || !rows.every(r => String(r.translation || "").trim())) throw new Error(`${b.id}: Al-Fatihah did not come back as 7 explained verses`);
+      } else {
+        const rows = await getJSON(`${sources.spa5k.cdn}/${b.key}/1.json`);
+        if (!Array.isArray(rows) || !rows.some(r => String(r.text || "").trim())) throw new Error(`${b.id}: Al-Fatihah has no text`);
+        const one = await getJSON(`${sources.spa5k.cdn}/${b.key}/2/255.json`);
+        if (!String(one.text || "").trim()) throw new Error(`${b.id}: verse file 2/255 has no text`);
+      }
+    }
+    pass(G, `${books.length} books answer`);
+  } catch (e) { error(G, e.message); }
+}
+
 async function radioList(G, list) {
   const bad = [];
   for (const r of list) { let res = await probe(r); if (!res.ok) res = await probe(r); if (!res.ok) bad.push(`${r.name} (${res.info})`); }
@@ -162,7 +183,7 @@ async function radioList(G, list) {
 const { live, sunnah = [] } = readJson("data/radios.json");
 
 (async () => {
-  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), recitations(), translations(), hadithBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah)]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah)]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);

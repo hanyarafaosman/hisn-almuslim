@@ -1,6 +1,6 @@
 {
   "name": "hisn-almuslim",
-  "version": "1.8.2",
+  "version": "1.9.2",
   "private": true,
   "description": "حصن المسلم - تطبيق أذكار يعمل على جميع الأنظمة (PWA + Capacitor)",
   "scripts": {
@@ -27,7 +27,9 @@
     "measure:audio": "node scripts/measure-audio.js",
     "hisn:fix": "node scripts/hisn-corrections.js",
     "mushaf:pages": "node scripts/build-mushaf-pages.js",
-    "hadith": "node scripts/build-hadith-index.js"
+    "hadith": "node scripts/build-hadith-index.js",
+    "tafsir": "node scripts/build-tafsir-index.js",
+    "asma": "node scripts/build-asma.js"
   },
   "license": "MIT"
 }

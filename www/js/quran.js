@@ -3,8 +3,8 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.8.2";
-import { mirrorOf } from "./mirror.js?v=1.8.2";
+import * as off from "./offline.js?v=1.9.2";
+import { mirrorOf } from "./mirror.js?v=1.9.2";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -223,7 +223,7 @@ export function setupQuran(ctx) {
     view.innerHTML = `
       <div class="chips" role="tablist" aria-label="${esc(t("quran.riwayah"))}">${INDEX.riwayat.map(r => `<button class="chip ${r.id === meta.id ? "on" : ""}" data-r="${r.id}" role="tab" aria-selected="${r.id === meta.id}">${esc(rShort(r))}</button>`).join("")}</div>
       <p class="riwayah-note">${esc(t("quran.riwayahOf", { name: rName(meta) }))}${sep()}${esc(t("count.ayat", { n: meta.ayat }))} <span id="cached"></span></p>
-      <div class="resume-row"><a class="resume" href="#/mushaf/${state.lastPage?.ed || state.mushafEd || 1421}/${state.lastPage?.p || 1}">${icon("quran")}<div><b>${esc(t("mushaf.pages"))}</b><span>${esc(t("mushaf.ed" + (state.lastPage?.ed || state.mushafEd || 1421)))}${sep()}${esc(t("quran.page", { n: state.lastPage?.p || 1 }))}</span></div></a>${cont ? pos(cont, t("quran.continue"), "book") : ""}${bm ? pos(bm, t("quran.bookmark"), "bookmark") : ""}</div>
+      <div class="resume-row"><a class="resume" href="#/mushaf/${state.lastPage?.ed || state.mushafEd || 1421}/${state.lastPage?.p || 1}">${icon("quran")}<div><b>${esc(t("mushaf.pages"))}</b><span>${esc(t("mushaf.ed" + (state.lastPage?.ed || state.mushafEd || 1421)))}${sep()}${esc(t("quran.page", { n: state.lastPage?.p || 1 }))}</span></div></a><a class="resume" href="#/tafsir">${icon("tafsir")}<div><b>${esc(t("tafsir.books"))}</b><span>${esc(t("tafsir.homeHint"))}</span></div></a>${cont ? pos(cont, t("quran.continue"), "book") : ""}${bm ? pos(bm, t("quran.bookmark"), "bookmark") : ""}</div>
       <div class="searchbox">${icon("search")}<input id="qq" type="search" placeholder="${esc(t("quran.searchPlaceholder"))}" value="${esc(homeQuery)}" autocomplete="off" enterkeyhint="search"></div>
       <div class="tabs-row"><div class="segmented" id="qtabs"><button data-t="surahs" class="${state.tab === "surahs" ? "on" : ""}">${esc(t("quran.surahs"))}</button><button data-t="juz" class="${state.tab === "juz" ? "on" : ""}">${esc(t("quran.juzs"))}</button></div></div>
       <div id="qlist"></div>`;
@@ -359,6 +359,7 @@ export function setupQuran(ctx) {
           toast(t(on ? "quran.bmSaved" : "quran.bmRemoved")); closeTools(); return;
         }
         if (act.dataset.act === "copy") { copyText(`${plain(n)}\n${ref(n)}`); closeTools(); return; }
+        if (act.dataset.act === "tafsir") { closeTools(); ctx.tafsir().openAyah({ s, a: n, rid: meta.id }); return; }
         // The website has a page for every surah in Hafs; other riwayat link into the app.
         if (act.dataset.act === "share") { share(t("quran.surah", { name }), `${plain(n)}\n${ref(n)}\n${meta.id === "hafs" ? `${SITE}surah/${s}/#a-${n}` : `${SITE}#/quran/${meta.id}/${s}?a=${n}`}`); closeTools(); return; }
       }
@@ -370,6 +371,7 @@ export function setupQuran(ctx) {
       const n = Number(aya.dataset.a); const isBm = state.bookmark && state.bookmark.r === meta.id && state.bookmark.s === s && state.bookmark.a === n;
       aya.insertAdjacentHTML("afterend", `<div class="aya-tools" dir="${document.documentElement.dir}" data-a="${n}"><span class="aya-ref">${esc(t("quran.ayaRef", { aya: n, page: Number(aya.dataset.p) }))}</span><span class="spacer"></span>
         <button class="icon-btn ${isBm ? "active" : ""}" data-act="bm" aria-label="${esc(t(isBm ? "quran.bmRemove" : "quran.bmAdd"))}">${icon("bookmark")}</button>
+        ${meta.ayat === KUFI_AYAT ? `<button class="icon-btn" data-act="tafsir" aria-label="${esc(t("tafsir.title"))}">${icon("tafsir")}</button>` : ""}
         <button class="icon-btn" data-act="copy" aria-label="${esc(t("common.copy"))}">${icon("copy")}</button>
         <button class="icon-btn" data-act="share" aria-label="${esc(t("common.share"))}">${icon("share")}</button></div>`);
     });
@@ -591,6 +593,7 @@ export function setupQuran(ctx) {
     const trUrls = trKey ? Array.from({ length: 114 }, (_, i) => trUrl(trKey, i + 1)) : [];
     const recs = LS.get("offline:recs", {});
     const hadithRows = (row, part) => ctx.hadith().offlineRows(fmt, part, row).catch(() => `<div class="about">${esc(t("common.loadFailed"))}</div>`);
+    const tafsirRows = (row, part) => ctx.tafsir().offlineRows(fmt, part, row).catch(() => `<div class="about">${esc(t("common.loadFailed"))}</div>`);
     const [storage, riwSaved, trSaved, itemsSaved, chSaved, recRows] = await Promise.all([
       off.storageInfo(),
       Promise.all(INDEX.riwayat.map(async r => (await off.savedSet(off.STORES.QURAN, [r.data, r.font])).size === 2)),
@@ -603,7 +606,7 @@ export function setupQuran(ctx) {
     const btn = (act, label, ic, cls = "ghost") => `<button class="btn ${cls} small" data-act="${act}">${icon(ic)} ${esc(t(label))}</button>`;
     const row = (title, subText, act, saved, extra = "") => `<div class="setting"><div class="lbl">${esc(title)}<small>${subText}</small></div>${extra}${saved ? btn("del:" + act, "offline.delete", "trash", "danger") : ""}${saved !== "full" ? btn("save:" + act, "offline.save", "download", "") : ""}</div>`;
     const part = (done, total) => done === 0 ? false : done === total ? "full" : "part";
-    const hadithHtml = await hadithRows(row, part); if (stale(hash)) return;
+    const [hadithHtml, tafsirHtml] = await Promise.all([hadithRows(row, part), tafsirRows(row, part)]); if (stale(hash)) return;
     view.innerHTML = `
       <p class="riwayah-note">${esc(t("offline.intro"))}</p>
       <div class="card"><div class="about">${esc(t("offline.storage", { used: fmt(storage.usage), quota: fmt(storage.quota) }))}<br><small>${esc(t(storage.persisted ? "offline.persisted" : "offline.notPersisted"))}</small></div><div id="job"></div></div>
@@ -614,6 +617,8 @@ export function setupQuran(ctx) {
       <div class="card">${Object.keys(EDITIONS).map(e2 => row(t("mushaf.ed" + e2), esc(t("offline.progress", { done: pagesSaved[e2].size, total: 604 })) + `${sep()}${esc(t("offline.size", { size: fmt(PAGES.fonts[EDITIONS[e2].v].bytes) }))}`, "pages:" + e2, part(pagesSaved[e2].size, 604))).join("")}</div>
       <h2 class="section-title">${esc(t("offline.hadith"))}</h2>
       <div class="card">${hadithHtml}</div>
+      <h2 class="section-title">${esc(t("offline.tafsir"))}</h2>
+      <div class="card">${tafsirHtml}</div>
       <h2 class="section-title">${esc(t("offline.translation"))}</h2>
       <div class="card">${trKey
         ? row(tm ? trLabel(tm) : trKey, esc(t("offline.progress", { done: trSaved.size, total: 114 })), "tr", part(trSaved.size, 114))
@@ -636,6 +641,7 @@ export function setupQuran(ctx) {
       tr: [off.STORES.TR, trUrls], items: [off.STORES.AUDIO, audio.items], chapters: [off.STORES.AUDIO, audio.chapters],
       pages: id => [off.STORES.PAGES, pageFontUrls(id)],
       hadith: id => ctx.hadith().offlineTarget(id) || [],
+      tafsir: id => ctx.tafsir().offlineTarget(id) || [],
     };
     view.querySelectorAll("[data-act]").forEach(b => b.onclick = async () => {
       // data-act is "<save|del>:<kind>[:<id>]"; the id may itself contain ":" (reciter server URLs).
@@ -703,5 +709,7 @@ export function setupQuran(ctx) {
     async describe(p) { await loadIndex(); const m = riw(p.r); return t("quran.position", { surah: surahName(p.s, m), aya: p.a, riwayah: rShort(m) }); },
     listen: renderListen, radio: renderRadio, offline: renderOffline, mushaf: (ed, n) => renderPages(ed, n), player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
+    // Quran text of a riwayah (with its font) and surah names, for the tafsir pages.
+    textOf: id => loadRiwayah(id), surahName,
   };
 }
