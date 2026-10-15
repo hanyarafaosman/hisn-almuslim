@@ -225,9 +225,9 @@ html[dir="ltr"] .switch.on::after { transform: translateX(20px); }
 }
 
 /* ===== المصحف والاستماع والإذاعات ===== */
-:root { --paper: #fffdf7; --gold: #b8923a; }
-:root[data-theme="dark"] { --paper: #101b18; --gold: #d6b25e; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #101b18; --gold: #d6b25e; } }
+:root { --paper: #fffdf7; --gold: #b8923a; --jalala: #c62828; }
+:root[data-theme="dark"] { --paper: #101b18; --gold: #d6b25e; --jalala: #ff7b72; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --paper: #101b18; --gold: #d6b25e; --jalala: #ff7b72; } }
 
 .spinner { width: 34px; height: 34px; margin: 0 auto 12px; border-radius: 50%; border: 3px solid var(--border); border-top-color: var(--primary); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -458,6 +458,7 @@ button.pill { cursor: pointer; gap: 6px; }
 
 .mpage.tappable.ready .mline:not(.mhead):not(.mbasm) span { cursor: pointer; }
 .mpage .mline span { border-radius: 1.2cqw; transition: background .25s; }
+.mpage .mline span.jl { color: var(--jalala); }
 .mpage .mline span.bm { background: color-mix(in srgb, var(--accent) 16%, transparent); }
 .mpage .mline span.play, .mpage .mline.mbasm.play { background: color-mix(in srgb, var(--primary) 17%, transparent); }
 .mpage .mline.mbasm { border-radius: 1.2cqw; transition: background .25s; }

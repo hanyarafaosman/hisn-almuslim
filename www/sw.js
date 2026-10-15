@@ -1,5 +1,5 @@
 /* Service worker: offline-first app shell for حصن المسلم */
-const VERSION = "hisn-v1.12.0";
+const VERSION = "hisn-v1.13.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
@@ -22,7 +22,7 @@ const OFFLINE_AUDIO = "hisn-offline-audio-v1";
 const QURAN_CACHE = "hisn-quran-v1";
 // Translations of meanings from QuranEnc.com, kept for offline reading of surahs already opened.
 const TR_CACHE = "hisn-tr-v1";
-// Page fonts of the printed Madinah Mushaf (KFGQPC QCF, one per page), from the Quran.com CDN.
+// Page fonts of the printed Madinah Mushaf (KFGQPC QCF, one per page), from the Quran.com and Quran Foundation CDNs.
 const MUSHAF_FONTS = "hisn-mushaf-fonts-v1";
 // Hadith books (fawazahmed0/hadith-api at a pinned commit, so the files never change). Every section the
 // reader opens is kept, and whole books can be saved from the Offline content page.
@@ -63,7 +63,8 @@ self.addEventListener("fetch", e => {
     e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : uiFont ? FONT_CACHE : VERSION));
     return;
   }
-  if (url.hostname === "static.qurancdn.com" && url.pathname.startsWith("/fonts/quran/")) { e.respondWith(cacheFirst(req, MUSHAF_FONTS)); return; }
+  // Page fonts of the prints: QCF v1/v2 from the Quran.com CDN, the colour Tajweed print (QCF v4) from the Quran Foundation CDN.
+  if ((url.hostname === "static.qurancdn.com" || url.hostname === "verses.quran.foundation") && url.pathname.startsWith("/fonts/quran/")) { e.respondWith(cacheFirst(req, MUSHAF_FONTS)); return; }
   if (url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/gh/fawazahmed0/hadith-api@")) { e.respondWith(cacheFirst(req, HADITH_CACHE)); return; }
   // Tafsir files from jsDelivr, or from GitHub when jsDelivr refuses one (see js/mirror.js).
   if ((url.hostname === "cdn.jsdelivr.net" && url.pathname.startsWith("/gh/spa5k/tafsir_api@"))

@@ -83,6 +83,17 @@ async function mushafPageFonts() {
   }
 }
 
+// The colour-coded Tajweed print (QCF v4): every page font must load, at the size mushaf/tajweed.json was built with.
+async function tajweedPageFonts() {
+  const G = "Tajweed page fonts (verses.quran.foundation)";
+  const f = readJson("mushaf/tajweed.json").fonts.v4;
+  const urls = Array.from({ length: 604 }, (_, i) => f.url.replace("{n}", i + 1));
+  const { bytes, bad } = await headAll(urls, /font|woff|octet-stream/i);
+  if (bad.length) error(G, `${bad.length} of 604 pages unavailable: ${listBad(bad)}`);
+  else if (bytes !== f.bytes) error(G, `fonts changed at the source (${bytes} bytes, built with ${f.bytes}); check the pages and rebuild with npm run mushaf:colors`);
+  else pass(G, `604 pages, ${mb(bytes)}, unchanged`);
+}
+
 // Every file must be in the backup, with the size its source has today and the size listed in manifest.json.
 async function backup() {
   const G = "Backup copy (hisn-almuslim-assets)";
@@ -190,7 +201,7 @@ async function radioList(G, list) {
 const { live, sunnah = [] } = readJson("data/radios.json");
 
 (async () => {
-  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah)]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah)]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);
