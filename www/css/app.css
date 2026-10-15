@@ -463,6 +463,9 @@ button.pill { cursor: pointer; gap: 6px; }
 .ayabar .ref span { color: var(--primary); }
 .ayabar .icon-btn { width: 42px; height: 42px; flex: none; color: var(--muted); }
 .ayabar .icon-btn.active { color: var(--accent); }
+.list .row.split .mark-play { color: var(--primary); }
+.list .sub .timed { display: inline-flex; align-items: center; gap: 3px; margin-inline-start: 8px; color: var(--primary); font-weight: 700; }
+.list .sub .timed svg { width: 12px; height: 12px; }
 .topbar .icon-btn.active { color: var(--accent); }
 body.has-player .ayabar { bottom: calc(var(--nav-h) + var(--sab) + 72px); }
 @media (min-width: 900px) { .ayabar { bottom: 16px; } body.has-player .ayabar { bottom: 96px; } }

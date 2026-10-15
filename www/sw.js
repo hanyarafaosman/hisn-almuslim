@@ -1,5 +1,5 @@
 /* Service worker: offline-first app shell for حصن المسلم */
-const VERSION = "hisn-v1.10.0";
+const VERSION = "hisn-v1.11.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
