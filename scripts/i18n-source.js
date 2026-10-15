@@ -459,6 +459,9 @@ const S = {
   "player.prev": ["السورة السابقة", "Previous surah"],
   "player.next": ["السورة التالية", "Next surah"],
   "player.close": ["إغلاق المشغّل", "Close the player"],
+  "player.aya": ["آية {n}", "Verse {n}"],
+  "player.follow": ["متابعة الآية المتلوّة", "Follow the recited verse"],
+  "player.followOff": ["توقفت متابعة التلاوة. للعودة إلى الآية المتلوّة اضغط زر المتابعة في المشغّل.", "Stopped following the recitation. To go back to the recited verse, tap the follow button in the player."],
 };
 
 const ar = {}, en = {};

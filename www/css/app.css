@@ -283,6 +283,7 @@ html[dir="rtl"] .flip, html[dir="ltr"] .dir { transform: scaleX(-1); }
 .aya:focus-visible { box-shadow: 0 0 0 2px var(--primary); }
 .aya.sel { background: var(--surface-2); }
 .aya.bm { border-inline-start: 4px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
+.aya.play, .basmala.play { background: color-mix(in srgb, var(--primary) 9%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primary) 45%, transparent); border-radius: 10px; }
 .aya.flash { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .aya-text { font-family: var(--qfont), var(--font-text); font-size: calc(1.75rem * var(--scale)); line-height: 2.25; text-align: justify; text-align-last: start; display: block; user-select: text; }
 .aya-tools { display: flex; align-items: center; gap: 2px; margin: 0 8px 6px; padding: 4px 12px 4px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); animation: up .15s ease-out; }
@@ -315,7 +316,12 @@ html[dir="rtl"] .flip, html[dir="ltr"] .dir { transform: scaleX(-1); }
 .player .pl-main { background: var(--primary); color: var(--on-primary); width: 44px; height: 44px; position: relative; }
 .player.loading .pl-main::after { content: ""; position: absolute; inset: -4px; border-radius: 50%; border: 3px solid transparent; border-top-color: var(--accent); animation: spin .9s linear infinite; }
 .player .pl-info { flex: 1; min-width: 0; padding-inline: 8px; }
-.player .pl-title { font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player .pl-title { font-weight: 700; white-space: nowrap; display: flex; align-items: baseline; gap: 6px; }
+.player .pl-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.player .pl-aya { flex: none; font-size: .8rem; color: var(--primary); }
+.player .pl-follow { color: var(--muted); }
+.player .pl-follow.active { color: var(--primary); background: color-mix(in srgb, var(--primary) 14%, transparent); }
+@media (max-width: 420px) { .player .icon-btn:not(.pl-main) { width: 38px; } .player .pl-info { padding-inline: 6px; } } /* room for the surah and its verse */
 .player .pl-sub { font-size: .78rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player .icon-btn:disabled { opacity: .35; }
 .player .icon-btn svg { width: 22px; height: 22px; }
@@ -454,6 +460,8 @@ button.pill { cursor: pointer; gap: 6px; }
 .mpage .mline span { border-radius: 1.2cqw; transition: background .25s; }
 .mpage .mline span.jl { color: var(--jalala); }
 .mpage .mline span.bm { background: color-mix(in srgb, var(--accent) 16%, transparent); }
+.mpage .mline span.play, .mpage .mline.mbasm.play { background: color-mix(in srgb, var(--primary) 17%, transparent); }
+.mpage .mline.mbasm { border-radius: 1.2cqw; transition: background .25s; }
 .mpage .mline span.sel { background: color-mix(in srgb, var(--primary) 20%, transparent); }
 .mpage .mline span.flash { background: color-mix(in srgb, var(--accent) 38%, transparent); }
 .mslider { display: flex; align-items: center; gap: 10px; margin: 12px 4px; }
