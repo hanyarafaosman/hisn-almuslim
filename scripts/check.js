@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "tafsir/index.json", "asma/book.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "tafsir/index.json", "asma/book.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -40,6 +40,26 @@ for (const r of qi.riwayat) {
   if (r.surahs.some((s, i) => s[1] !== d.s[i].length)) fail(`${r.id}: surah lengths differ from index`);
   if (d.e && d.e.some((s, i) => s.length !== d.s[i].length)) fail(`${r.id}: emlaey length mismatch`);
   if (!r.basmala) fail(`${r.id}: missing basmala`);
+}
+
+// Printed pages (Hafs): the verse map mushaf/ayat.json must cover exactly the glyphs of mushaf/madinah.json,
+// every verse once and in order, and give 240 quarters of a hizb in order. Both files are cached for good
+// (QURAN_CACHE in sw.js), so a rebuild of either must also rename the files or bump QURAN_CACHE.
+const pagesJson = readJson("mushaf/madinah.json"), ayatJson = readJson("mushaf/ayat.json"); const hafsIdx = qi.riwayat.find(r => r.id === "hafs");
+{
+  let prev = [1, 0], verses = 0;
+  pagesJson.pages.forEach((page, i) => {
+    const glyphs = page.filter(x => x.w1).reduce((n, x) => n + x.w1.split(" ").length, 0);
+    const runs = ayatJson.pages[i] || [];
+    if (runs.reduce((n, r) => n + r[2], 0) !== glyphs) fail(`mushaf/ayat.json page ${i + 1}: glyph count differs from madinah.json`);
+    runs.forEach(([s, a]) => { const next = a === prev[1] + 1 && s === prev[0] || (a === 1 && s === prev[0] + 1); if (!next) fail(`mushaf/ayat.json page ${i + 1}: ${s}:${a} out of order`); prev = [s, a]; verses++; });
+  });
+  if (ayatJson.pages.length !== 604 || verses !== hafsIdx.ayat) fail(`mushaf/ayat.json: ${ayatJson.pages.length} pages / ${verses} verses`);
+  if (ayatJson.rub.length !== 240 || ayatJson.rub.some(([s, a], i) => i && !(s > ayatJson.rub[i - 1][0] || (s === ayatJson.rub[i - 1][0] && a > ayatJson.rub[i - 1][1])))) fail("mushaf/ayat.json: quarters must be 240 in order");
+  // Cross-check with the King Fahd Complex text: every quarter starts at a verse marked ۞, except at the start of a surah.
+  const hafsText = readJson(hafsIdx.data); const rubMark = (s, a) => hafsText.s[s - 1][a - 1][0].includes("۞");
+  const marked = hafsText.s.flatMap((ay, si) => ay.map((x, ai) => [si + 1, ai + 1]).filter(([s, a]) => rubMark(s, a)));
+  if (ayatJson.rub.some(([s, a]) => a !== 1 && !rubMark(s, a)) || marked.some(([s, a]) => !ayatJson.rub.some(r => r[0] === s && r[1] === a))) fail("mushaf/ayat.json: quarters differ from the ۞ marks in quran/hafs.json");
 }
 
 // Interface fonts are shipped with the app: css/fonts.css, www/fonts/ and the FONTS precache list in sw.js must agree
@@ -114,7 +134,7 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }

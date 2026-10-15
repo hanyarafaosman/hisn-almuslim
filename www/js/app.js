@@ -1,12 +1,12 @@
 /* ===== حصن المسلم — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.9.2";
-import { setupHadith } from "./hadith.js?v=1.9.2";
-import { setupTafsir } from "./tafsir.js?v=1.9.2";
-import { setupAsma } from "./asma.js?v=1.9.2";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.9.2";
-import { mirrorOf } from "./mirror.js?v=1.9.2";
+import { setupQuran } from "./quran.js?v=1.10.0";
+import { setupHadith } from "./hadith.js?v=1.10.0";
+import { setupTafsir } from "./tafsir.js?v=1.10.0";
+import { setupAsma } from "./asma.js?v=1.10.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.10.0";
+import { mirrorOf } from "./mirror.js?v=1.10.0";
 
-const VERSION = "1.9.2";
+const VERSION = "1.10.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -205,11 +205,15 @@ function pickLanguage() {
 }
 
 // ---------- router ----------
-function setHeader(title, { back = false, actions = "" } = {}) {
+function setHeader(title, { back = false, actions = "", onTitle = null } = {}) {
   titleEl.textContent = title; backBtn.hidden = !back; actionsEl.innerHTML = actions;
+  // A title that opens something (the Quran index on a reading page) acts as a button.
+  titleEl.onclick = onTitle; titleEl.classList.toggle("tappable", !!onTitle);
+  if (onTitle) { titleEl.setAttribute("role", "button"); titleEl.tabIndex = 0; } else { titleEl.removeAttribute("role"); titleEl.removeAttribute("tabindex"); }
   document.title = PAGE_ROUTE && ownRoute() && getLang() === PAGE_LANG ? PAGE_TITLE
     : title === t("app.name") ? title : `${title} — ${t("app.name")}`;
 }
+titleEl.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && titleEl.onclick) { e.preventDefault(); titleEl.onclick(); } });
 backBtn.addEventListener("click", () => { if (history.length > 1) history.back(); else location.hash = "#/"; });
 // Bottom bar: Home, Quran, Adhkar, Hadith, More. Pages reached from "More" highlight that tab.
 const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more" };
@@ -230,7 +234,7 @@ function route() {
     case "listen": return Q.listen(parts.slice(1), params);
     case "radio": return Q.radio();
     case "offline": return Q.offline();
-    case "mushaf": return Q.mushaf(parts[1], Number(parts[2]));
+    case "mushaf": return Q.mushaf(parts[1], Number(parts[2]), params);
     case "search": return renderHub(params.get("q") || "");
     case "adhkar": return renderHome(params.get("q") || "");
     case "hadith": return H.render(parts.slice(1), params);
@@ -288,18 +292,18 @@ function renderHub(q = "") {
     : h >= 15 && h < 21 ? { id: 27, period: "evening", label: t("home.evening"), ic: "moon" }
     : { id: 28, label: t("home.sleep"), ic: "bed" };
   const p = catProgress(catById.get(now.id), now.period);
-  const last = LS.get("quran", {}).last;
+  const qs = LS.get("quran", {}); const reading = qs.last || qs.lastPage;
   view.innerHTML = `
     <section class="hero">
       <h2>${esc(greet)}</h2>
       <p class="verse" lang="ar" dir="rtl">«فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ»</p>
       <p class="verse-ref">${T("home.verseRef")}</p>
       <a class="now" href="#/cat/${now.id}">${icon(now.ic)}<div><small>${T("hub.now")}</small><b>${esc(now.label)}</b><div class="progress light"><div style="width:${p.pct}%"></div></div></div><span class="pct">${T("common.percent", { n: p.pct })}</span></a>
-      ${last ? `<a class="now" href="#/quran/${esc(last.r)}/${last.s}?a=${last.a}">${icon("quran")}<div><small>${T("quran.continue")}</small><b id="hub-last">…</b></div>${icon("back", "chev")}</a>` : ""}
+      ${reading ? `<a class="now" id="hub-quran" href="#/quran">${icon("quran")}<div><small>${T("quran.continue")}</small><b id="hub-last">…</b></div>${icon("back", "chev")}</a>` : ""}
     </section>
     <div class="searchbox">${icon("search")}<input id="q" type="search" placeholder="${T("hub.searchPlaceholder")}" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></div>
     <div id="results"></div>`;
-  if (last) Q.describe(last).then(x => { const b = document.getElementById("hub-last"); if (b) b.textContent = x; });
+  if (reading) Q.resume().then(r => { const a = document.getElementById("hub-quran"); if (!a || !r) return; a.href = r.href; $("#hub-last").textContent = r.text; }).catch(() => {});
   const input = $("#q"), results = $("#results");
   const tiles = () => {
     results.innerHTML = `<h2 class="section-title">${T("hub.sections")}</h2><div class="hub-grid">${HUB_TILES.map(x =>
