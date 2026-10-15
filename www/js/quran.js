@@ -3,8 +3,8 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.10.0";
-import { mirrorOf } from "./mirror.js?v=1.10.0";
+import * as off from "./offline.js?v=1.11.0";
+import { mirrorOf } from "./mirror.js?v=1.11.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -195,10 +195,25 @@ export function setupQuran(ctx) {
       }
     }
     const failMsg = () => t(q.type === "radio" ? "radio.playFailed" : "listen.playFailed");
+    let tok = 0;
     function start() {
       document.getElementById("audio")?.pause();
-      el.classList.add("loading"); a.src = url();
-      a.play().catch(() => { el.classList.remove("loading"); toast(failMsg()); render(); });
+      const mine = ++tok; const at = q.at; q.at = null;
+      el.classList.add("loading"); a.muted = false;
+      if (at) {
+        // Start at a verse. Playback begins right away (inside the tap, as phones require) but silent;
+        // once the verse's time is known and the file can seek, it jumps there and the sound comes on.
+        a.muted = true;
+        const ready = new Promise(r => a.addEventListener("loadedmetadata", r, { once: true }));
+        const waitMax = new Promise(r => setTimeout(() => r(null), 8000));
+        Promise.race([Promise.all([at, ready]).then(([sec]) => sec), waitMax]).catch(() => null).then(sec => {
+          if (mine !== tok) return;
+          if (a.readyState > 0) a.currentTime = Number.isFinite(sec) && sec > 0 ? sec : 0; // no verse time: from the beginning
+          a.muted = false;
+        });
+      }
+      a.src = url();
+      a.play().catch(() => { el.classList.remove("loading"); a.muted = false; toast(failMsg()); render(); });
       render();
     }
     function step(d) { if (q?.type !== "surahs") return; const i = q.idx + d; if (i < 0 || i >= q.list.length) return; q.idx = i; start(); }
@@ -217,33 +232,71 @@ export function setupQuran(ctx) {
       try { navigator.mediaSession.setActionHandler("previoustrack", () => step(-1)); navigator.mediaSession.setActionHandler("nexttrack", () => step(1)); } catch { /* unsupported */ }
     }
     return {
-      surahs({ server, list, start: s, sub }) { const idx = list.indexOf(s); if (idx < 0) { toast(t("listen.surahUnavailable")); return; } q = { type: "surahs", server, list, idx, sub }; start(); },
+      // at: seconds (or a promise of seconds, or null) where the first surah starts; the next surahs start at the beginning.
+      surahs({ server, list, start: s, sub, at = null }) { const idx = list.indexOf(s); if (idx < 0) { toast(t("listen.surahUnavailable")); return; } q = { type: "surahs", server, list, idx, sub, at }; start(); },
       radio({ id, url: u, name, sub }) { if (q?.type === "radio" && q.id === id && !a.paused) { a.pause(); return; } q = { type: "radio", id, url: u, name, sub }; start(); },
       pause() { a.pause(); },
       key, refresh: render,
     };
   })();
 
+  // ---------- verse timings (mp3quran.net ayat_timing): where each verse starts in a surah recording ----------
+  // Some recordings have them. They are made for the files the player plays: the read's folder_url is the moshaf's server.
+  let timingReads = null, timedKnown = null; // timedKnown: the same map once loaded, to decide inside a tap
+  const timedServers = () => (timingReads ||= getJSON(`${API}/ayat_timing/reads`).then(rs => (timedKnown = new Map(rs.map(r => [r.folder_url, r.id])))).catch(e => { timingReads = null; throw e; }));
+  // Seconds from the start of the surah's recording to verse a, or null when this recording has no timings.
+  // Only the start times are kept (in storage), so a verse can be found again without a connection.
+  async function ayahStart(meta, server, s, a) {
+    const read = (await timedServers()).get(server); if (!read) return null;
+    const k = `timing:${read}:${s}`; let starts = LS.get(k, null);
+    if (!starts) {
+      const rows = await getJSON(`${API}/ayat_timing?surah=${s}&read=${read}`, { keep: false });
+      starts = [0]; rows.forEach(x => { if (x.ayah >= 1) starts[x.ayah] = x.start_time; });
+      // A timing fits the text only when it counts the verses as this riwayah does.
+      if (starts.length - 1 !== meta.surahs[s - 1][1] || starts.some(v => typeof v !== "number")) return null;
+      LS.set(k, starts);
+    }
+    return typeof starts[a] === "number" ? starts[a] / 1000 : null;
+  }
+
   // ---------- reciter picker (for the reader) ----------
-  async function pickReciter(meta, then) {
+  async function pickReciter(meta, then, { fromAya = false } = {}) {
     const body = sheet(t("quran.pickReciterTitle", { name: rShort(meta) }), loading(t("quran.fetchingReciters")));
     try {
-      const lists = await Promise.all(meta.audio.map(id => getReciters(id).catch(() => [])));
+      const [lists, timed] = await Promise.all([Promise.all(meta.audio.map(id => getReciters(id).catch(() => []))), timedServers().catch(() => new Map())]);
       const items = [];
       lists.flat().forEach(r => r.moshaf.filter(m => meta.audio.includes(m.rewaya_id)).forEach(m => items.push({ name: r.name, moshaf: m.name, server: m.server, list: m.surah_list, total: m.surah_total })));
       const c = collator(); const seen = new Set();
-      const uniq = items.filter(x => !seen.has(x.server) && seen.add(x.server)).sort((x, y) => c.compare(x.name, y.name));
+      // Chosen to start at a verse: reciters whose recordings have verse timings come first.
+      const uniq = items.filter(x => !seen.has(x.server) && seen.add(x.server)).sort((x, y) => (fromAya ? timed.has(y.server) - timed.has(x.server) : 0) || c.compare(x.name, y.name));
       if (!uniq.length) { body.innerHTML = `<div class="empty">${esc(t("quran.noReciters"))}</div>`; return; }
-      body.innerHTML = `<div class="searchbox small">${icon("search")}<input type="search" placeholder="${esc(t("quran.searchReciter"))}" id="rc-q"></div><div class="list flat" id="rc-list"></div>`;
-      const draw = f => { const q = lower(f); $("#rc-list", body).innerHTML = uniq.filter(x => !q || lower(x.name).includes(q)).map(x => `<button class="row" data-i="${uniq.indexOf(x)}"><div class="lbl" dir="auto">${esc(x.name)}<span class="sub" dir="auto">${esc(x.moshaf)}${sep()}${esc(t("count.surahs", { n: x.total }))}</span></div>${state.reciters[meta.id]?.server === x.server ? icon("check") : ""}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
+      body.innerHTML = `${fromAya ? `<p class="riwayah-note">${icon("play")} ${esc(t("listen.pickTimed"))}</p>` : ""}<div class="searchbox small">${icon("search")}<input type="search" placeholder="${esc(t("quran.searchReciter"))}" id="rc-q"></div><div class="list flat" id="rc-list"></div>`;
+      const draw = f => { const q = lower(f); $("#rc-list", body).innerHTML = uniq.filter(x => !q || lower(x.name).includes(q)).map(x => `<button class="row" data-i="${uniq.indexOf(x)}"><div class="lbl" dir="auto">${esc(x.name)}<span class="sub" dir="auto">${esc(x.moshaf)}${sep()}${esc(t("count.surahs", { n: x.total }))}${timed.has(x.server) ? `<span class="timed">${icon("play")} ${esc(t("listen.timed"))}</span>` : ""}</span></div>${state.reciters[meta.id]?.server === x.server ? icon("check") : ""}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
       draw(""); $("#rc-q", body).oninput = e => draw(e.target.value.trim());
       $("#rc-list", body).onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; const x = uniq[Number(b.dataset.i)]; state.reciters[meta.id] = x; save(); closeSheet(); then?.(x); };
     } catch (err) { body.innerHTML = `<div class="empty">${esc(t("quran.recitersFailed"))}<br><small>${esc(err.message)}</small></div>`; }
   }
   const surahList = x => String(x.list || "").split(",").map(Number).filter(Boolean);
-  function playSurah(meta, s, then) {
-    const go = x => { player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}` }); then?.(x); };
-    const r = state.reciters[meta.id]; r ? go(r) : pickReciter(meta, go);
+  // Plays the surah of verse a with the chosen reciter, starting at that verse when the recording has verse timings
+  // (otherwise from the beginning of the surah, with a note saying so).
+  function playFrom(meta, s, a, then) {
+    const go = (x, fromStart = false) => {
+      const at = a > 1 && !fromStart ? ayahStart(meta, x.server, s, a).then(sec => { if (sec === null) toast(t("listen.noTiming")); return sec; }, () => { toast(t("listen.timingFailed")); return null; }) : null;
+      player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}`, at });
+      then?.(x);
+    };
+    const r = state.reciters[meta.id];
+    if (!r) return pickReciter(meta, go, { fromAya: a > 1 });
+    // The chosen recording cannot start at a verse: offer a reciter who can, or the surah from its beginning.
+    if (a > 1 && timedKnown && !timedKnown.has(r.server)) {
+      const body = sheet(t("listen.fromAya"), `<p class="about" dir="auto">${esc(t("listen.noTimingFor", { name: r.name }))}</p>
+        <button class="btn block" id="pt-pick">${icon("headphones")} ${esc(t("listen.pickTimedBtn"))}</button>
+        <button class="btn ghost block" id="pt-start">${icon("play")} ${esc(t("listen.fromStart"))}</button>`);
+      $("#pt-pick", body).onclick = () => pickReciter(meta, go, { fromAya: true });
+      $("#pt-start", body).onclick = () => { closeSheet(); go(r, true); };
+      return;
+    }
+    go(r);
   }
 
   // ---------- the printed Madinah pages of Hafs: page of every verse, quarters of a hizb (mushaf/ayat.json) ----------
@@ -381,7 +434,7 @@ export function setupQuran(ctx) {
     if (tab === "marks") {
       if (!state.marks.length) return `<div class="empty">${icon("bookmark")}<div>${esc(t("quran.noMarks"))}</div></div>`;
       const ok = state.marks.filter(m => INDEX.riwayat.some(r => r.id === m.r));
-      return `<div class="list">${ok.map(m => { const mm = riw(m.r); return `<div class="row split"><a class="row-main" href="${placeHref(mode, m.r, m.s, m.a, { A })}"><div class="num">${icon("bookmark-f")}</div><div class="lbl">${esc(t("quran.position", { surah: surahName(m.s, mm), aya: m.a, riwayah: rShort(mm) }))}${m.r === "hafs" && A ? `<span class="sub">${esc(t("quran.page", { n: A.pageOf(m.s, m.a) }))}</span>` : ""}</div></a><button class="icon-btn dl-btn" data-unmark="${esc(m.r)}:${m.s}:${m.a}" aria-label="${esc(t("quran.bmRemove"))}">${icon("trash")}</button></div>`; }).join("")}</div>`;
+      return `<div class="list">${ok.map(m => { const mm = riw(m.r); return `<div class="row split"><a class="row-main" href="${placeHref(mode, m.r, m.s, m.a, { A })}"><div class="num">${icon("bookmark-f")}</div><div class="lbl">${esc(t("quran.position", { surah: surahName(m.s, mm), aya: m.a, riwayah: rShort(mm) }))}${m.r === "hafs" && A ? `<span class="sub">${esc(t("quran.page", { n: A.pageOf(m.s, m.a) }))}</span>` : ""}</div></a><button class="icon-btn mark-play" data-play-mark="${esc(m.r)}:${m.s}:${m.a}" aria-label="${esc(t("quran.playMark"))}" title="${esc(t("quran.playMark"))}">${icon("play")}</button><button class="icon-btn dl-btn" data-unmark="${esc(m.r)}:${m.s}:${m.a}" aria-label="${esc(t("quran.bmRemove"))}">${icon("trash")}</button></div>`; }).join("")}</div>`;
     }
     return `<div class="list">${meta.surahs.map((_, i) => surahRow(meta, i, placeHref(mode, meta.id, i + 1, 1, { A, flash: false }), cur.surahs?.has(i + 1))).join("")}</div>`;
   }
@@ -416,6 +469,14 @@ export function setupQuran(ctx) {
     list.addEventListener("click", e => {
       const u = e.target.closest("[data-unmark]");
       if (u) { const [r, s, a] = u.dataset.unmark.split(":"); toggleMark(r, Number(s), Number(a)); draw(); return; }
+      // Listen from a bookmark: open its place and start the recitation at that verse.
+      const p = e.target.closest("[data-play-mark]");
+      if (p) {
+        const [r, s, a] = p.dataset.playMark.split(":"); const m = riw(r); const href = placeHref(o.mode, m.id, Number(s), Number(a), { A: o.A });
+        // Go there once playback has started (after the reciter is chosen, if none was yet).
+        playFrom(m, Number(s), Number(a), () => { if (href !== location.hash) location.hash = href; else closeSheet(); });
+        return;
+      }
       // A link to the place already shown changes nothing in the address: just close the sheet.
       const link = e.target.closest("a[href]"); if (link && o.inSheet && link.getAttribute("href") === location.hash) closeSheet();
     });
@@ -473,6 +534,7 @@ export function setupQuran(ctx) {
     try { ({ meta, data } = await loadRiwayah(rid)); } catch (e) { return failed(e, () => renderReader(rid, s, params)); }
     if (stale(hash)) return;
     if (meta.id !== rid) { location.replace(`#/quran/${meta.id}/${s}`); return; }
+    timedServers().catch(() => {}); // known before a verse's "listen" is tapped
     if (state.riwayah !== meta.id) { state.riwayah = meta.id; save(); }
     const ayat = data.s[s - 1]; const arName = meta.surahs[s - 1][0]; const name = surahName(s, meta);
     // The aya at the top of the screen (the saved reading place), for the index and the printed page.
@@ -509,7 +571,8 @@ export function setupQuran(ctx) {
       <p class="source-note">${esc(t("quran.sourceNote", { source: t("kfgqpc.name"), v: meta.version }))}</p>
       <p class="source-note" id="tr-source"></p>`;
 
-    const playWith = x => { player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}` }); const b = $("#q-rec"); if (b) b.innerHTML = `${icon("headphones")} <span dir="auto">${esc(x.name)}</span>`; };
+    const showRec = x => { const b = $("#q-rec"); if (b) b.innerHTML = `${icon("headphones")} <span dir="auto">${esc(x.name)}</span>`; };
+    const playWith = x => { player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}` }); showRec(x); };
     const qp = $("#q-page"); if (qp) qp.onclick = () => { const a = curAya(); location.hash = pageHref(state.mushafEd || "1421", ayat[a - 1][1], `${s}:${a}`); };
     $("#q-idx").onclick = () => openIdx(); $("#q-search").onclick = () => openIdx(true);
     $("#q-play").onclick = () => { const r = state.reciters[meta.id]; r ? playWith(r) : pickReciter(meta, playWith); };
@@ -553,6 +616,7 @@ export function setupQuran(ctx) {
       if (act) {
         const n = Number(act.closest(".aya-tools").dataset.a);
         if (act.dataset.act === "bm") { document.getElementById("a-" + n).classList.toggle("bm", toggleMark(meta.id, s, n)); closeTools(); return; }
+        if (act.dataset.act === "play") { closeTools(); playFrom(meta, s, n, showRec); return; }
         if (act.dataset.act === "copy") { copyText(`${plain(n)}\n${ref(n)}`); closeTools(); return; }
         if (act.dataset.act === "tafsir") { closeTools(); ctx.tafsir().openAyah({ s, a: n, rid: meta.id }); return; }
         // The website has a page for every surah in Hafs; other riwayat link into the app.
@@ -567,6 +631,7 @@ export function setupQuran(ctx) {
       aya.insertAdjacentHTML("afterend", `<div class="aya-tools" dir="${document.documentElement.dir}" data-a="${n}"><span class="aya-ref">${esc(t("quran.ayaRef", { aya: n, page: Number(aya.dataset.p) }))}</span><span class="spacer"></span>
         <button class="icon-btn ${isBm ? "active" : ""}" data-act="bm" aria-label="${esc(t(isBm ? "quran.bmRemove" : "quran.bmAdd"))}">${icon(isBm ? "bookmark-f" : "bookmark")}</button>
         ${meta.ayat === KUFI_AYAT ? `<button class="icon-btn" data-act="tafsir" aria-label="${esc(t("tafsir.title"))}">${icon("tafsir")}</button>` : ""}
+        <button class="icon-btn" data-act="play" aria-label="${esc(t("listen.fromAya"))}">${icon("headphones")}</button>
         <button class="icon-btn" data-act="copy" aria-label="${esc(t("common.copy"))}">${icon("copy")}</button>
         <button class="icon-btn" data-act="share" aria-label="${esc(t("common.share"))}">${icon("share")}</button></div>`);
     });
@@ -635,6 +700,7 @@ export function setupQuran(ctx) {
     try { [, , A] = await Promise.all([loadIndex(), loadPages(), loadAyat().catch(() => null)]); loadFont(riw("hafs")); } catch (e) { return failed(e, () => renderPages(ed, n, params)); }
     if (stale(hash)) return;
     state.mushafEd = ed; state.lastPage = { ed, p: n, t: Date.now() }; save();
+    timedServers().catch(() => {}); // known before a verse's "listen" is tapped
     const info = pageInfo(n, A); const key = EDITIONS[ed].key; const hafs = riw("hafs");
     const runs = A ? A.pages[n - 1] : []; // verses on this page in reading order: [surah, aya, glyphs]
     const marksHere = () => state.marks.filter(m => m.r === "hafs" && PAGES.verseStart[m.s + ":" + m.a] === n);
@@ -729,12 +795,12 @@ export function setupQuran(ctx) {
       const btn = (act, ic, label, cls = "") => `<button class="icon-btn ${cls}" data-act="${act}" aria-label="${esc(label)}" title="${esc(label)}">${icon(ic)}</button>`;
       document.body.insertAdjacentHTML("beforeend", `<div class="ayabar" id="ayabar" role="toolbar" aria-label="${esc(t("quran.position", { surah: surahName(s, hafs), aya: a, riwayah: rShort(hafs) }))}">
         <b class="ref">${esc(surahName(s, hafs))} <span>${esc(num(a))}</span></b>
-        ${btn("tafsir", "tafsir", t("tafsir.title"))}${btn("bm", marked ? "bookmark-f" : "bookmark", t(marked ? "quran.bmRemove" : "quran.bmAdd"), marked ? "active" : "")}${btn("copy", "copy", t("common.copy"))}${btn("share", "share", t("common.share"))}${btn("play", "headphones", t("quran.listenSurah"))}${btn("text", "translate", t("quran.openText"))}</div>`);
+        ${btn("tafsir", "tafsir", t("tafsir.title"))}${btn("bm", marked ? "bookmark-f" : "bookmark", t(marked ? "quran.bmRemove" : "quran.bmAdd"), marked ? "active" : "")}${btn("copy", "copy", t("common.copy"))}${btn("share", "share", t("common.share"))}${btn("play", "headphones", t("listen.fromAya"))}${btn("text", "translate", t("quran.openText"))}</div>`);
       $("#ayabar").onclick = async e => {
         const b = e.target.closest("[data-act]"); if (!b) return; const act = b.dataset.act;
         if (act === "tafsir") { closeAyabar(); sel = -1; ctx.tafsir().openAyah({ s, a, rid: "hafs" }); return; }
         if (act === "bm") { toggleMark("hafs", s, a); refreshBm(); closeAyabar(); sel = -1; return; }
-        if (act === "play") { playSurah(hafs, s); return; }
+        if (act === "play") { playFrom(hafs, s, a); closeAyabar(); sel = -1; return; }
         if (act === "text") { location.hash = `#/quran/hafs/${s}` + (a > 1 ? `?a=${a}` : ""); return; }
         let text; try { text = (await loadRiwayah("hafs")).data.s[s - 1][a - 1][0]; } catch { toast(t("common.loadFailed")); return; }
         const body = `${text.replace(AYA_NUM, "")} ﴿${num(a)}﴾\n${t("quran.copyRef", { surah: surahName(s, hafs), aya: a, riwayah: rName(hafs) })}`;
