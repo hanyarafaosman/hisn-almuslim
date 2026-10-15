@@ -1,4 +1,4 @@
-# نشر حصن المسلم على Google Play
+# نشر حصن ونور على Google Play
 
 التطبيق على Google Play هو **TWA (Trusted Web Activity)**: تطبيق Android صغير يفتح الموقع نفسه داخل Chrome كتطبيق كامل، من غير شريط متصفح. أي تحديث يُنشر على الموقع يصل لمستخدمي التطبيق فورًا، ومش محتاج إصدار جديد على المتجر إلا لو اتغيّر الاسم أو الأيقونة أو إعدادات الحزمة.
 
@@ -46,7 +46,7 @@
 | الخانة | القيمة |
 |---|---|
 | Package ID | `io.github.hanyarafaosman.hisnalmuslim` (**لا يتغيّر بعد النشر أبدًا**) |
-| App name / Short name | `حصن المسلم` |
+| App name / Short name | `حصن ونور` |
 | Version / Version code | `1.0.0` / `1` |
 | Display mode | Standalone |
 | Orientation | Portrait |

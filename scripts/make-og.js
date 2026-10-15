@@ -20,8 +20,8 @@ const html = `<!doctype html><html lang="ar" dir="rtl"><head><meta charset="utf-
   img { width: 300px; height: 300px; filter: drop-shadow(0 18px 40px rgba(0,0,0,.35)); }
 </style></head><body>
   <div class="text">
-    <h1>حصن المسلم</h1>
-    <div class="sub">من أذكار الكتاب والسنة</div>
+    <h1>حصن ونور</h1>
+    <div class="sub">أذكار حصن المسلم من الكتاب والسنة</div>
     <div class="features">أذكار الصباح والمساء والنوم مع العداد والصوت<br>المصحف بثماني روايات، وكتب السنة، والتلاوات والإذاعات</div>
     <div class="chips"><span class="chip">مجاني بلا إعلانات</span><span class="chip">يعمل دون إنترنت</span></div>
   </div>
