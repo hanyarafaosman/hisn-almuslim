@@ -3,8 +3,8 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.14.0";
-import { mirrorOf } from "./mirror.js?v=1.14.0";
+import * as off from "./offline.js?v=1.15.0";
+import { mirrorOf } from "./mirror.js?v=1.15.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -646,6 +646,7 @@ export function setupQuran(ctx) {
       <div class="reader-bar">
         <button class="pill" id="q-riw" aria-label="${esc(t("quran.changeRiwayah"))}">${icon("layers")} ${esc(t("quran.riwayahOf", { name: rShort(meta) }))}</button><span class="pill ghost">${esc(t("count.ayat", { n: ayat.length }))}</span>${meta.id === "hafs"
           ? `<button class="pill ghost" id="q-page" aria-label="${esc(t("mushaf.openPage"))}">${icon("quran")} ${esc(t("quran.page", { n: ayat[0][1] }))}</button>` : `<span class="pill ghost">${esc(t("quran.page", { n: ayat[0][1] }))}</span>`}
+        <button class="pill ghost" id="q-theme" aria-label="${esc(t(isDark() ? "mushaf.toDayAria" : "mushaf.toNightAria"))}">${icon(isDark() ? "sun" : "moon")} ${esc(t(isDark() ? "mushaf.toDay" : "mushaf.toNight"))}</button>
         <button class="link" id="q-rec">${icon("headphones")} <span dir="auto">${esc(rec ? rec.name : t("quran.chooseReciter"))}</span></button>
       </div>
       <div id="tr-note"></div>
@@ -667,6 +668,8 @@ export function setupQuran(ctx) {
     $("#q-idx").onclick = () => openIdx(); $("#q-search").onclick = () => openIdx(true);
     $("#q-play").onclick = () => { const r = state.reciters[meta.id]; r ? playWith(r) : pickReciter(meta, playWith); };
     $("#q-rec").onclick = () => pickReciter(meta, playWith);
+    // Night or day reading, from here as from Settings.
+    $("#q-theme").onclick = () => { const d = ctx.toggleTheme(); const b = $("#q-theme"); b.innerHTML = `${icon(d ? "sun" : "moon")} ${esc(t(d ? "mushaf.toDay" : "mushaf.toNight"))}`; b.setAttribute("aria-label", t(d ? "mushaf.toDayAria" : "mushaf.toNightAria")); };
     $("#q-tr").onclick = () => pickTranslation(() => renderReader(meta.id, s, params));
     $("#q-riw").onclick = () => {
       const body = sheet(t("quran.chooseRiwayah"), `<div class="list flat">${INDEX.riwayat.map(r => `<button class="row" data-r="${r.id}"><div class="lbl">${esc(rName(r))}<span class="sub">${esc(t("count.ayat", { n: r.ayat }))}</span></div>${r.id === meta.id ? icon("check") : ""}</button>`).join("")}</div>`);
@@ -822,6 +825,12 @@ export function setupQuran(ctx) {
   }
   matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => tajweedPalette());
 
+  // The bars of the printed pages: the app top bar and the tools below the page (body.mm-ui, see renderPages).
+  let mmVisit = false, uiTimer = null;
+  function setUi(on) { clearTimeout(uiTimer); document.body.classList.toggle("mm-ui", on); }
+  function keepUi() { clearTimeout(uiTimer); }
+  window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#/mushaf/")) { mmVisit = false; setUi(false); } });
+
   let pageClick = null;
   async function renderPages(ed, n, params = new URLSearchParams()) {
     setNav("quran"); const hash = location.hash;
@@ -856,16 +865,34 @@ export function setupQuran(ctx) {
       x.h ? `<div class="mline mhead"><span>سورة ${esc(hafs.surahs[x.h - 1][0])}</span></div>`
       : x.b ? `<div class="mline mbasm" data-s="${runs[vi]?.[0] || ""}">${esc(hafs.basmala)}</div>` // the surah of the verse that follows
       : `<div class="mline${n <= 2 ? " center" : ""}">${x[key].split(" ").map(glyph).join("")}</div>`).join("");
+    // Full-screen page: the surah and the juz in the top margin and the page number below, as in print. One tap shows or
+    // hides the bars (the app's top bar and the tools below); a long press on a verse opens that verse's tools.
+    const surahTitle = [...info.surahs].sort((x, y) => x - y).map(s => surahName(s, hafs)).join(sep());
+    const where = () => [t("mushaf.pageOf", { n, total: 604 }), t("quran.juz", { n: info.juz }), info.q >= 0 ? hizbLabel(info.q) : ""].filter(Boolean).join(sep());
+    const recName = () => state.reciters.hafs?.name || t("quran.chooseReciter");
+    const themeBtn = () => { const d = isDark(); return `${icon(d ? "sun" : "moon")}<span>${esc(t(d ? "mushaf.toDay" : "mushaf.toNight"))}</span>`; };
+    const themeAria = () => t(isDark() ? "mushaf.toDayAria" : "mushaf.toNightAria");
     view.innerHTML = `
-      <div class="reader-bar"><button class="pill" id="m-ed" aria-label="${esc(t("mushaf.chooseEdition"))}">${icon("layers")} ${esc(t("mushaf.ed" + ed))}</button><span class="pill ghost">${esc(t("quran.juz", { n: info.juz }))}</span>${info.q >= 0 ? `<span class="pill ghost">${esc(hizbLabel(info.q))}</span>` : ""}<span class="pill ghost">${esc(t("quran.page", { n }))}</span></div>
-      <div class="mpage-wrap"><div class="mpage${n <= 2 ? " opening" : ""}${A ? " tappable" : ""}" id="mpage" lang="ar" dir="rtl" style="--qfont:'kfgqpc-hafs'">${lines}<div class="mpage-msg" id="mpage-msg">${loading("")}</div></div></div>
-      <div class="mslider"><input type="range" id="m-range" min="1" max="604" step="1" value="${n}" aria-label="${esc(t("mushaf.slider"))}"><output id="m-range-out" for="m-range">${esc(t("mushaf.pageOf", { n, total: 604 }))}</output></div>
-      <nav class="reader-nav">
-        ${n > 1 ? `<a class="btn ghost" href="${pageHref(ed, n - 1)}" data-replace>${icon("back")} ${esc(t("mushaf.prev"))}</a>` : "<span></span>"}
-        ${n < 604 ? `<a class="btn ghost" href="${pageHref(ed, n + 1)}" data-replace>${esc(t("mushaf.next"))} ${icon("back", "flip")}</a>` : "<span></span>"}
-      </nav>
-      <p class="source-note">${esc(t("mushaf.source"))}</p>`;
-    view.querySelectorAll("[data-replace]").forEach(a => a.onclick = e => { e.preventDefault(); location.replace(a.getAttribute("href")); });
+      <div class="mm" id="mm">
+        <div class="mm-margin" aria-hidden="true"><span>${esc(t("quran.surah", { name: surahTitle }))}</span><span>${esc(t("quran.juz", { n: info.juz }))}</span></div>
+        <div class="mpage-wrap"><div class="mpage${n <= 2 ? " opening" : ""}${A ? " tappable" : ""}" id="mpage" lang="ar" dir="rtl" style="--qfont:'kfgqpc-hafs'">${lines}<div class="mpage-msg" id="mpage-msg">${loading("")}</div></div></div>
+        <div class="mm-margin foot"><span>${esc(num(n))}</span></div>
+      </div>
+      <div class="mbar" id="mbar">
+        <div class="mslider">
+          <button class="icon-btn" id="m-prev" aria-label="${esc(t("mushaf.prev"))}"${n <= 1 ? " disabled" : ""}>${icon("back", "dir")}</button>
+          <input type="range" id="m-range" min="1" max="604" step="1" value="${n}" aria-label="${esc(t("mushaf.slider"))}">
+          <button class="icon-btn" id="m-next" aria-label="${esc(t("mushaf.next"))}"${n >= 604 ? " disabled" : ""}>${icon("back", "flip")}</button>
+        </div>
+        <output class="mm-where" id="m-range-out" for="m-range">${esc(where())}</output>
+        <div class="mtools">
+          <button data-tool="listen" id="m-listen">${icon("play")}<span>${esc(t("common.listen"))}</span></button>
+          <button data-tool="reciter" aria-label="${esc(t("quran.chooseReciter"))}">${icon("headphones")}<span id="m-rec" dir="auto">${esc(recName())}</span></button>
+          <button data-tool="theme" id="m-theme" aria-label="${esc(themeAria())}">${themeBtn()}</button>
+          <button data-tool="print" aria-label="${esc(t("mushaf.chooseEdition"))}">${icon("layers")}<span>${esc(t("mushaf.print"))}</span></button>
+        </div>
+      </div>`;
+    $("#m-prev").onclick = () => goPage(ed, n - 1); $("#m-next").onclick = () => goPage(ed, n + 1);
     const page = $("#mpage");
     const paintMarks = () => { const on = new Set(marksHere().map(m => m.s + ":" + m.a)); runs.forEach(([s, a], i) => page.querySelectorAll(`span[data-v="${i}"]`).forEach(x => x.classList.toggle("bm", on.has(s + ":" + a)))); };
     const refreshBm = () => { $("#m-bm-wrap").innerHTML = bmBtn(); $("#m-bm").onclick = toggleBm; paintMarks(); };
@@ -921,45 +948,80 @@ export function setupQuran(ctx) {
         els.forEach(x => x.classList.add("flash")); els[0]?.scrollIntoView({ block: "center" });
         setTimeout(() => els.forEach(x => x.classList.remove("flash")), 2200);
       }
-      if (A && !state.hintAya) { state.hintAya = true; save(); setTimeout(() => { if (!stale(hash)) toast(t("quran.ayaHint")); }, 900); }
+      if (A && !state.hintMm) { state.hintMm = true; save(); setTimeout(() => { if (!stale(hash)) toast(t("mushaf.hint")); }, 900); }
     } catch { if (!stale(hash)) $("#mpage-msg").innerHTML = `<div class="empty">${icon("download")}<div>${esc(t("mushaf.fontNeedsNet"))}</div></div>`; }
     [n + 1, n - 1].filter(p => p >= 1 && p <= 604).forEach(p => loadPageFont(ed, p).catch(() => {}));
 
     // Arabic book: the next page is on the left, so swiping toward the right turns forward.
     let x0 = null;
     page.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
-    page.addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 60) goPage(ed, dx > 0 ? n + 1 : n - 1); });
+    page.addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 60) { setUi(false); goPage(ed, dx > 0 ? n + 1 : n - 1); } });
 
     // Page slider: shows the page and its surah while dragging, opens the page on release.
     const range = $("#m-range"), out = $("#m-range-out");
     range.oninput = () => { const p = Number(range.value); out.textContent = `${t("mushaf.pageOf", { n: p, total: 604 })}${sep()}${surahName(pageFirst[p][0], hafs)}`; };
     range.onchange = () => { const p = Number(range.value); if (p !== n) goPage(ed, p); };
 
+    // The tools below the page: listen from this page (or pause), the reciter, night or day reading, the print.
+    const listenBtn = $("#m-listen");
+    const showListen = now => { const on = !!now && !now.paused; listenBtn.innerHTML = `${icon(on ? "pause" : "play")}<span>${esc(t(on ? "common.pause" : "common.listen"))}</span>`; };
+    const unlisten = player.listen(now => { if (stale(hash) || !document.body.contains(listenBtn)) return unlisten(); showListen(now); });
+    showListen(player.now());
+    $("#mbar .mtools").onclick = e => {
+      const tool = e.target.closest("[data-tool]")?.dataset.tool; if (!tool) return;
+      keepUi();
+      if (tool === "print") return openPrint();
+      if (tool === "theme") { ctx.toggleTheme(); if (ed === "tajweed") tajweedPalette(); const b = $("#m-theme"); b.innerHTML = themeBtn(); b.setAttribute("aria-label", themeAria()); return; }
+      const now = player.now(), v = recited(now);
+      if (tool === "reciter") return pickReciter(hafs, x => {
+        $("#m-rec").textContent = x.name;
+        if (now && !now.paused && v?.rid === "hafs") playFrom(hafs, v.s, Math.max(1, v.a)); // go on with the new voice from the same verse
+      }, { fromAya: true });
+      if (tool === "listen") {
+        if (now && !now.paused) return player.pause();
+        if (now && v?.rid === "hafs" && onPage(v)) return document.getElementById("pl-toggle").click(); // resume this page
+        playFrom(hafs, ...info.first);
+      }
+    };
+
     // Print and colours: the three prints, and the name of Allah in colour.
-    $("#m-ed").onclick = () => {
+    const openPrint = () => {
       const size = e2 => t("offline.size", { size: off.fmtSize(FONTS[EDITIONS[e2].v].bytes, getLang()) });
       const body = sheet(t("mushaf.display"), `<div class="list flat">${editions().map(e2 => `<button class="row" data-ed="${e2}"><div class="lbl">${esc(t("mushaf.ed" + e2))}${e2 === "tajweed" ? `<span class="sub">${esc(t("mushaf.tajweedNote"))}</span>` : ""}<span class="sub">${esc(size(e2))}</span></div>${e2 === ed ? icon("check") : ""}</button>`).join("")}</div>
-        ${JALALA ? `<div class="list flat"><div class="row"><div class="lbl">${esc(t("mushaf.jalala"))}<span class="sub">${esc(t("mushaf.jalalaNote", { n: JALALA.count }))}</span></div><button class="switch ${state.jalala ? "on" : ""}" id="m-jl" role="switch" aria-checked="${!!state.jalala}" aria-label="${esc(t("mushaf.jalala"))}"></button></div></div>` : ""}`);
+        ${JALALA ? `<div class="list flat"><div class="row"><div class="lbl">${esc(t("mushaf.jalala"))}<span class="sub">${esc(t("mushaf.jalalaNote", { n: JALALA.count }))}</span></div><button class="switch ${state.jalala ? "on" : ""}" id="m-jl" role="switch" aria-checked="${!!state.jalala}" aria-label="${esc(t("mushaf.jalala"))}"></button></div></div>` : ""}
+        <p class="source-note">${esc(t("mushaf.source"))}</p>`);
       body.onclick = e => {
         if (e.target.closest("#m-jl")) { state.jalala = !state.jalala; save(); closeSheet(); renderPages(ed, n, params); return; }
         const b = e.target.closest("[data-ed]"); if (!b) return; closeSheet(); goPage(b.dataset.ed, n);
       };
     };
 
-    // Tap a verse: it is marked on the page and its tools appear (tafsir, bookmark, copy, share, listen, verse by verse).
-    if (!A) return;
-    let sel = -1;
+    // The bars: shown when the Mushaf is opened from elsewhere (and hidden again after a few seconds), shown or hidden by
+    // a tap on the page, hidden when a page is turned by swiping. A long press (or a right click) on a verse opens its
+    // tools (tafsir, bookmark, copy, share, listen, verse by verse).
+    if (!mmVisit) { mmVisit = true; setUi(true); uiTimer = setTimeout(() => setUi(false), 4000); }
+    $("#mbar").onpointerdown = keepUi; document.querySelector(".topbar").onpointerdown = keepUi;
+    let sel = -1, pressT = null, pressAt = null, pressedAt = 0, held = false;
     if (pageClick) document.removeEventListener("click", pageClick); // the page may be drawn again at the same address
     const onDoc = pageClick = e => {
       if (stale(hash)) { if (pageClick === onDoc) pageClick = null; return document.removeEventListener("click", onDoc); }
-      if (e.target.closest("#ayabar, #sheet")) return;
-      const sp = e.target.closest("#mpage span[data-v]");
-      if (!sp) { if (sel >= 0) { closeAyabar(); sel = -1; } return; }
-      const v = Number(sp.dataset.v); closeAyabar();
-      if (v === sel) { sel = -1; return; }
-      sel = v; select(v);
+      if (e.target.closest("#ayabar, #sheet, #mbar, .topbar, #player")) return;
+      if (Date.now() - pressedAt < 400) return; // the click that ends a long press
+      if (document.getElementById("ayabar")) { closeAyabar(); sel = -1; return; }
+      if (e.target.closest("#mm")) setUi(!document.body.classList.contains("mm-ui"));
     };
     document.addEventListener("click", onDoc);
+    if (!A) return;
+    const verseAt = e => e.target.closest?.("#mpage span[data-v]");
+    const openVerse = sp => {
+      pressedAt = Date.now(); held = true; clearTimeout(pressT); pressAt = null;
+      const v = Number(sp.dataset.v); if (v === sel && document.getElementById("ayabar")) return;
+      closeAyabar(); setUi(false); sel = v; select(v); navigator.vibrate?.(12);
+    };
+    page.addEventListener("pointerdown", e => { const sp = verseAt(e); if (!sp || e.button > 0) return; pressAt = [e.clientX, e.clientY]; clearTimeout(pressT); pressT = setTimeout(() => openVerse(sp), 450); });
+    page.addEventListener("pointermove", e => { if (pressAt && Math.hypot(e.clientX - pressAt[0], e.clientY - pressAt[1]) > 10) { clearTimeout(pressT); pressAt = null; } });
+    for (const ev of ["pointerup", "pointercancel"]) page.addEventListener(ev, () => { clearTimeout(pressT); pressAt = null; if (held) { held = false; pressedAt = Date.now(); } });
+    page.addEventListener("contextmenu", e => { const sp = verseAt(e); if (!sp) return; e.preventDefault(); openVerse(sp); });
     function select(v) {
       const [s, a] = runs[v]; const marked = isMarked("hafs", s, a);
       page.querySelectorAll(`span[data-v="${v}"]`).forEach(x => x.classList.add("sel"));
