@@ -1,6 +1,6 @@
 // Checks every outside service the app relies on, so a broken source is noticed before users report it.
 // Run daily by .github/workflows/sources.yml (a failed run emails the repository owner). Usage: npm run check:sources
-//   errors   (exit 1): adhkar audio (hisnmuslim.com), Mushaf page fonts (static.qurancdn.com),
+//   errors   (exit 1): adhkar audio (hisnmuslim.com), Mushaf page fonts (static.qurancdn.com, verses.quran.foundation),
 //                      recitations API (mp3quran.net), translations API (quranenc.com), hadith books (jsDelivr),
 //                      tafsir books (quranenc.com, jsDelivr),
 //                      backup copy of the audio and page fonts (hisn-almuslim-assets, see www/js/mirror.js)
@@ -13,17 +13,18 @@ const readJson = f => JSON.parse(fs.readFileSync(path.join(WWW, f), "utf8"));
 const ORIGIN = "https://hanyarafaosman.github.io"; // the app fetches cross-origin, so CORS must allow it
 const GH = process.env.GITHUB_ACTIONS === "true";
 const errors = [], warnings = [], passed = [];
-const error = (group, msg) => { errors.push(`${group}: ${msg}`); console.log(GH ? `::error title=${group}::${msg}` : `✗ ${group}: ${msg}`); };
-const warn = (group, msg) => { warnings.push(`${group}: ${msg}`); console.log(GH ? `::warning title=${group}::${msg}` : `⚠ ${group}: ${msg}`); };
+// On GitHub the title shows only in the annotation, so the message repeats the source name for the job log.
+const error = (group, msg) => { errors.push(`${group}: ${msg}`); console.log(GH ? `::error title=${group}::${group}: ${msg}` : `✗ ${group}: ${msg}`); };
+const warn = (group, msg) => { warnings.push(`${group}: ${msg}`); console.log(GH ? `::warning title=${group}::${group}: ${msg}` : `⚠ ${group}: ${msg}`); };
 const pass = (group, msg) => { passed.push(`${group}: ${msg}`); console.log(`✓ ${group}: ${msg}`); };
 
 // One request with a timeout, retried so a single network hiccup does not raise an alarm.
-async function request(url, { method = "GET", tries = 3 } = {}) {
+async function request(url, { method = "GET", tries = 3, headers = {} } = {}) {
   let last;
   for (let i = 0; i < tries; i++) {
     const ctl = new AbortController(); const timer = setTimeout(() => ctl.abort(), 20000);
     try {
-      const res = await fetch(url, { method, signal: ctl.signal, headers: { Origin: ORIGIN, "User-Agent": "HisnAlMuslim-source-check" } });
+      const res = await fetch(url, { method, signal: ctl.signal, headers: { Origin: ORIGIN, "User-Agent": "HisnAlMuslim-source-check", ...headers } });
       if (res.ok || res.status === 404) return res;
       last = new Error("HTTP " + res.status);
     } catch (e) { last = e.name === "AbortError" ? new Error("timeout") : e; }
@@ -36,13 +37,13 @@ const corsOk = res => ["*", ORIGIN].includes(res.headers.get("access-control-all
 async function getJSON(url) { const r = await request(url); if (!r.ok) throw new Error("HTTP " + r.status); if (!corsOk(r)) throw new Error("no CORS header"); return r.json(); }
 
 // HEAD many files with a few parallel workers; returns total bytes, each file size and the files that failed.
-async function headAll(urls, accept) {
+async function headAll(urls, accept, headers = {}) {
   const q = [...urls], bad = [], size = new Map(); let bytes = 0;
   await Promise.all(Array.from({ length: 8 }, async () => {
     while (q.length) {
       const u = q.shift();
       try {
-        const r = await request(u, { method: "HEAD" });
+        const r = await request(u, { method: "HEAD", headers });
         const why = !r.ok ? "HTTP " + r.status : !corsOk(r) ? "no CORS header" : !accept.test(r.headers.get("content-type") || "") ? "type " + r.headers.get("content-type") : "";
         if (why) bad.push(`${u} (${why})`); else { size.set(u, Number(r.headers.get("content-length")) || 0); bytes += size.get(u); }
       } catch (e) { bad.push(`${u} (${e.message})`); }
@@ -88,9 +89,14 @@ async function tajweedPageFonts() {
   const G = "Tajweed page fonts (verses.quran.foundation)";
   const f = readJson("mushaf/tajweed.json").fonts.v4;
   const urls = Array.from({ length: 604 }, (_, i) => f.url.replace("{n}", i + 1));
-  const { bytes, bad } = await headAll(urls, /font|woff|octet-stream/i);
+  // The CDN (BunnyCDN, Vary: Accept-Encoding) can keep two copies of a page, an older one for compressed requests and
+  // the current one for "identity", and which one an edge holds differs by location. The build measured "identity".
+  // A few bytes of difference on some pages is that older copy; fonts replaced at the source change far more.
+  const { bytes, bad } = await headAll(urls, /font|woff|octet-stream/i, { "accept-encoding": "identity" });
+  const drift = Math.abs(bytes - f.bytes) / f.bytes;
   if (bad.length) error(G, `${bad.length} of 604 pages unavailable: ${listBad(bad)}`);
-  else if (bytes !== f.bytes) error(G, `fonts changed at the source (${bytes} bytes, built with ${f.bytes}); check the pages and rebuild with npm run mushaf:colors`);
+  else if (drift > 0.01) error(G, `fonts changed at the source (${bytes} bytes, built with ${f.bytes}); check the pages and rebuild with npm run mushaf:colors`);
+  else if (bytes !== f.bytes) warn(G, `${bytes} bytes, built with ${f.bytes}: the CDN serves an older copy of a few pages from this location (difference under 1%)`);
   else pass(G, `604 pages, ${mb(bytes)}, unchanged`);
 }
 
@@ -155,11 +161,14 @@ async function hadithBooks() {
   const { source, books } = readJson("hadith/index.json");
   try {
     // Pinned to a commit, so the files never change: every book's first section and its whole-book file must answer.
+    // The whole-book file (the app's book search, 0.03–5.5 MB) is downloaded as the app does: jsDelivr can leave a HEAD
+    // request for a large file it has not cached yet without an answer, while a GET of the same file answers at once.
     for (const b of books) {
-      const sec = await getJSON(`${source.cdn}/ara-${b.id}/sections/${b.sections[0][0]}.min.json`);
+      const get = file => getJSON(`${source.cdn}/${file}`).catch(e => { throw new Error(`${b.id}: ${file}: ${e.message}`); });
+      const sec = await get(`ara-${b.id}/sections/${b.sections[0][0]}.min.json`);
       if (!Array.isArray(sec.hadiths) || !sec.hadiths.some(h => h.text)) throw new Error(`${b.id}: first section has no hadith text`);
-      const whole = await request(`${source.cdn}/ara-${b.id}1.min.json`, { method: "HEAD" });
-      if (!whole.ok) throw new Error(`${b.id}: whole-book file gave HTTP ${whole.status}`);
+      const whole = await get(`ara-${b.id}1.min.json`);
+      if (!Array.isArray(whole.hadiths) || !whole.hadiths.some(h => h.text)) throw new Error(`${b.id}: whole-book file has no hadith text`);
     }
     pass(G, `${books.length} books answer`);
   } catch (e) { error(G, e.message); }
