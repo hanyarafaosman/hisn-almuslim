@@ -3,8 +3,8 @@
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
 // Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
 
-import * as off from "./offline.js?v=1.11.0";
-import { mirrorOf } from "./mirror.js?v=1.11.0";
+import * as off from "./offline.js?v=1.12.0";
+import { mirrorOf } from "./mirror.js?v=1.12.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -657,18 +657,24 @@ export function setupQuran(ctx) {
 
   // ---------- printed pages: the Madinah Mushaf, page-exact (Hafs) ----------
   // Each word is a King Fahd Complex glyph drawn by the font of its page, so lines break exactly as in print.
-  const EDITIONS = { 1405: { v: "v1", key: "w1" }, 1421: { v: "v2", key: "w2" } };
-  let PAGES = null, pageFirst = null;
+  // The colour-coded Tajweed print (KFGQPC / Dar Al-Maarifah, QCF V4) draws the same glyph codes as the 1421 print.
+  const EDITIONS = { 1405: { v: "v1", key: "w1" }, 1421: { v: "v2", key: "w2" }, tajweed: { v: "v4", key: "w2" } };
+  let PAGES = null, pageFirst = null, FONTS = {}, JALALA = null;
+  const fetchJSON = async u => { const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
   async function loadPages() {
     if (!PAGES) {
-      const r = await fetch("mushaf/madinah.json"); if (!r.ok) throw new Error("HTTP " + r.status); PAGES = await r.json();
+      // tajweed.json (fonts of the Tajweed print) and jalala.json (where the name of Allah is written) are optional.
+      const [p, tj, jl] = await Promise.all([fetchJSON("mushaf/madinah.json"), fetchJSON("mushaf/tajweed.json").catch(() => null), fetchJSON("mushaf/jalala.json").catch(() => null)]);
+      PAGES = p; FONTS = { ...p.fonts, ...(tj?.fonts || {}) }; JALALA = jl;
       pageFirst = Array(605).fill(null); // first verse that starts on each page
       Object.entries(PAGES.verseStart).forEach(([k, p]) => { const [s, a] = k.split(":").map(Number); const cur = pageFirst[p]; if (!cur || s < cur[0] || (s === cur[0] && a < cur[1])) pageFirst[p] = [s, a]; });
       for (let p = 1; p <= 604; p++) if (!pageFirst[p]) pageFirst[p] = pageFirst[p - 1]; // page that only continues a long verse
     }
     return PAGES;
   }
-  const pageFontUrl = (ed, n) => PAGES.fonts[EDITIONS[ed].v].url.replace("{n}", n);
+  // Prints whose fonts are known (the Tajweed one needs tajweed.json).
+  const editions = () => Object.keys(EDITIONS).filter(e => FONTS[EDITIONS[e].v]);
+  const pageFontUrl = (ed, n) => FONTS[EDITIONS[ed].v].url.replace("{n}", n);
   const pageFontUrls = ed => Array.from({ length: 604 }, (_, i) => pageFontUrl(ed, i + 1));
   const pageFonts = new Map();
   function loadPageFont(ed, n) {
@@ -689,16 +695,31 @@ export function setupQuran(ctx) {
   const pageHref = (ed, n, v = "") => `#/mushaf/${ed}/${n}` + (v ? `?v=${v}` : "");
   const goPage = (ed, n) => { if (n >= 1 && n <= 604) location.replace(pageHref(ed, n)); };
 
+  // The Tajweed fonts (COLRv1) colour the letters themselves, so CSS colour has no effect on them. They carry three
+  // palettes (0 light, 1 dark, 2 sepia); entry 0 of each is the colour of the letters, which the name of Allah overrides.
+  const isDark = () => { const th = document.documentElement.dataset.theme; return th === "dark" || (th !== "light" && matchMedia("(prefers-color-scheme: dark)").matches); };
+  let palFam = null;
+  function tajweedPalette(fam = palFam) {
+    if (!fam) return; palFam = fam;
+    let st = document.getElementById("tj-palette"); if (!st) { st = document.createElement("style"); st.id = "tj-palette"; document.head.appendChild(st); }
+    const base = isDark() ? 1 : 0, red = getComputedStyle(document.documentElement).getPropertyValue("--jalala").trim() || "#c62828";
+    st.textContent = `@font-palette-values --tj { font-family: '${fam}'; base-palette: ${base}; }
+@font-palette-values --tj-jl { font-family: '${fam}'; base-palette: ${base}; override-colors: 0 ${red}; }
+.mpage .mline { font-palette: --tj; } .mpage .mline span.jl { font-palette: --tj-jl; }`;
+  }
+  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => tajweedPalette());
+
   let pageClick = null;
   async function renderPages(ed, n, params = new URLSearchParams()) {
     setNav("quran"); const hash = location.hash;
-    if (!EDITIONS[ed]) ed = state.mushafEd || "1421";
     n = Math.min(604, Math.max(1, n | 0 || 1));
     setHeader(t("mushaf.pages"), { back: true }); view.innerHTML = loading();
     // The verse map (ayat.json) is optional: without it the page still shows, only verses cannot be selected.
     let A = null;
     try { [, , A] = await Promise.all([loadIndex(), loadPages(), loadAyat().catch(() => null)]); loadFont(riw("hafs")); } catch (e) { return failed(e, () => renderPages(ed, n, params)); }
     if (stale(hash)) return;
+    // An unknown print (or the Tajweed one when its fonts list could not load) opens the last print used.
+    if (!editions().includes(String(ed))) { const e2 = editions().includes(String(state.mushafEd)) ? state.mushafEd : "1421"; location.replace(pageHref(e2, n, params.get("v") || "")); return; }
     state.mushafEd = ed; state.lastPage = { ed, p: n, t: Date.now() }; save();
     timedServers().catch(() => {}); // known before a verse's "listen" is tapped
     const info = pageInfo(n, A); const key = EDITIONS[ed].key; const hafs = riw("hafs");
@@ -709,8 +730,14 @@ export function setupQuran(ctx) {
     setHeader([...info.surahs].sort((x, y) => x - y).map(s => surahName(s, hafs)).join(sep()), { back: true, onTitle: () => openFinder(finderOpts),
       actions: `<button class="icon-btn" id="m-idx" aria-label="${esc(t("quran.index"))}">${icon("list", "flip")}</button><button class="icon-btn" id="m-search" aria-label="${esc(t("quran.searchTitle"))}">${icon("search")}</button><span id="m-bm-wrap">${bmBtn()}</span>` });
     // Every glyph carries the index of its verse in runs, so a tap selects the whole verse.
-    let vi = 0, left = runs[0]?.[2] ?? Infinity;
-    const glyph = g => { const v = vi; if (--left === 0) { vi++; left = runs[vi]?.[2] ?? Infinity; } return A ? `<span data-v="${v}">${g}</span>` : `<span>${g}</span>`; };
+    let vi = 0, left = runs[0]?.[2] ?? Infinity, gi = 0;
+    // The name of Allah in colour, when chosen: jalala.json lists its glyphs on each page.
+    const jl = state.jalala && JALALA ? new Set(JALALA.pages[n - 1]) : null;
+    const glyph = g => {
+      const v = vi; if (--left === 0) { vi++; left = runs[vi]?.[2] ?? Infinity; }
+      const cls = jl?.has(gi++) ? ` class="jl"` : "";
+      return A ? `<span data-v="${v}"${cls}>${g}</span>` : `<span${cls}>${g}</span>`;
+    };
     const lines = PAGES.pages[n - 1].map(x =>
       x.h ? `<div class="mline mhead"><span>سورة ${esc(hafs.surahs[x.h - 1][0])}</span></div>`
       : x.b ? `<div class="mline mbasm">${esc(hafs.basmala)}</div>`
@@ -741,7 +768,7 @@ export function setupQuran(ctx) {
     paintMarks();
     try {
       const fam = await loadPageFont(ed, n); if (stale(hash)) return;
-      page.style.setProperty("--qcf", `'${fam}'`); page.classList.add("ready"); $("#mpage-msg").remove();
+      page.style.setProperty("--qcf", `'${fam}'`); if (ed === "tajweed") tajweedPalette(fam); page.classList.add("ready"); $("#mpage-msg").remove();
       // The two prints draw glyphs at different sizes: scale the page so its widest line fills the width, as in print.
       if (n > 2) {
         const ls = [...page.querySelectorAll(".mline:not(.mhead):not(.mbasm)")];
@@ -770,9 +797,15 @@ export function setupQuran(ctx) {
     range.oninput = () => { const p = Number(range.value); out.textContent = `${t("mushaf.pageOf", { n: p, total: 604 })}${sep()}${surahName(pageFirst[p][0], hafs)}`; };
     range.onchange = () => { const p = Number(range.value); if (p !== n) goPage(ed, p); };
 
+    // Print and colours: the three prints, and the name of Allah in colour.
     $("#m-ed").onclick = () => {
-      const body = sheet(t("mushaf.chooseEdition"), `<div class="list flat">${Object.keys(EDITIONS).map(e2 => `<button class="row" data-ed="${e2}"><div class="lbl">${esc(t("mushaf.ed" + e2))}<span class="sub">${esc(t("offline.size", { size: off.fmtSize(PAGES.fonts[EDITIONS[e2].v].bytes, getLang()) }))}</span></div>${e2 === ed ? icon("check") : ""}</button>`).join("")}</div>`);
-      body.onclick = e => { const b = e.target.closest("[data-ed]"); if (!b) return; closeSheet(); goPage(b.dataset.ed, n); };
+      const size = e2 => t("offline.size", { size: off.fmtSize(FONTS[EDITIONS[e2].v].bytes, getLang()) });
+      const body = sheet(t("mushaf.display"), `<div class="list flat">${editions().map(e2 => `<button class="row" data-ed="${e2}"><div class="lbl">${esc(t("mushaf.ed" + e2))}${e2 === "tajweed" ? `<span class="sub">${esc(t("mushaf.tajweedNote"))}</span>` : ""}<span class="sub">${esc(size(e2))}</span></div>${e2 === ed ? icon("check") : ""}</button>`).join("")}</div>
+        ${JALALA ? `<div class="list flat"><div class="row"><div class="lbl">${esc(t("mushaf.jalala"))}<span class="sub">${esc(t("mushaf.jalalaNote", { n: JALALA.count }))}</span></div><button class="switch ${state.jalala ? "on" : ""}" id="m-jl" role="switch" aria-checked="${!!state.jalala}" aria-label="${esc(t("mushaf.jalala"))}"></button></div></div>` : ""}`);
+      body.onclick = e => {
+        if (e.target.closest("#m-jl")) { state.jalala = !state.jalala; save(); closeSheet(); renderPages(ed, n, params); return; }
+        const b = e.target.closest("[data-ed]"); if (!b) return; closeSheet(); goPage(b.dataset.ed, n);
+      };
     };
 
     // Tap a verse: it is marked on the page and its tools appear (tafsir, bookmark, copy, share, listen, verse by verse).
@@ -811,7 +844,7 @@ export function setupQuran(ctx) {
     }
   }
   document.addEventListener("keydown", e => {
-    const m = /^#\/mushaf\/(\d+)\/(\d+)/.exec(location.hash); if (!m || e.target?.closest?.("input, textarea, select") || document.getElementById("sheet")) return;
+    const m = /^#\/mushaf\/(\w+)\/(\d+)/.exec(location.hash); if (!m || e.target?.closest?.("input, textarea, select") || document.getElementById("sheet")) return;
     if (e.key === "ArrowLeft") goPage(m[1], Number(m[2]) + 1);
     if (e.key === "ArrowRight") goPage(m[1], Number(m[2]) - 1);
   });
@@ -911,7 +944,7 @@ export function setupQuran(ctx) {
     if (!off.isSupported()) { view.innerHTML = `<div class="empty">${esc(t("offline.needOnce"))}</div>`; return; }
     view.innerHTML = loading();
     try { await Promise.all([loadIndex(), loadPages()]); } catch (e) { return failed(e, renderOffline); }
-    const pagesSaved = { 1405: await off.savedSet(off.STORES.PAGES, pageFontUrls(1405)), 1421: await off.savedSet(off.STORES.PAGES, pageFontUrls(1421)) };
+    const pagesSaved = Object.fromEntries(await Promise.all(editions().map(async e2 => [e2, await off.savedSet(off.STORES.PAGES, pageFontUrls(e2))])));
     sizes ||= await fetch("data/audio-sizes.json").then(r => r.json()).catch(() => null);
     const lang = getLang(); const fmt = b => off.fmtSize(b, lang);
     const audio = adhkarAudio();
@@ -942,7 +975,7 @@ export function setupQuran(ctx) {
       <div class="card">${INDEX.riwayat.map((r, i) => row(rName(r), esc(t(riwSaved[i] ? "offline.saved" : "offline.notSaved")), "riw:" + r.id, riwSaved[i] ? "full" : false)).join("")}
         ${riwSaved.some(x => !x) ? `<div class="setting"><div class="lbl"></div>${btn("save:riw:all", "offline.saveAll", "download", "")}</div>` : ""}</div>
       <h2 class="section-title">${esc(t("offline.mushafPages"))}</h2>
-      <div class="card">${Object.keys(EDITIONS).map(e2 => row(t("mushaf.ed" + e2), esc(t("offline.progress", { done: pagesSaved[e2].size, total: 604 })) + `${sep()}${esc(t("offline.size", { size: fmt(PAGES.fonts[EDITIONS[e2].v].bytes) }))}`, "pages:" + e2, part(pagesSaved[e2].size, 604))).join("")}</div>
+      <div class="card">${editions().map(e2 => row(t("mushaf.ed" + e2), esc(t("offline.progress", { done: pagesSaved[e2].size, total: 604 })) + `${sep()}${esc(t("offline.size", { size: fmt(FONTS[EDITIONS[e2].v].bytes) }))}`, "pages:" + e2, part(pagesSaved[e2].size, 604))).join("")}</div>
       <h2 class="section-title">${esc(t("offline.hadith"))}</h2>
       <div class="card">${hadithHtml}</div>
       <h2 class="section-title">${esc(t("offline.tafsir"))}</h2>

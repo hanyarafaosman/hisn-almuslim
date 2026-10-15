@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "tafsir/index.json", "asma/book.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "tafsir/index.json", "asma/book.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -60,6 +60,14 @@ const pagesJson = readJson("mushaf/madinah.json"), ayatJson = readJson("mushaf/a
   const hafsText = readJson(hafsIdx.data); const rubMark = (s, a) => hafsText.s[s - 1][a - 1][0].includes("۞");
   const marked = hafsText.s.flatMap((ay, si) => ay.map((x, ai) => [si + 1, ai + 1]).filter(([s, a]) => rubMark(s, a)));
   if (ayatJson.rub.some(([s, a]) => a !== 1 && !rubMark(s, a)) || marked.some(([s, a]) => !ayatJson.rub.some(r => r[0] === s && r[1] === a))) fail("mushaf/ayat.json: quarters differ from the ۞ marks in quran/hafs.json");
+}
+
+// The name of Allah on the printed pages (mushaf/jalala.json): glyph indexes inside each page, 2699 + 5 (اللهم) words.
+{
+  const jl = readJson("mushaf/jalala.json"), tj = readJson("mushaf/tajweed.json");
+  if (jl.count !== 2704 || jl.pages.length !== 604) fail(`mushaf/jalala.json: ${jl.count} words on ${jl.pages.length} pages`);
+  jl.pages.forEach((idx, i) => { const glyphs = pagesJson.pages[i].filter(x => x.w1).reduce((n, x) => n + x.w1.split(" ").length, 0); if (idx.some((g, j) => !(g >= 0 && g < glyphs) || (j && g <= idx[j - 1]))) fail(`mushaf/jalala.json page ${i + 1}: glyph index outside the page or out of order`); });
+  if (!/{n}/.test(tj.fonts?.v4?.url || "") || !(tj.fonts.v4.bytes > 0)) fail("mushaf/tajweed.json: v4 font url with {n} and size required");
 }
 
 // Interface fonts are shipped with the app: css/fonts.css, www/fonts/ and the FONTS precache list in sw.js must agree
@@ -134,7 +142,7 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }
