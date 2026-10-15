@@ -60,7 +60,7 @@ const brand = "background: radial-gradient(circle at 20% 15%, rgba(233,196,106,.
     h1 { margin: 0; font: 700 112px/1.15 Amiri, serif; }
     p { margin: 6px 0 0; font: 400 38px/1.4 Amiri, serif; color: #e9c46a; }
     img { width: 250px; height: 250px; filter: drop-shadow(0 16px 36px rgba(0,0,0,.35)); }
-  </style></head><body><div class="text"><h1>حصن المسلم</h1><p>أذكار ومصحف وكتب السنة</p></div><img src="${fileUrl(path.join(www, "icons", "icon-512.png"))}" alt=""></body></html>`,
+  </style></head><body><div class="text"><h1>حصن ونور</h1><p>أذكار حصن المسلم والمصحف وكتب السنة</p></div><img src="${fileUrl(path.join(www, "icons", "icon-512.png"))}" alt=""></body></html>`,
   path.join(store, "feature-graphic.jpg"), { width: 1024, height: 500 });
 
   fs.copyFileSync(path.join(www, "icons", "maskable-512.png"), path.join(store, "icon-512.png"));

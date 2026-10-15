@@ -188,7 +188,7 @@ const HOME_CHAPTERS = [[27, "morning"], [27, "evening"], [28], [1], [25], [10], 
 add("", {
   nav: "home",
   head: jsonld({ "@graph": [
-    { "@type": "WebSite", "@id": SITE + "#website", name: APP, alternateName: ["Hisn al-Muslim", BOOK], url: SITE, inLanguage: "ar" },
+    { "@type": "WebSite", "@id": SITE + "#website", name: APP, alternateName: ["حصن المسلم", "Hisn al-Muslim", BOOK], url: SITE, inLanguage: "ar" },
     { "@type": "WebApplication", name: APP, url: SITE, applicationCategory: "LifestyleApplication", operatingSystem: "Android, iOS, Windows, macOS, Linux",
       browserRequirements: "Requires JavaScript", inLanguage: "ar", isAccessibleForFree: true, image: SITE + "icons/icon-512.png",
       description: /<meta name="description" content="([^"]*)">/.exec(TEMPLATE)[1], offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } },

@@ -5,7 +5,7 @@ const fs = require("fs"), path = require("path");
 const ROOT = path.join(__dirname, "..");
 
 const S = {
-  "app.name": ["حصن المسلم", "Hisn al-Muslim"],
+  "app.name": ["حصن ونور", "Fortress and Light"],
   "nav.hub": ["الرئيسية", "Home"],
   "nav.adhkar": ["الأذكار", "Adhkar"],
   "nav.hadith": ["الحديث", "Hadith"],

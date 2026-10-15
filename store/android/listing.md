@@ -7,7 +7,7 @@
 
 ### اسم التطبيق
 <!-- title-ar -->
-حصن المسلم: أذكار ومصحف وحديث
+حصن ونور: أذكار ومصحف وحديث
 <!-- /title-ar -->
 
 ### الوصف المختصر
@@ -17,7 +17,7 @@
 
 ### الوصف الكامل
 <!-- full-ar -->
-حصن المسلم تطبيق مجاني بلا إعلانات، يجمع لك أذكار اليوم والليلة والمصحف الشريف وكتب السنة في مكان واحد، ويعمل دون إنترنت.
+حصن ونور تطبيق مجاني بلا إعلانات، يجمع لك أذكار اليوم والليلة والمصحف الشريف وكتب السنة في مكان واحد، ويعمل دون إنترنت.
 
 الأذكار
 • كتاب «حصن المسلم من أذكار الكتاب والسنة» للشيخ سعيد بن علي بن وهف القحطاني رحمه الله كاملًا: 132 بابًا و267 ذكرًا.
@@ -49,7 +49,7 @@
 
 ### App name
 <!-- title-en -->
-Hisn al-Muslim: Adhkar & Quran
+Fortress & Light: Dhikr, Quran
 <!-- /title-en -->
 
 ### Short description
@@ -59,7 +59,7 @@ Morning & evening adhkar with counter and audio, Quran in 8 readings, hadith
 
 ### Full description
 <!-- full-en -->
-Hisn al-Muslim is a free app with no ads. It brings together the daily remembrances (adhkar), the Holy Quran, and the books of hadith, and it works offline.
+Fortress & Light is a free app with no ads. It brings together the daily remembrances (adhkar), the Holy Quran, and the books of hadith, and it works offline.
 
 Adhkar
 • The complete book "Hisn al-Muslim" (Fortress of the Muslim) by Shaykh Saʿid ibn ʿAli ibn Wahf al-Qahtani: 132 chapters, 267 adhkar.

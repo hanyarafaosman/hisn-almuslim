@@ -20,4 +20,4 @@ http.createServer((req, res) => {
     res.writeHead(200, { "Content-Type": mime[path.extname(file)] || "application/octet-stream", "Cache-Control": "no-cache" });
     res.end(data);
   });
-}).listen(port, () => console.log(`حصن المسلم dev server → http://localhost:${port} (${path.relative(process.cwd(), root) || "."})`));
+}).listen(port, () => console.log(`حصن ونور dev server → http://localhost:${port} (${path.relative(process.cwd(), root) || "."})`));
