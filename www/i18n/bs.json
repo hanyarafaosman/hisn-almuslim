@@ -192,6 +192,7 @@
  "tasbih.noLimit": "Bez ograničenja",
  "tasbih.completed": "Završeno: {n}",
  "tasbih.wasReset": "Brojač je resetovan",
+ "tasbih.virtue": "Vrijednost ovog zikra",
  "settings.install": "Instaliraj aplikaciju",
  "settings.installHint": "Instaliraj je na uređaj da je koristiš bez interneta",
  "settings.installManual": "Iz menija preglednika: „Dodaj na početni ekran“ ili „Instaliraj“",

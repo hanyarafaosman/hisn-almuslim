@@ -192,6 +192,7 @@
  "tasbih.noLimit": "Sem limite",
  "tasbih.completed": "Você completou {n}",
  "tasbih.wasReset": "Contador zerado",
+ "tasbih.virtue": "A virtude deste dhikr",
  "settings.install": "Instalar o aplicativo",
  "settings.installHint": "Instale no seu dispositivo para usar offline",
  "settings.installManual": "No menu do navegador: “Adicionar à tela inicial” ou “Instalar”",

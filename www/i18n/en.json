@@ -183,6 +183,7 @@
  "tasbih.noLimit": "No limit",
  "tasbih.completed": "You completed {n}",
  "tasbih.wasReset": "Counter reset",
+ "tasbih.virtue": "The virtue of this dhikr",
  "settings.install": "Install the app",
  "settings.installHint": "Install it on your device to use it offline",
  "settings.installManual": "From the browser menu: “Add to Home screen” or “Install”",

@@ -183,6 +183,7 @@
  "tasbih.noLimit": "بدون محدودیت",
  "tasbih.completed": "{n} بار کامل شد",
  "tasbih.wasReset": "شمارنده صفر شد",
+ "tasbih.virtue": "فضیلت این ذکر",
  "settings.install": "نصب برنامه",
  "settings.installHint": "آن را روی دستگاه خود نصب کنید تا بدون اینترنت کار کند",
  "settings.installManual": "از منوی مرورگر: «افزودن به صفحهٔ اصلی» یا «نصب»",

@@ -193,6 +193,7 @@ const S = {
   "tasbih.noLimit": ["بلا حدّ", "No limit"],
   "tasbih.completed": ["أتممت {n}", "You completed {n}"],
   "tasbih.wasReset": ["تم التصفير", "Counter reset"],
+  "tasbih.virtue": ["فضل هذا الذكر", "The virtue of this dhikr"],
 
   "settings.install": ["تثبيت التطبيق", "Install the app"],
   "settings.installHint": ["ثبّته على جهازك ليعمل دون اتصال", "Install it on your device to use it offline"],

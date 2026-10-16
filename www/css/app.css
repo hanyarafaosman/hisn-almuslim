@@ -175,6 +175,11 @@ html[dir="rtl"] .list .chev { transform: scaleX(-1); }
 .tasbih .tools { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
 .tasbih .phrases { display: flex; gap: 8px; overflow-x: auto; padding: 4px 2px 8px; scrollbar-width: none; }
 .tasbih .phrases .chip { flex: none; font-family: var(--font-text); font-size: 1.05rem; }
+#virtues { display: grid; gap: 12px; }
+.dhikr.virtue .dhikr-text { cursor: auto; font-size: calc(1.2rem * var(--scale)); }
+.dhikr-bar .from { display: inline-flex; align-items: center; gap: 6px; min-width: 0; padding-inline: 8px; color: var(--muted); font-size: .8rem; }
+.dhikr-bar .from svg { width: 16px; height: 16px; flex: none; }
+.dhikr-bar .from span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stat { color: var(--muted); font-size: .9rem; }
 
 /* ---- settings ---- */
