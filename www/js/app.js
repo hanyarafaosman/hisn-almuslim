@@ -1,12 +1,12 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.14.0";
-import { setupHadith } from "./hadith.js?v=1.14.0";
-import { setupTafsir } from "./tafsir.js?v=1.14.0";
-import { setupAsma } from "./asma.js?v=1.14.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.14.0";
-import { mirrorOf } from "./mirror.js?v=1.14.0";
+import { setupQuran } from "./quran.js?v=1.15.0";
+import { setupHadith } from "./hadith.js?v=1.15.0";
+import { setupTafsir } from "./tafsir.js?v=1.15.0";
+import { setupAsma } from "./asma.js?v=1.15.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.15.0";
+import { mirrorOf } from "./mirror.js?v=1.15.0";
 
-const VERSION = "1.14.0";
+const VERSION = "1.15.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -106,6 +106,7 @@ function catProgress(cat, period) {
 }
 
 // ---------- theme ----------
+const isDark = () => settings.theme === "dark" || (settings.theme === "auto" && matchMedia("(prefers-color-scheme: dark)").matches);
 function applyTheme() {
   const th = settings.theme;
   if (th === "auto") document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", th);
@@ -168,6 +169,8 @@ const Q = setupQuran({
   view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, LS, copyText, share, SITE,
   adhkarAudio: () => ({ items: DB.categories.flatMap(c => c.items.map(i => i.audio)).filter(Boolean), chapters: DB.categories.map(c => c.audio).filter(Boolean) }),
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hadith: () => H, tafsir: () => TF,
+  // Night/day reading from the Quran pages: switches the app theme (as in Settings) and says whether it is now dark.
+  toggleTheme() { settings.theme = isDark() ? "light" : "dark"; saveSettings(); applyTheme(); return settings.theme === "dark"; },
 });
 // ---------- hadith books ----------
 const H = setupHadith({
@@ -221,6 +224,8 @@ function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll("
 
 function route() {
   const h = location.hash || "#/"; const [path, qs] = h.slice(1).split("?"); const parts = path.split("/").filter(Boolean); const params = new URLSearchParams(qs || "");
+  // The printed Mushaf fills the screen: the app bars step aside there (see .mm-on in app.css).
+  document.body.classList.toggle("mm-on", parts[0] === "mushaf");
   stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 1) || (parts[0] === "tafsir" && parts.length > 2)); view.scrollTop = 0; window.scrollTo(0, 0);
   if (!parts.length) return renderHub(params.get("q") || "");
   switch (parts[0]) {
