@@ -577,3 +577,27 @@ body.has-player .ayabar { bottom: calc(var(--nav-h) + var(--sab) + 72px); }
 .asma-notes .fn-num { color: var(--primary); font-weight: 700; }
 .sheet .tf-ayat { font-size: calc(1.25rem * var(--scale)); line-height: 2; max-height: 30vh; overflow-y: auto; }
 .asma-hero + .riwayah-note { margin-top: 10px; }
+
+/* creed and fiqh */
+.kt-intro { margin: -4px 4px 8px; color: var(--muted); font-size: .88rem; }
+.kt-hero h2 { font-family: var(--font-text); font-size: 1.35rem; line-height: 1.7; }
+.kt-hero p + p { margin-top: 4px; }
+.kt-hero + .riwayah-note { margin-top: 10px; }
+.kt-actions { display: flex; margin: 12px 0; }
+.kt-actions .btn { flex: 1; }
+.kt-actions svg { width: 20px; height: 20px; }
+.list .kt-row { padding-inline-start: calc(16px + var(--lv, 0) * 18px); }
+.list .kt-row .lbl { font-family: var(--font-text); font-weight: 400; font-size: calc(1.02rem * var(--scale)); line-height: 1.7; }
+.kt-group { padding: 12px 16px 8px; padding-inline-start: calc(16px + var(--lv, 0) * 18px); font-family: var(--font-text); font-weight: 700; line-height: 1.7; color: var(--primary-2); background: var(--surface-2); border-bottom: 1px solid var(--border); }
+.kt-snip { display: block; font-family: var(--font-text); font-weight: 400; line-height: 1.8; }
+.kt-snip mark { background: color-mix(in srgb, var(--accent) 35%, transparent); color: inherit; border-radius: 4px; padding: 0 1px; }
+.kt-crumb { display: block; color: var(--muted); font-family: var(--font-text); font-size: .9rem; margin: 2px 4px 0; }
+.kt-text .kt-h { font-size: 1.08em; line-height: 1.7; color: var(--primary-2); margin: .9em 0 .3em; }
+.kt-text .kt-h.l2 { font-size: 1em; }
+.kt-text .kt-h.l3 { font-size: .95em; color: var(--text); }
+.kt-text p, .kt-text .kt-h { scroll-margin-top: calc(80px + var(--sat)); border-radius: 8px; transition: background .4s; }
+.kt-text p.flash, .kt-text .kt-h.flash { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.kt-text .kt-sep { text-align: center; text-align-last: center; color: var(--muted); letter-spacing: .4em; }
+.sheet .kt-note { margin: 0; box-shadow: none; }
+:root[data-theme="dark"] .kt-text .kt-h, :root[data-theme="dark"] .kt-group { color: var(--primary); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .kt-text .kt-h, :root:not([data-theme="light"]) .kt-group { color: var(--primary); } }

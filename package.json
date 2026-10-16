@@ -31,7 +31,8 @@
     "mushaf:colors": "node scripts/build-mushaf-colors.js",
     "hadith": "node scripts/build-hadith-index.js",
     "tafsir": "node scripts/build-tafsir-index.js",
-    "asma": "node scripts/build-asma.js"
+    "asma": "node scripts/build-asma.js",
+    "kutub": "node scripts/build-kutub.js"
   },
   "license": "MIT"
 }

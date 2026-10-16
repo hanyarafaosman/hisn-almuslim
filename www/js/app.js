@@ -3,6 +3,7 @@ import { setupQuran } from "./quran.js?v=1.14.0";
 import { setupHadith } from "./hadith.js?v=1.14.0";
 import { setupTafsir } from "./tafsir.js?v=1.14.0";
 import { setupAsma } from "./asma.js?v=1.14.0";
+import { setupKutub } from "./kutub.js?v=1.14.0";
 import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.14.0";
 import { mirrorOf } from "./mirror.js?v=1.14.0";
 
@@ -184,6 +185,11 @@ const AS = setupAsma({
   view, $, esc, icon, t, num, sep, getLang, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel,
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
+// ---------- creed and fiqh: the books of ʿaqida and the primer of each of the four schools ----------
+const KT = setupKutub({
+  view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel, Q,
+  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
+});
 
 // ---------- language ----------
 function applyStatic() {
@@ -221,7 +227,7 @@ function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll("
 
 function route() {
   const h = location.hash || "#/"; const [path, qs] = h.slice(1).split("?"); const parts = path.split("/").filter(Boolean); const params = new URLSearchParams(qs || "");
-  stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 1) || (parts[0] === "tafsir" && parts.length > 2)); view.scrollTop = 0; window.scrollTo(0, 0);
+  stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 1) || (parts[0] === "tafsir" && parts.length > 2) || (parts[0] === "kutub" && parts.length > 2)); view.scrollTop = 0; window.scrollTo(0, 0);
   if (!parts.length) return renderHub(params.get("q") || "");
   switch (parts[0]) {
     case "section": return renderSection(parts[1]);
@@ -240,6 +246,7 @@ function route() {
     case "hadith": return H.render(parts.slice(1), params);
     case "tafsir": return TF.render(parts.slice(1), params);
     case "asma": return AS.render(parts.slice(1));
+    case "kutub": return KT.render(parts.slice(1), params);
     case "more": return renderMore();
     // Unknown address (for example a link to a newer version's page): show Home but keep the address,
     // so the page opens once the app updates instead of the link being lost.
@@ -277,6 +284,7 @@ const HUB_TILES = [
   { href: "#/hadith", icon: "books", label: () => t("hadith.books") },
   { href: "#/tafsir", icon: "tafsir", label: () => t("tafsir.books") },
   { href: "#/asma", icon: "asma", label: () => t("asma.title") },
+  { href: "#/kutub", icon: "kutub", label: () => t("kutub.title") },
   { href: "#/listen", icon: "headphones", label: () => t("listen.recitations") },
   { href: "#/radio", icon: "radio", label: () => t("listen.radios") },
   { href: "#/tasbih", icon: "beads", label: () => t("nav.tasbih") },
@@ -313,10 +321,11 @@ function renderHub(q = "") {
   const doSearch = async () => {
     const query = input.value.trim(); const r = adhkarSearch(query, 20); if (!r) return tiles();
     const mine = ++seq;
-    const [surahs, names] = await Promise.all([Q.searchSurahs(query).catch(() => []), AS.search(query).catch(() => [])]); if (mine !== seq) return;
+    const [surahs, names, books] = await Promise.all([Q.searchSurahs(query).catch(() => []), AS.search(query).catch(() => []), KT.search(query).catch(() => [])]); if (mine !== seq) return;
     results.innerHTML =
       (surahs.length ? `<h2 class="section-title">${T("quran.surahs")}</h2><div class="list">${surahs.slice(0, 8).map(x => `<a href="${x.href}"><div class="num">${num(x.n)}</div><div class="lbl">${esc(x.name)}</div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
       + (names.length ? `<h2 class="section-title">${T("asma.title")}</h2><div class="list">${names.slice(0, 6).map(x => `<a href="${x.href}"><div class="num">${num(x.n)}</div><div class="lbl" lang="ar" dir="rtl">${esc(x.name)}</div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
+      + (books.length ? `<h2 class="section-title">${T("kutub.title")}</h2><div class="list">${books.slice(0, 6).map(x => `<a href="${x.href}"><div class="num">${icon(x.icon)}</div><div class="lbl">${esc(x.name)}<span class="sub">${esc(x.sub)}</span></div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
       + `<div class="list" style="margin-top:12px"><a href="#/quran?q=${encodeURIComponent(query)}"><div class="num">${icon("quran")}</div><div class="lbl">${T("hub.searchQuran", { q: query })}</div>${icon("back", "chev")}</a></div>`
       + (r.count ? r.html : "");
   };
@@ -327,7 +336,7 @@ function renderHub(q = "") {
 function renderMore() {
   setNav("more"); setHeader(t("nav.more"));
   const rows = [
-    ["#/tafsir", "tafsir", t("tafsir.books")], ["#/asma", "asma", t("asma.title")],
+    ["#/tafsir", "tafsir", t("tafsir.books")], ["#/asma", "asma", t("asma.title")], ["#/kutub", "kutub", t("kutub.title")],
     ["#/listen", "headphones", t("listen.recitations")], ["#/radio", "radio", t("listen.radios")], ["#/tasbih", "beads", t("nav.tasbih")],
     ["#/fav", "star", t("common.favorites")], ["#/extras", "book", t("extra.section")], ["#/offline", "download", t("offline.title")], ["#/settings", "settings", t("nav.settings")],
   ];
@@ -595,6 +604,8 @@ function renderSettings() {
         <b>${T("about.tafsirTitle")}</b><br>${th("about.tafsirText", {}, { qe: link("https://quranenc.com", "QuranEnc.com"), qul: link("https://qul.tarteel.ai", "QUL") }, esc)}
       </div><div class="about">
         <b>${T("about.asmaTitle")}</b><br>${th("about.asmaText", {}, { link: link("https://app.turath.io/book/96493", "turath.io") }, esc)}
+      </div><div class="about">
+        <b>${T("about.kutubTitle")}</b><br>${th("about.kutubText", {}, { link: link("https://app.turath.io", "turath.io") }, esc)}
       </div><div class="about">
         <b>${T("about.audioTitle")}</b><br>${th("about.audioText", {}, { link: link("https://mp3quran.net", "mp3quran.net") }, esc)}
         <br><small>${T("about.version", { v: VERSION })}</small>
