@@ -582,3 +582,40 @@ body.has-player .ayabar { bottom: calc(var(--nav-h) + var(--sab) + 72px); }
 .asma-notes .fn-num { color: var(--primary); font-weight: 700; }
 .sheet .tf-ayat { font-size: calc(1.25rem * var(--scale)); line-height: 2; max-height: 30vh; overflow-y: auto; }
 .asma-hero + .riwayah-note { margin-top: 10px; }
+
+/* ===== صفحات المصحف بملء الشاشة (body.mm-on)، والأزرار تظهر بلمسة (body.mm-ui) ===== */
+body.mm-on { padding-top: var(--sat); padding-bottom: var(--sab); }
+body.mm-on.has-player { padding-top: var(--sat); padding-bottom: calc(62px + var(--sab)); }
+body.mm-on .bottom-nav { display: none; }
+body.mm-on .topbar { transform: translateY(-100%); transition: transform .22s ease; }
+body.mm-on.mm-ui .topbar { transform: none; }
+body.mm-on .view { padding: 0 10px; }
+/* The page as large as the screen allows: by width on phones, by height on wide or short screens. */
+.mm { --mmw: min(100%, 560px, calc((100dvh - var(--sat) - var(--sab) - 84px) / 1.56)); min-height: calc(100dvh - var(--sat) - var(--sab)); display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 6px 0; }
+.mm .mpage { width: var(--mmw); }
+body.has-player .mm { --mmw: min(100%, 560px, calc((100dvh - var(--sat) - var(--sab) - 146px) / 1.56)); min-height: calc(100dvh - var(--sat) - var(--sab) - 62px); } /* room for the player */
+.mm-margin { display: flex; justify-content: space-between; gap: 12px; width: var(--mmw); margin: 0 auto; padding: 0 8px; font-size: .78rem; font-weight: 600; color: var(--muted); }
+.mm-margin span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mm-margin.foot { justify-content: center; }
+.mbar { position: fixed; inset-inline: 0; bottom: 0; z-index: 22; max-width: 760px; margin: 0 auto; padding: 4px 10px calc(8px + var(--sab)); background: var(--surface); border: 1px solid var(--border); border-bottom: 0; border-radius: 18px 18px 0 0; box-shadow: 0 -6px 24px rgba(0,0,0,.12); transform: translateY(105%); transition: transform .22s ease; }
+body.mm-ui .mbar { transform: none; }
+body.mm-on.has-player .mbar { bottom: calc(62px + var(--sab)); padding-bottom: 8px; }
+.mbar .mslider { margin: 0; gap: 2px; }
+.mbar .mslider .icon-btn { width: 40px; height: 40px; flex: none; color: var(--primary); }
+.mbar .mslider .icon-btn:disabled { opacity: .3; }
+.mm-where { display: block; text-align: center; font-size: .78rem; color: var(--muted); margin: -4px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mtools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.mtools button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; border-radius: 12px; color: var(--text); font-size: .74rem; font-weight: 600; min-width: 0; }
+.mtools button:active, .mtools button:hover { background: var(--surface-2); }
+.mtools svg { width: 22px; height: 22px; color: var(--primary); }
+.mtools span { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mpage.tappable { -webkit-touch-callout: none; }
+body.mm-on .player { bottom: 0; height: calc(62px + var(--sab)); padding-bottom: var(--sab); }
+body.mm-on .ayabar { bottom: calc(var(--sab) + 10px); }
+body.mm-on.has-player .ayabar { bottom: calc(var(--sab) + 72px); }
+body.mm-on .toast { bottom: calc(var(--sab) + 24px); }
+body.mm-on.has-player .toast { bottom: calc(var(--sab) + 86px); }
+body.mm-on.mm-ui .toast { bottom: calc(var(--sab) + 170px); }
+body.mm-on.mm-ui.has-player .toast { bottom: calc(var(--sab) + 232px); }
+@media (min-width: 900px) { body.mm-on .player { border-radius: 16px 16px 0 0; } }
+@media (prefers-reduced-motion: reduce) { body.mm-on .topbar, .mbar { transition: none; } }
