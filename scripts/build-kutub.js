@@ -13,7 +13,8 @@ const OUT = path.join(ROOT, "www", "kutub");
 const API = "https://api.turath.io", FILES = "https://files.turath.io";
 
 // unit: the heading level that starts a reading page (deeper headings are shown inside it); 0 makes a short book one page.
-// from: first page of the book's own text (earlier pages are a catalogue card or a publisher's preface).
+// from: first page of the book's own text (earlier pages are a catalogue card or a publisher's preface);
+// to: its last page (later pages are the editor's conclusion and references).
 // items: the book has no chapters, only numbered paragraphs (one page; the contents lists each paragraph).
 const BOOKS = [
   {
@@ -65,10 +66,11 @@ const BOOKS = [
     aboutEn: "One of the best-known and most relied-upon primers of the Hanafi school, known simply as “al-Kitab”, covering every chapter of fiqh.",
   },
   {
-    id: "risala", turath: 11373, group: "fiqh", madhhab: "maliki", died: 386,
+    // The Dar al-Fikr copy (turath 11373) has no punctuation or paragraphs; this edition is vowelled and punctuated.
+    id: "risala", turath: 1430, group: "fiqh", madhhab: "maliki", died: 386, from: 75, to: 330,
     ar: "الرسالة", en: "Ar-Risala", by: "ابن أبي زيد القيرواني", byEn: "Ibn Abi Zayd al-Qayrawani",
-    about: "أشهر متون المذهب المالكي: بدأها بباب في العقيدة، ثم العبادات والمعاملات والآداب.",
-    aboutEn: "The best-known primer of the Maliki school: it opens with a chapter on creed, then worship, transactions and manners.",
+    about: "أشهر متون المذهب المالكي: بدأها بباب في العقيدة، ثم العبادات والمعاملات والآداب. والنص مشكول، جمعه المحقق من شرح التتائي وقابله بالمخطوطات، والحواشي تعليقاته.",
+    aboutEn: "The best-known primer of the Maliki school: it opens with a chapter on creed, then worship, transactions and manners. Fully vowelled; the editor compiled the text from at-Tata'i's commentary and checked it against manuscripts, and the footnotes are his.",
   },
   {
     id: "abu-shuja", turath: 11370, group: "fiqh", madhhab: "shafii", died: 593,
@@ -126,10 +128,16 @@ function build(cfg, info, whole, problems, infos) {
   const say = (pg, msg) => ((cfg.known || []).includes(`p${pg}: ${msg}`) ? infos : problems).push(`${cfg.id} p${pg}: ${msg}`);
   const tell = (pg, msg) => infos.push(`${cfg.id} p${pg}: ${msg}`);
   const headings = info.indexes.headings;
-  const first = cfg.from || 1;
-  // A heading mark may run over a line break: keep it on one line.
-  const pages = whole.pages.map((p, i) => {
-    const text = p.text.replace(/<span data-type="title"[^>]*>[\s\S]*?<\/span>/g, m => m.replace(/\s*\n\s*/g, " "));
+  const first = cfg.from || 1, last = cfg.to || whole.pages.length;
+  const ENTITY = { quot: '"', amp: "&", lt: "<", gt: ">", apos: "'", "#39": "'", nbsp: " " };
+  // A heading mark may run over a line break: keep it on one line. A mark nested in another is the same heading
+  // listed twice (al-Risala's «[الرعاف:]»): only the outer one is kept. Pages after the book's text are left out.
+  const twice = new Set();
+  const pages = whole.pages.slice(0, last).map((p, i) => {
+    const text = p.text
+      .replace(/(<span data-type="title"[^>]*>)\s*<span data-type="title"[^>]*?\bid="?toc-(\d+)"?[^>]*>([\s\S]*?)<\/span>\s*<\/span>/g, (m, outer, n, inner) => { twice.add(Number(n)); return outer + inner + "</span>"; })
+      .replace(/<span data-type="title"[^>]*>[\s\S]*?<\/span>/g, m => m.replace(/\s*\n\s*/g, " "))
+      .replace(/&(quot|amp|lt|gt|apos|#39|nbsp);/g, (m, k) => ENTITY[k]);
     const at = text.search(/^_{5,}\s*$/m);
     return { idx: i + 1, page: p.page, vol: p.vol, body: at < 0 ? text : text.slice(0, at), foot: at < 0 ? "" : text.slice(at).replace(/^_+[^\n]*\n?/, "") };
   });
@@ -137,7 +145,7 @@ function build(cfg, info, whole, problems, infos) {
   // ---------- headings the edition did not mark in the text: find their line on their page ----------
   const marked = new Set(pages.flatMap(p => [...(p.body + p.foot).matchAll(/\bid="?toc-(\d+)/g)].map(m => Number(m[1]))));
   headings.forEach((hd, k) => {
-    const n = k + 1; if (marked.has(n)) return;
+    const n = k + 1; if (marked.has(n) || twice.has(n)) return;
     const p = pages[hd.page - 1];
     if (!p || p.idx < first) return; // before the book's own text (a publisher's preface)
     const lines = p.body.split("\n");
@@ -158,13 +166,13 @@ function build(cfg, info, whole, problems, infos) {
     p.body = lines.join("\n");
   });
 
-  // Footnote numbers in the edition: "(١) …" under the line, or a bare "١ …" (then the mark in the text is a bare digit).
+  // Footnote numbers in the edition: "(١) …" under the line, "(^١) …" (the mark in the text is the same), or a bare
+  // "١ …" (then the mark in the text is a bare digit).
   const footLines = pages.flatMap(p => p.foot.split("\n").map(l => l.trim()));
-  const paren = footLines.filter(l => /^\([٠-٩]+\)/.test(l)).length;
-  const bare = footLines.filter(l => /^[٠-٩]+(?![٠-٩/])/.test(l)).length;
-  const style = bare > paren ? "bare" : "paren";
-  const NOTE = style === "paren" ? /^\(([٠-٩]+|\*)\)\s*/ : /^([٠-٩]+|\*)(?![٠-٩/])\s*[.-]?\s*/;
-  const MARK = style === "paren" ? /\((\*|[٠-٩]+)\)/g : /(?<![٠-٩(/])(\*|[٠-٩]+)(?![٠-٩)/])/g;
+  const count = re => footLines.filter(l => re.test(l)).length;
+  const style = [["caret", count(/^\(\^[٠-٩]+\)/)], ["paren", count(/^\([٠-٩]+\)/)], ["bare", count(/^[٠-٩]+(?![٠-٩/])/)]].sort((a, b) => b[1] - a[1])[0][0];
+  const NOTE = { caret: /^\(\^([٠-٩]+)\)\s*/, paren: /^\(([٠-٩]+|\*)\)\s*/, bare: /^([٠-٩]+|\*)(?![٠-٩/])\s*[.-]?\s*/ }[style];
+  const MARK = { caret: /\(\^([٠-٩]+)\)/g, paren: /\((\*|[٠-٩]+)\)/g, bare: /(?<![٠-٩(/])(\*|[٠-٩]+)(?![٠-٩)/])/g }[style];
 
   // ---------- footnotes of every page ----------
   const notes = new Map(); // "page:n" -> text
@@ -326,7 +334,7 @@ function build(cfg, info, whole, problems, infos) {
       return t || "";
     });
   });
-  const missing = headings.map((h, k) => k).filter(k => !toc[k] && headings[k].page >= first);
+  const missing = headings.map((h, k) => k).filter(k => !toc[k] && !twice.has(k + 1) && headings[k].page >= first && headings[k].page <= last);
   if (!cfg.items && missing.length) problems.push(`${cfg.id}: headings not placed: ${missing.map(k => headings[k].title).join(" | ")}`);
 
   // A reading page with no text of its own is a group title in the contents (for example «كتاب الطهارة» before its chapters).
