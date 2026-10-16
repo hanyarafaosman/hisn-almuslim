@@ -201,6 +201,7 @@
  "tasbih.noLimit": "Без ограничения",
  "tasbih.completed": "Выполнено: {n}",
  "tasbih.wasReset": "Счётчик сброшен",
+ "tasbih.virtue": "Достоинство этого зикра",
  "settings.install": "Установить приложение",
  "settings.installHint": "Установите его на устройство, чтобы пользоваться без интернета",
  "settings.installManual": "В меню браузера: «Добавить на главный экран» или «Установить»",

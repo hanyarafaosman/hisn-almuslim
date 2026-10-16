@@ -4,7 +4,7 @@
 // byte-range support so seeking works offline. A file whose source is down is taken from its backup copy
 // (js/mirror.js) but still saved under the original URL.
 
-import { fetchWithMirror } from "./mirror.js?v=1.15.0";
+import { fetchWithMirror } from "./mirror.js?v=1.16.0";
 
 export const STORES = { QURAN: "hisn-quran-v1", TR: "hisn-tr-v1", AUDIO: "hisn-offline-audio-v1", PAGES: "hisn-mushaf-fonts-v1", HADITH: "hisn-hadith-v1", TAFSIR: "hisn-tafsir-v1" };
 const supported = typeof caches !== "undefined";

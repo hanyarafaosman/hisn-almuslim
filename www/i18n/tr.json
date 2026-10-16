@@ -183,6 +183,7 @@
  "tasbih.noLimit": "Sınırsız",
  "tasbih.completed": "{n} tamamlandı",
  "tasbih.wasReset": "Sayaç sıfırlandı",
+ "tasbih.virtue": "Bu zikrin fazileti",
  "settings.install": "Uygulamayı yükle",
  "settings.installHint": "İnternetsiz kullanmak için cihazınıza yükleyin",
  "settings.installManual": "Tarayıcı menüsünden: “Ana ekrana ekle” veya “Yükle”",

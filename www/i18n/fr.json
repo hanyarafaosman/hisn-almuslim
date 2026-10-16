@@ -192,6 +192,7 @@
  "tasbih.noLimit": "Sans limite",
  "tasbih.completed": "Vous avez terminé {n}",
  "tasbih.wasReset": "Compteur remis à zéro",
+ "tasbih.virtue": "Le mérite de ce dhikr",
  "settings.install": "Installer l’application",
  "settings.installHint": "Installez-la sur votre appareil pour l’utiliser hors ligne",
  "settings.installManual": "Dans le menu du navigateur : « Ajouter à l’écran d’accueil » ou « Installer »",

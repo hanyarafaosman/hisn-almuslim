@@ -183,6 +183,7 @@
  "tasbih.noLimit": "بې حده",
  "tasbih.completed": "{n} ځله بشپړ شو",
  "tasbih.wasReset": "شمېرونکی صفر شو",
+ "tasbih.virtue": "د دې ذکر فضیلت",
  "settings.install": "اپ نصبول",
  "settings.installHint": "پر خپله وسیله یې نصب کړئ چې پرته له انټرنېټه وکارول شي",
  "settings.installManual": "د براوزر له مېنو څخه: «کور پردې ته ورزیاتول» یا «نصبول»",

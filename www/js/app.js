@@ -1,12 +1,12 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.15.0";
-import { setupHadith } from "./hadith.js?v=1.15.0";
-import { setupTafsir } from "./tafsir.js?v=1.15.0";
-import { setupAsma } from "./asma.js?v=1.15.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.15.0";
-import { mirrorOf } from "./mirror.js?v=1.15.0";
+import { setupQuran } from "./quran.js?v=1.16.0";
+import { setupHadith } from "./hadith.js?v=1.16.0";
+import { setupTafsir } from "./tafsir.js?v=1.16.0";
+import { setupAsma } from "./asma.js?v=1.16.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.16.0";
+import { mirrorOf } from "./mirror.js?v=1.16.0";
 
-const VERSION = "1.15.0";
+const VERSION = "1.16.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -523,25 +523,85 @@ function renderFavorites() {
 }
 
 const PHRASES = ["سُبْحَانَ اللَّهِ", "الْحَمْدُ لِلَّهِ", "اللَّهُ أَكْبَرُ", "لَا إِلَهَ إِلَّا اللَّهُ", "أَسْتَغْفِرُ اللَّهَ", "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ", "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ"];
+// The virtue of each phrase, from Hisn al-Muslim's own chapters (as [chapter, item]): 130 = the virtue of tasbih,
+// tahmid, tahlil and takbir; 129 = seeking forgiveness and repentance; 107 = the virtue of prayers upon the Prophet ﷺ.
+const PHRASE_VIRTUES = [
+  [[130, 258], [130, 257], [130, 261]],
+  [[130, 264], [130, 257], [130, 261]],
+  [[130, 257], [130, 261]],
+  [[130, 264], [130, 261], [130, 257], [130, 255]],
+  [[129, 248], [129, 249], [129, 253], [129, 250]],
+  [[130, 254], [130, 256], [130, 259]],
+  [[130, 260]],
+  [[107, 219], [107, 220], [107, 221], [107, 222], [107, 223]],
+];
+function virtueCard(cat, item) {
+  const tr = showAdhkarTr() && EN?.items[item.id];
+  return `<article class="dhikr virtue" data-cat="${cat.id}" data-item="${item.id}">
+    <div class="dhikr-text" lang="ar" dir="rtl">${formatText(item.text)}</div>
+    ${tr ? `<div class="dhikr-tr" lang="en" dir="ltr">${tr.n ? `<p class="translit">${esc(tr.n)}</p>` : ""}${tr.t ? `<p>${esc(tr.t)}</p>` : ""}</div>` : ""}
+    <div class="dhikr-bar">
+      <a class="from" href="#/cat/${cat.id}?item=${item.id}">${icon("book")}<span>${esc(catTitle(cat))}</span></a>
+      <span class="spacer"></span>
+      <button class="icon-btn" data-act="copy" type="button" aria-label="${T("common.copy")}">${icon("copy")}</button>
+      <button class="icon-btn" data-act="share" type="button" aria-label="${T("common.share")}">${icon("share")}</button>
+      ${item.audio ? `<button class="icon-btn" data-act="play" type="button" aria-label="${T("common.listen")}">${icon("play")}</button>` : ""}
+    </div>
+  </article>`;
+}
 function renderTasbih() {
   setNav("tasbih"); setHeader(t("nav.tasbih"), { back: true, actions: `<button class="icon-btn" id="a-reset" aria-label="${T("tasbih.reset")}">${icon("reset")}</button>` });
-  const draw = () => {
-    view.innerHTML = `<section class="tasbih">
-      <div class="phrases" dir="rtl">${PHRASES.map((p, i) => `<button class="chip ${tasbih.phrase === i ? "on" : ""}" data-ph="${i}" lang="ar">${p}</button>`).join("")}</div>
-      <button class="big-btn" id="tap" type="button" aria-label="${T("tasbih.tap")}"><div><div class="num">${num(tasbih.count)}</div><div class="lbl">${tasbih.target ? T("tasbih.target", { n: tasbih.target }) : T("tasbih.noLimit")}</div></div></button>
-      <div class="targets">${[33, 100, 1000, 0].map(x => `<button class="chip ${tasbih.target === x ? "on" : ""}" data-t="${x}">${x ? num(x) : "∞"}</button>`).join("")}</div>
-    </section>`;
-    $("#tap").onclick = () => {
-      tasbih.count++;
-      if (tasbih.target && tasbih.count >= tasbih.target) { vibrate([40, 60, 40]); toast(t("tasbih.completed", { n: tasbih.target })); tasbih.count = 0; } else vibrate(10);
-      saveTasbih(); $(".tasbih .num").textContent = num(tasbih.count);
-    };
-    view.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { tasbih.target = Number(b.dataset.t); tasbih.count = 0; saveTasbih(); draw(); });
-    // Choosing another dhikr starts its count from zero.
-    view.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => { const ph = Number(b.dataset.ph); if (ph !== tasbih.phrase) tasbih.count = 0; tasbih.phrase = ph; saveTasbih(); draw(); });
+  view.innerHTML = `<section class="tasbih">
+      <div class="phrases" dir="rtl">${PHRASES.map((p, i) => `<button class="chip ${tasbih.phrase === i ? "on" : ""}" data-ph="${i}" lang="ar" aria-pressed="${tasbih.phrase === i}">${p}</button>`).join("")}</div>
+      <button class="big-btn" id="tap" type="button" aria-label="${T("tasbih.tap")}"><div><div class="num">${num(tasbih.count)}</div><div class="lbl"></div></div></button>
+      <div class="targets">${[33, 100, 1000, 0].map(x => `<button class="chip" data-t="${x}">${x ? num(x) : "∞"}</button>`).join("")}</div>
+    </section>
+    <section class="virtues" aria-labelledby="virtues-h"><h2 class="section-title" id="virtues-h">${T("tasbih.virtue")}</h2><div id="virtues"></div></section>`;
+  const box = $(".tasbih .phrases"), numEl = $(".tasbih .num");
+  const showCount = () => { numEl.textContent = num(tasbih.count); };
+  const showTarget = () => {
+    $(".tasbih .lbl").textContent = tasbih.target ? t("tasbih.target", { n: tasbih.target }) : t("tasbih.noLimit");
+    view.querySelectorAll("[data-t]").forEach(b => b.classList.toggle("on", Number(b.dataset.t) === tasbih.target));
   };
-  draw();
-  $("#a-reset").onclick = () => { tasbih.count = 0; saveTasbih(); $(".tasbih .num").textContent = num(0); toast(t("tasbih.wasReset")); };
+  const showVirtues = () => {
+    const list = (PHRASE_VIRTUES[tasbih.phrase] || []).map(([c, i]) => ({ cat: catById.get(c), item: catById.get(c)?.items.find(x => x.id === i) })).filter(x => x.item);
+    if (playingBtn && $("#virtues").contains(playingBtn)) stopAudio();
+    $(".virtues").hidden = !list.length;
+    $("#virtues").innerHTML = list.map(({ cat, item }) => virtueCard(cat, item)).join("");
+  };
+  // Scroll the phrase strip only as far as needed to show the chosen chip whole (centred when the page opens).
+  const reveal = (chip, center) => {
+    const b = box.getBoundingClientRect(), c = chip.getBoundingClientRect();
+    const dx = center ? (c.left + c.right - b.left - b.right) / 2 : c.left < b.left ? c.left - b.left - 8 : c.right > b.right ? c.right - b.right + 8 : 0;
+    if (dx) box.scrollBy({ left: dx, behavior: center ? "auto" : "smooth" });
+  };
+  showTarget(); showVirtues();
+  const center = () => { const c = box.querySelector(".chip.on"); if (c) reveal(c, true); return box.scrollLeft; };
+  const at = center();
+  // The chips get wider once the Arabic font has loaded: centre again, unless the strip was scrolled meanwhile.
+  document.fonts?.ready.then(() => { if (box.isConnected && box.scrollLeft === at) center(); });
+  $("#tap").onclick = () => {
+    tasbih.count++;
+    if (tasbih.target && tasbih.count >= tasbih.target) { vibrate([40, 60, 40]); toast(t("tasbih.completed", { n: tasbih.target })); tasbih.count = 0; } else vibrate(10);
+    saveTasbih(); showCount();
+  };
+  view.querySelectorAll("[data-t]").forEach(b => b.onclick = () => { tasbih.target = Number(b.dataset.t); tasbih.count = 0; saveTasbih(); showTarget(); showCount(); });
+  // Choosing another dhikr starts its count from zero. Only the parts that change are updated,
+  // so the phrase strip keeps its scroll position.
+  box.querySelectorAll("[data-ph]").forEach(b => b.onclick = () => {
+    const ph = Number(b.dataset.ph); if (ph === tasbih.phrase) return;
+    tasbih.phrase = ph; tasbih.count = 0; saveTasbih();
+    box.querySelectorAll("[data-ph]").forEach(x => { const on = x === b; x.classList.toggle("on", on); x.setAttribute("aria-pressed", on); });
+    showCount(); showVirtues(); reveal(b, false);
+  });
+  $("#virtues").addEventListener("click", e => {
+    const btn = e.target.closest("[data-act]"); if (!btn) return;
+    const card = btn.closest(".dhikr"); const cat = catById.get(Number(card.dataset.cat)); const item = cat.items.find(i => i.id === Number(card.dataset.item));
+    if (btn.dataset.act === "copy") return copyText(dhikrPlain(cat, item));
+    if (btn.dataset.act === "share") return shareText(catTitle(cat), dhikrPlain(cat, item), catUrl(cat, item));
+    if (btn.dataset.act === "play") return togglePlay(item.audio, btn);
+  });
+  $("#a-reset").onclick = () => { tasbih.count = 0; saveTasbih(); showCount(); toast(t("tasbih.wasReset")); };
 }
 document.addEventListener("keydown", e => { if (e.code === "Space" && location.hash === "#/tasbih" && !e.target.closest("button,input,select")) { e.preventDefault(); $("#tap")?.click(); } });
 
