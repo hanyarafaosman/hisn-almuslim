@@ -4,8 +4,8 @@
 // spa5k/tafsir_api pinned to a release commit on jsDelivr (the classical books, from the Quranic Universal Library);
 // a file jsDelivr refuses is read from GitHub at the same commit (js/mirror.js).
 // Verse numbers follow the Kufan count, so tafsir is offered in the Hafs and Shuʿbah readings.
-import * as off from "./offline.js?v=1.14.0";
-import { fetchWithMirror, mirrorOf } from "./mirror.js?v=1.14.0";
+import * as off from "./offline.js?v=1.16.0";
+import { fetchWithMirror, mirrorOf } from "./mirror.js?v=1.16.0";
 
 const TAFSIR_STORE = off.STORES.TAFSIR;
 
