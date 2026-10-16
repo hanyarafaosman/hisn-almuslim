@@ -1,12 +1,12 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.15.0";
-import { setupHadith } from "./hadith.js?v=1.15.0";
-import { setupTafsir } from "./tafsir.js?v=1.15.0";
-import { setupAsma } from "./asma.js?v=1.15.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.15.0";
-import { mirrorOf } from "./mirror.js?v=1.15.0";
+import { setupQuran } from "./quran.js?v=1.16.0";
+import { setupHadith } from "./hadith.js?v=1.16.0";
+import { setupTafsir } from "./tafsir.js?v=1.16.0";
+import { setupAsma } from "./asma.js?v=1.16.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.16.0";
+import { mirrorOf } from "./mirror.js?v=1.16.0";
 
-const VERSION = "1.15.0";
+const VERSION = "1.16.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -576,7 +576,10 @@ function renderTasbih() {
     if (dx) box.scrollBy({ left: dx, behavior: center ? "auto" : "smooth" });
   };
   showTarget(); showVirtues();
-  const chosen = box.querySelector(".chip.on"); if (chosen) reveal(chosen, true);
+  const center = () => { const c = box.querySelector(".chip.on"); if (c) reveal(c, true); return box.scrollLeft; };
+  const at = center();
+  // The chips get wider once the Arabic font has loaded: centre again, unless the strip was scrolled meanwhile.
+  document.fonts?.ready.then(() => { if (box.isConnected && box.scrollLeft === at) center(); });
   $("#tap").onclick = () => {
     tasbih.count++;
     if (tasbih.target && tasbih.count >= tasbih.target) { vibrate([40, 60, 40]); toast(t("tasbih.completed", { n: tasbih.target })); tasbih.count = 0; } else vibrate(10);
