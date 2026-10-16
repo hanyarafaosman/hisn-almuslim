@@ -146,7 +146,7 @@ for (const b of kt.books) {
   const file = path.join(root, "kutub", b.file || "");
   if (!fs.existsSync(file)) { fail("kutub: missing " + b.file); continue; }
   const text = fs.readFileSync(file, "utf8");
-  const hash = require("crypto").createHash("sha256").update(text.replace(/\n$/, "")).digest("hex").slice(0, 10);
+  const hash = require("crypto").createHash("sha256").update(text.replace(/\r?\n$/, "")).digest("hex").slice(0, 10);
   if (b.file !== `${b.id}.${hash}.json`) fail(`kutub: ${b.file} does not match its text (rebuild with npm run kutub)`);
   const book = JSON.parse(text);
   const anchors = s => new Set((s.body || []).map(x => x.a).filter(Boolean));
