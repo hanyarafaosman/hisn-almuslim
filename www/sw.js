@@ -1,8 +1,8 @@
 /* Service worker: offline-first app shell for حصن ونور */
-const VERSION = "hisn-v1.16.0";
+const VERSION = "hisn-v1.17.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
+  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
   "./i18n/ar.json", "./i18n/en.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png", "./icons/favicon.svg"
 ];
@@ -30,9 +30,12 @@ const HADITH_CACHE = "hisn-hadith-v1";
 // Tafsir books from spa5k/tafsir_api (pinned to a release commit, so the files never change): every surah or verse
 // the reader opens is kept, and whole books can be saved from the Offline content page. QuranEnc books use TR_CACHE.
 const TAFSIR_CACHE = "hisn-tafsir-v1";
+// Books of creed and fiqh (kutub/<id>.<hash>.json): a book is kept across app updates once opened. A corrected
+// book gets a new file name, and js/kutub.js deletes copies the index no longer lists.
+const KUTUB_CACHE = "hisn-kutub-v1";
 // Backup copies of outside files (MIRROR in js/mirror.js). On GitHub Pages they share the app's origin.
 const MIRROR = new URL("https://hanyarafaosman.github.io/hisn-almuslim-assets/");
-const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS, HADITH_CACHE, TAFSIR_CACHE];
+const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS, HADITH_CACHE, TAFSIR_CACHE, KUTUB_CACHE];
 
 self.addEventListener("install", e => {
   // cache: "reload" bypasses the browser HTTP cache (GitHub Pages sends max-age=600), so a new version never stores stale files.
@@ -60,7 +63,8 @@ self.addEventListener("fetch", e => {
     const quranFile = (/\/quran\/(fonts\/[a-z]+\.woff2|[a-z]+\.json)$/.test(url.pathname) && !url.pathname.endsWith("/index.json"))
       || /\/mushaf\/[a-z]+\.json$/.test(url.pathname);
     const uiFont = /\/fonts\/[a-z0-9-]+\.woff2$/.test(url.pathname);
-    e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : uiFont ? FONT_CACHE : VERSION));
+    const book = /\/kutub\/[a-z0-9-]+\.[0-9a-f]{10}\.json$/.test(url.pathname);
+    e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : uiFont ? FONT_CACHE : book ? KUTUB_CACHE : VERSION));
     return;
   }
   // Page fonts of the prints: QCF v1/v2 from the Quran.com CDN, the colour Tajweed print (QCF v4) from the Quran Foundation CDN.

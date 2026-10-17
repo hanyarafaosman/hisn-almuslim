@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "tafsir/index.json", "asma/book.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -134,6 +134,34 @@ for (const box of [...asma.groups, ...asma.chapters]) {
   if (refs.some(n => !box.notes[n - 1]) || (box.head || []).some(n => !box.notes[n - 1])) fail(`asma: footnote without a note in ${box.title || "names " + box.names}`);
 }
 
+// Creed and fiqh: each book file is named after its id and the hash of its text, its contents point to places
+// that exist, and every footnote mark has its note. No book file is left that the index does not list.
+const kt = readJson("kutub/index.json");
+const ktFiles = new Set(kt.books.map(b => b.file));
+for (const f of fs.readdirSync(path.join(root, "kutub"))) if (f !== "index.json" && !ktFiles.has(f)) fail("kutub: file not in the index " + f);
+if (new Set(kt.books.map(b => b.id)).size !== kt.books.length) fail("kutub: duplicate book ids");
+for (const b of kt.books) {
+  if (!b.ar || !b.en || !b.by || !b.byEn || !(b.died > 0) || !b.about || !b.aboutEn || !b.edition || !/^https:\/\/app\.turath\.io\/book\/\d+$/.test(b.url)) fail("kutub: incomplete book " + b.id);
+  if (!["aqida", "fiqh"].includes(b.group) || (b.group === "fiqh") !== !!b.madhhab || (b.madhhab && !enStrings["kutub." + b.madhhab])) fail(`kutub: ${b.id} has a bad group or school`);
+  const file = path.join(root, "kutub", b.file || "");
+  if (!fs.existsSync(file)) { fail("kutub: missing " + b.file); continue; }
+  const text = fs.readFileSync(file, "utf8");
+  const hash = require("crypto").createHash("sha256").update(text.replace(/\r?\n$/, "")).digest("hex").slice(0, 10);
+  if (b.file !== `${b.id}.${hash}.json`) fail(`kutub: ${b.file} does not match its text (rebuild with npm run kutub)`);
+  const book = JSON.parse(text);
+  const anchors = s => new Set((s.body || []).map(x => x.a).filter(Boolean));
+  for (const e of book.toc) {
+    const s = book.sections[e.s];
+    if (!s || !e.t) { fail(`kutub: ${b.id} contents entry «${e.t}» points nowhere`); continue; }
+    if ((e.a && !anchors(s).has(e.a)) || (e.fn && !s.notes?.[e.fn - 1]) || ((e.a || e.fn) && !s.body)) fail(`kutub: ${b.id} contents entry «${e.t}» points to a missing place`);
+  }
+  if (!book.sections.some(s => s.body)) fail(`kutub: ${b.id} has no text`);
+  for (const s of book.sections) {
+    const refs = [...JSON.stringify([s.th || "", s.body || []]).matchAll(/⟦(\d+)⟧/g)].map(m => Number(m[1]));
+    if (refs.some(n => !s.notes?.[n - 1]) || (s.notes || []).some((x, i) => !refs.includes(i + 1))) fail(`kutub: ${b.id} «${s.t}» has a footnote mark without its note, or a note without its mark`);
+  }
+}
+
 // Interface languages: every language listed in js/i18n.js has a strings file that passes check-i18n.js
 // LANGS entries look like ["fr", "Français"]; other arrays in the file do not end right after the second string.
 const langs = [...new Set([...fs.readFileSync(path.join(root, "js/i18n.js"), "utf8").matchAll(/\["([a-z]{2,3})", "[^"]+"\]/g)].map(m => m[1]))];
@@ -142,12 +170,12 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }
 
 console.log(ok
-  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${tx.books.length} tafsir books, ${asma.names.length} names of Allah, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios)`
+  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${tx.books.length} tafsir books, ${asma.names.length} names of Allah, ${kt.books.length} creed and fiqh books, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios)`
   : "checks failed");
 process.exit(ok ? 0 : 1);

@@ -3,3 +3,5 @@ www/quran/** -text
 *.woff2 binary
 *.png binary
 *.jpg binary
+# Each book file is named after the hash of its bytes (scripts/build-kutub.js)
+www/kutub/*.json -text
