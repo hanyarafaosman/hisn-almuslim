@@ -604,6 +604,25 @@ body.has-player .ayabar { bottom: calc(var(--nav-h) + var(--sab) + 72px); }
 .kt-text p.flash, .kt-text .kt-h.flash { background: color-mix(in srgb, var(--accent) 22%, transparent); }
 .kt-text .kt-sep { text-align: center; text-align-last: center; color: var(--muted); letter-spacing: .4em; }
 .sheet .kt-note { margin: 0; box-shadow: none; }
+.kt-find { margin-top: 12px; }
+.kt-authors { margin-top: 10px; }
+.kt-authors .chip { font-size: .85rem; padding: 6px 12px; }
+/* A long contents opens one level at a time. */
+.kt-fold { border-bottom: 1px solid var(--border); }
+.kt-fold:last-child { border-bottom: 0; }
+.kt-fold > summary { display: flex; align-items: center; gap: 8px; min-height: 52px; padding: 8px 12px 8px 16px; padding-inline-start: calc(16px + var(--lv, 0) * 18px); cursor: pointer; list-style: none; font-family: var(--font-text); font-weight: 700; line-height: 1.7; color: var(--primary-2); }
+.kt-fold > summary::-webkit-details-marker { display: none; }
+.kt-fold > summary::before { content: ""; flex: none; width: 8px; height: 8px; border-inline-end: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .15s; opacity: .7; }
+html[dir="ltr"] .kt-fold > summary::before { transform: rotate(-45deg); }
+.kt-fold[open] > summary::before { transform: rotate(45deg) translate(-2px, -2px); }
+.kt-fold > summary > span { flex: 1; }
+.kt-fold > summary .icon-btn { flex: none; color: var(--muted); }
+html[dir="rtl"] .kt-fold > summary .icon-btn svg { transform: scaleX(-1); }
+.kt-fold > summary:active { background: var(--surface-2); }
+.kt-sub { border-top: 1px solid var(--border); background: color-mix(in srgb, var(--surface-2) 40%, var(--surface)); }
+.kt-sub > a:last-child, .kt-sub > div:last-child { border-bottom: 0; }
+:root[data-theme="dark"] .kt-fold > summary { color: var(--primary); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .kt-fold > summary { color: var(--primary); } }
 :root[data-theme="dark"] .kt-text .kt-h, :root[data-theme="dark"] .kt-group { color: var(--primary); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .kt-text .kt-h, :root:not([data-theme="light"]) .kt-group { color: var(--primary); } }
 
