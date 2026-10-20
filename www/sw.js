@@ -1,5 +1,5 @@
 /* Service worker: offline-first app shell for حصن ونور */
-const VERSION = "hisn-v1.19.0";
+const VERSION = "hisn-v1.20.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./js/prayer.js", "./js/prayer-calc.js", "./adhan/index.json", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./quran/index.json",
@@ -30,8 +30,9 @@ const HADITH_CACHE = "hisn-hadith-v1";
 // Tafsir books from spa5k/tafsir_api (pinned to a release commit, so the files never change): every surah or verse
 // the reader opens is kept, and whole books can be saved from the Offline content page. QuranEnc books use TR_CACHE.
 const TAFSIR_CACHE = "hisn-tafsir-v1";
-// Books of creed and fiqh (kutub/<id>.<hash>.json): a book is kept across app updates once opened. A corrected
-// book gets a new file name, and js/kutub.js deletes copies the index no longer lists.
+// Books of the library: kutub/<id>.<hash>.json (contents) and kutub/<id>/<n>.<hash>.json (text, about 250 KB each).
+// Every file read is kept across app updates. A corrected file gets a new name, and js/kutub.js deletes copies the
+// index no longer lists.
 const KUTUB_CACHE = "hisn-kutub-v1";
 // Adhan recordings (adhan/<id>.<hash>.aac, kept across updates), the adhan file the user chose (adhan/custom), and what
 // js/prayer.js leaves for the prayer notifications below (PRAYER_INFO).
@@ -68,7 +69,7 @@ self.addEventListener("fetch", e => {
     const quranFile = (/\/quran\/(fonts\/[a-z]+\.woff2|[a-z]+\.json)$/.test(url.pathname) && !url.pathname.endsWith("/index.json"))
       || /\/mushaf\/[a-z]+\.json$/.test(url.pathname);
     const uiFont = /\/fonts\/[a-z0-9-]+\.woff2$/.test(url.pathname);
-    const book = /\/kutub\/[a-z0-9-]+\.[0-9a-f]{10}\.json$/.test(url.pathname);
+    const book = /\/kutub\/[a-z0-9-]+(\/\d+)?\.[0-9a-f]{10}\.json$/.test(url.pathname);
     e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : uiFont ? FONT_CACHE : book ? KUTUB_CACHE : VERSION));
     return;
   }

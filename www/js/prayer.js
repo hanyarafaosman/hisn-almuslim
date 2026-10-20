@@ -6,7 +6,7 @@
 // A web page runs only while the browser keeps it alive, so these alerts come while the app is open or was recently
 // in the background. When the app is closed, the server in push/ sends the same alerts by Web Push (syncPush below,
 // the push handler in sw.js); the page explains both to the user.
-import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.19.0";
+import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.20.0";
 
 export const ADHAN_CACHE = "hisn-adhan-v1"; // the same name is in sw.js
 
