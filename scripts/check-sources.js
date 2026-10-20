@@ -5,7 +5,8 @@
 //                      tafsir books (quranenc.com, jsDelivr),
 //                      backup copy of the audio and page fonts (hisn-almuslim-assets, see www/js/mirror.js),
 //                      the prayer alerts server (push/, PUSH.url in www/js/prayer.js): it answers and its minute job runs
-//   warnings (exit 0): live radio stations, hadith radio stations, changed audio sizes,
+//   warnings (exit 0): live radio stations, hadith and subject radio stations, audio lesson series (IslamHouse.com),
+//                      video series (YouTube), live channels (win.holol.com), changed audio sizes,
 //                      city search and place names for prayer times (open-meteo.com, nominatim.openstreetmap.org)
 const fs = require("fs"), path = require("path");
 const { probe } = require("./check-radios.js");
@@ -234,10 +235,37 @@ async function radioList(G, list) {
   if (bad.length) warn(G, `${bad.length} of ${list.length} stations not responding: ${bad.join(", ")}`);
   else pass(G, `${list.length} stations responding`);
 }
-const { live, sunnah = [] } = readJson("data/radios.json");
+const { live, sunnah = [], topics = [] } = readJson("data/radios.json");
+
+// A few workers over a list; fn returns an error text, or "" when the item is fine.
+async function each(items, fn, n = 6) {
+  const q = [...items], bad = [];
+  await Promise.all(Array.from({ length: n }, async () => { while (q.length) { const x = q.shift(); const why = await fn(x).catch(e => e.message); if (why) bad.push(why); } }));
+  return bad;
+}
+// Audio series on the radio page (IslamHouse.com): every lesson file. The audio element plays them without CORS.
+async function audioSeries() {
+  const G = "Audio series"; const { series } = readJson("data/lessons.json");
+  const files = series.flatMap(s => s.tracks.map(([u], i) => ({ u, name: `${s.id} ${i + 1}` })));
+  const bad = await each(files, async f => { const r = await request(f.u, { method: "HEAD" }); return !r.ok ? `${f.name} (HTTP ${r.status})` : !/audio|mpeg|octet-stream/.test(r.headers.get("content-type") || "") ? `${f.name} (type ${r.headers.get("content-type")})` : ""; });
+  if (bad.length) warn(G, `${bad.length} of ${files.length} lessons not answering: ${listBad(bad)}`);
+  else pass(G, `${files.length} lessons in ${series.length} series answer`);
+}
+// Video series: the first and last episode of every playlist still play inside other sites (YouTube oEmbed answers 200).
+async function videoSeries() {
+  const G = "Video series"; const { series, live } = readJson("data/videos.json"); const channels = live.filter(c => c.url);
+  const eps = series.flatMap(s => s.parts.flatMap(p => [...new Set([p.eps[0], p.eps[p.eps.length - 1]])].map(e => ({ id: e[0], name: `${s.id} ${e[0]}` }))));
+  const bad = await each(eps, async e => { const r = await request(`https://www.youtube.com/oembed?url=${encodeURIComponent("https://www.youtube.com/watch?v=" + e.id)}&format=json`, { tries: 2 }); return r.ok ? "" : `${e.name} (HTTP ${r.status})`; });
+  if (bad.length) warn(G, `${bad.length} of ${eps.length} sampled episodes cannot be played in the app (run npm run series): ${listBad(bad)}`);
+  else pass(G, `${eps.length} sampled episodes of ${series.length} series play`);
+  const G2 = "Live channels";
+  const off = await each(channels, async c => { const r = await request(c.url); const text = r.ok ? (await r.text()).slice(0, 20) : ""; return !r.ok ? `${c.en} (HTTP ${r.status})` : !corsOk(r) ? `${c.en} (no CORS header, hls.js needs it)` : !text.startsWith("#EXTM3U") ? `${c.en} (not a playlist)` : ""; });
+  if (off.length) warn(G2, `${off.length} of ${channels.length} not answering: ${off.join(", ")}`);
+  else pass(G2, `${channels.length} channels answering`);
+}
 
 (async () => {
-  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah), placeSearch(), alertsServer()]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah), radioList("Subject radios", topics), audioSeries(), videoSeries(), placeSearch(), alertsServer()]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);

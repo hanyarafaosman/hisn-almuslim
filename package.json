@@ -33,6 +33,7 @@
     "tafsir": "node scripts/build-tafsir-index.js",
     "asma": "node scripts/build-asma.js",
     "kutub": "node scripts/build-kutub.js",
+    "series": "node scripts/build-series.js",
     "adhan": "node scripts/build-adhan.js",
     "check:prayer": "node scripts/check-prayer.js"
   },
