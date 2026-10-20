@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/prayer.js", "js/prayer-calc.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -162,6 +162,28 @@ for (const b of kt.books) {
   }
 }
 
+// Adhan recordings: each file is named after its id and the hash of its bytes and is an AAC (ADTS) stream, each has its
+// licence, source and an interface name, there is one for Fajr and one for the other prayers (the defaults in js/prayer.js),
+// and no file is left that the index does not list. The service worker and js/prayer.js keep them in the same cache.
+{
+  const ax = readJson("adhan/index.json"), files = new Set(ax.voices.map(v => v.file));
+  for (const f of fs.readdirSync(path.join(root, "adhan"))) if (f !== "index.json" && !files.has("adhan/" + f)) fail("adhan: file not in the index " + f);
+  for (const v of ax.voices) {
+    const file = path.join(root, v.file || "");
+    if (!fs.existsSync(file)) { fail("adhan: missing " + v.file); continue; }
+    const buf = fs.readFileSync(file), hash = require("crypto").createHash("sha256").update(buf).digest("hex").slice(0, 10);
+    if (v.file !== `adhan/${v.id}.${hash}.aac` || buf.length !== v.bytes) fail(`adhan: ${v.file} does not match its bytes (rebuild with npm run adhan)`);
+    if (!(buf[0] === 0xff && (buf[1] & 0xf0) === 0xf0)) fail(`adhan: ${v.file} is not an AAC (ADTS) stream`);
+    if (!v.by || !v.license || !/^https:\/\/creativecommons\.org\//.test(v.licenseUrl) || !/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/.test(v.url) || !(v.seconds > 60) || !(v.short > 5 && v.short < v.seconds)) fail("adhan: incomplete entry " + v.id);
+    if (!enStrings["prayer.v." + v.id]) fail(`adhan: no prayer.v.${v.id} string`);
+  }
+  const pj = fs.readFileSync(path.join(root, "js/prayer.js"), "utf8");
+  const def = (/voice: "([\w-]+)", fajrVoice: "([\w-]+)"/.exec(pj) || []).slice(1);
+  if (!ax.voices.some(v => v.id === def[0] && !v.fajr) || !ax.voices.some(v => v.id === def[1] && v.fajr)) fail("adhan: the default voices in js/prayer.js are not in adhan/index.json");
+  const cacheOf = src => (/const ADHAN_CACHE = "([^"]+)"/.exec(src) || [])[1];
+  if (!cacheOf(pj) || cacheOf(pj) !== cacheOf(fs.readFileSync(path.join(root, "sw.js"), "utf8"))) fail("adhan: ADHAN_CACHE differs between sw.js and js/prayer.js");
+}
+
 // Interface languages: every language listed in js/i18n.js has a strings file that passes check-i18n.js
 // LANGS entries look like ["fr", "Français"]; other arrays in the file do not end right after the second string.
 const langs = [...new Set([...fs.readFileSync(path.join(root, "js/i18n.js"), "utf8").matchAll(/\["([a-z]{2,3})", "[^"]+"\]/g)].map(m => m[1]))];
@@ -170,12 +192,12 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
+for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }
 
 console.log(ok
-  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${tx.books.length} tafsir books, ${asma.names.length} names of Allah, ${kt.books.length} creed and fiqh books, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios)`
+  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${tx.books.length} tafsir books, ${asma.names.length} names of Allah, ${kt.books.length} creed and fiqh books, ${readJson("adhan/index.json").voices.length} adhan recordings, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios)`
   : "checks failed");
 process.exit(ok ? 0 : 1);
