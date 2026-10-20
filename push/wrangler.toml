@@ -12,13 +12,13 @@ crons = ["* * * * *"]
 [[d1_databases]]
 binding = "DB"
 database_name = "hisn-push"
-database_id = "00000000-0000-0000-0000-000000000000" # replaced by the id that `npx wrangler d1 create hisn-push` prints
+database_id = "a069879f-d959-4305-a4f7-50b1ce705ec7" # printed by `npx wrangler d1 create hisn-push`
 migrations_dir = "migrations"
 
 [vars]
 # The public half of the VAPID key pair (npm run keys); the same key is PUSH.key in www/js/prayer.js.
 # The private half is only a Worker secret: npx wrangler secret put VAPID_PRIVATE_KEY
-VAPID_PUBLIC_KEY = ""
+VAPID_PUBLIC_KEY = "BGQvUdsL6dHUgFHDO32QvfoYy2tCmPIy3FU0S-FeRYxeh7vkYC_ykBKGlzLEDtZ9DNkRGmnripdu_IMNVzJ9GyA"
 VAPID_SUBJECT = "https://hanyarafaosman.github.io/hisn-almuslim/"
 # Pages allowed to call the server from a browser (comma-separated).
 ORIGINS = "https://hanyarafaosman.github.io"

@@ -51,7 +51,9 @@ npm run deploy
 - `keys` بيعمل مفتاحي VAPID: **الخاص بيروح على طول لسر الخادم** (`wrangler secret put VAPID_PRIVATE_KEY`) ومش بيتكتب في أي ملف، والعام بيتكتب في `wrangler.toml` و`www/js/prayer.js`.
 - تاني `deploy` عشان الخادم ياخد المفتاح العام.
 
-آخر خطوة: حط عنوان الخادم في `PUSH.url` في `www/js/prayer.js` (و`PUSH_URL` في `scripts/check-sources.js`)، وارفع إصدار التطبيق، وانشر.
+آخر خطوة: حط عنوان الخادم في `PUSH.url` في `www/js/prayer.js` (`scripts/check-sources.js` بياخده من هناك)، وارفع إصدار التطبيق، وانشر.
+
+الخادم الحالي: `https://hisn-push.hisn-push.workers.dev` على حساب hanyarafaosman. لو غيّرت اسم الـ workers.dev subdomain من لوحة Cloudflare، العنوان هيتغيّر، ولازم يتغيّر في `PUSH.url` وتنشر التطبيق.
 
 لو المفتاح الخاص ضاع أو اتسرب: `npm run keys` تاني و`npm run deploy` وانشر التطبيق. كل متصفح بيلاحظ إن المفتاح اتغيّر ويشترك من جديد لوحده أول ما التطبيق يتفتح، ولحد ما يتفتح الإشعارات مش هتوصله.
 

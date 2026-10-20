@@ -210,7 +210,7 @@ export function setupPrayer(ctx) {
   // the time zone, the calculation settings, the alert of each prayer and the language, works out the same times with
   // js/prayer-calc.js, and sends a short message at each alert; sw.js shows it. All of it is deleted when the alerts
   // are turned off. The key is the public half of the server's VAPID key pair (push/keys.js writes it here).
-  const PUSH = { url: "", key: "" };
+  const PUSH = { url: "https://hisn-push.hisn-push.workers.dev", key: "BGQvUdsL6dHUgFHDO32QvfoYy2tCmPIy3FU0S-FeRYxeh7vkYC_ykBKGlzLEDtZ9DNkRGmnripdu_IMNVzJ9GyA" };
   // On the local dev server, a test server can be set in the console: localStorage.pushServer = JSON.stringify({ url, key }).
   const pushServer = () => { const dev = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && LS.get("pushServer", null); return dev?.url && dev.key ? dev : PUSH; };
   let pushState = LS.get("prayerPush", null) ? "on" : ""; // on | unsupported | failed | "" (not asked for)
