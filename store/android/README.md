@@ -51,8 +51,8 @@
 | Display mode | Standalone |
 | Orientation | Portrait |
 | Status bar / Navigation bar / Background color | `#0f766e` |
-| Notification delegation | **مقفول** |
-| Location delegation | **مقفول** |
+| Notification delegation | **مفتوح** (تنبيهات الصلاة والأذان تظهر باسم التطبيق، ويطلب Android 13+ إذن الإشعارات) |
+| Location delegation | **مقفول** (Chrome نفسه يطلب إذن الموقع لمواقيت الصلاة، والبحث عن المدينة متاح بدونه) |
 | Google Play billing | **مقفول** |
 | Signing key | New (مفتاح جديد) |
 
@@ -83,11 +83,11 @@
 | Target audience | 13 سنة فأكثر (13-15 و16-17 و18+) |
 | News app / Government app | No |
 | Financial features / Health | None |
-| Data safety | No: التطبيق لا يجمع ولا يشارك أي بيانات |
+| Data safety | Yes، لبند واحد: **Location → Approximate location**: Collected، مش Shared، Processed ephemerally، Optional، والغرض App functionality |
 
 ليه 13 فأكثر: التطبيق مناسب للأطفال، بس اختيار فئة أقل من 13 بيدخّله في سياسة «التطبيقات العائلية» وشروطها الإضافية ومراجعتها الأطول. ممكن تضيفها بعد النشر لو حبيت.
 
-ليه Data safety «No»: كل البيانات (العدّاد والمفضلة والإعدادات) بتتحفظ على الجهاز ومش بتتبعت لأي مكان. التطبيق بس بيطلب المحتوى من مصادره (الصوتيات والترجمات والأحاديث)، وده مكتوب في سياسة الخصوصية.
+ليه Data safety كده: كل البيانات (العدّاد والمفضلة والإعدادات ومكان مواقيت الصلاة) بتتحفظ على الجهاز. الاستثناء الوحيد: لما المستخدم يضغط «استخدام موقعي الحالي» في مواقيت الصلاة، الإحداثيات بتتبعت مقرّبة لنحو كيلومتر مرة واحدة لـ OpenStreetMap عشان يظهر اسم المدينة، ومش بتتخزن عندنا. وده عند Google «جمع» لموقع تقريبي، اختياري ومؤقت. البحث عن مدينة بيبعت الاسم المكتوب بس لـ Open-Meteo. وغير كده التطبيق بيطلب المحتوى من مصادره (الصوتيات والترجمات والأحاديث)، وكل ده مكتوب في سياسة الخصوصية.
 
 **App integrity → App signing:** سيبها على Play App Signing (الافتراضي). بعد أول رفع، انسخ **SHA-256 certificate fingerprint** الخاص بـ **App signing key certificate** وابعته لـ Claude، عشان يتضاف لملف `assetlinks.json` جنب بصمة مفتاح الرفع.
 

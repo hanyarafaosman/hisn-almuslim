@@ -1,0 +1,40 @@
+{
+ "source": "Wikimedia Commons",
+ "voices": [
+  {
+   "id": "madinah",
+   "file": "adhan/madinah.8806453a29.aac",
+   "bytes": 2229394,
+   "seconds": 185.78,
+   "short": 36.2,
+   "by": "ejaz215",
+   "license": "CC BY 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+   "url": "https://commons.wikimedia.org/wiki/File:33937_ejaz215_call-to-prayer-from-the-prophet-s-mo.ogg",
+   "origin": "https://freesound.org/people/ejaz215/sounds/33937/"
+  },
+  {
+   "id": "shalqar",
+   "file": "adhan/shalqar.3d7b83439a.aac",
+   "bytes": 1575706,
+   "seconds": 131.3,
+   "short": 21.7,
+   "by": "Esetok",
+   "license": "CC BY-SA 4.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+   "url": "https://commons.wikimedia.org/wiki/File:Adhan_in_Shalqar_mosque.webm"
+  },
+  {
+   "id": "malmo-fajr",
+   "file": "adhan/malmo-fajr.aa0e8cd948.aac",
+   "bytes": 2820758,
+   "seconds": 235.05,
+   "short": 35.5,
+   "fajr": true,
+   "by": "Islamic Center Malmö",
+   "license": "CC BY 3.0",
+   "licenseUrl": "https://creativecommons.org/licenses/by/3.0/",
+   "url": "https://commons.wikimedia.org/wiki/File:Eid_al-Fitr_Fajr_azan_at_Malm%C3%B6_Mosque_-_19_August_2012.webm"
+  }
+ ]
+}

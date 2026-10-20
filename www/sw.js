@@ -1,8 +1,8 @@
 /* Service worker: offline-first app shell for حصن ونور */
-const VERSION = "hisn-v1.18.0";
+const VERSION = "hisn-v1.21.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./js/videos.js", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./data/lessons.json", "./data/videos.json", "./quran/index.json",
+  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./js/prayer.js", "./js/prayer-calc.js", "./js/videos.js", "./adhan/index.json", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./data/lessons.json", "./data/videos.json", "./quran/index.json",
   "./i18n/ar.json", "./i18n/en.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png", "./icons/favicon.svg"
 ];
@@ -30,12 +30,15 @@ const HADITH_CACHE = "hisn-hadith-v1";
 // Tafsir books from spa5k/tafsir_api (pinned to a release commit, so the files never change): every surah or verse
 // the reader opens is kept, and whole books can be saved from the Offline content page. QuranEnc books use TR_CACHE.
 const TAFSIR_CACHE = "hisn-tafsir-v1";
-// Books of creed and fiqh (kutub/<id>.<hash>.json): a book is kept across app updates once opened. A corrected
-// book gets a new file name, and js/kutub.js deletes copies the index no longer lists.
+// Books of the library: kutub/<id>.<hash>.json (contents) and kutub/<id>/<n>.<hash>.json (text, about 250 KB each).
+// Every file read is kept across app updates. A corrected file gets a new name, and js/kutub.js deletes copies the
+// index no longer lists.
 const KUTUB_CACHE = "hisn-kutub-v1";
+// Adhan recordings (adhan/<id>.<hash>.aac, kept across updates) and the adhan file the user chose (adhan/custom).
+const ADHAN_CACHE = "hisn-adhan-v1";
 // Backup copies of outside files (MIRROR in js/mirror.js). On GitHub Pages they share the app's origin.
 const MIRROR = new URL("https://hanyarafaosman.github.io/hisn-almuslim-assets/");
-const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS, HADITH_CACHE, TAFSIR_CACHE, KUTUB_CACHE];
+const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS, HADITH_CACHE, TAFSIR_CACHE, KUTUB_CACHE, ADHAN_CACHE];
 
 self.addEventListener("install", e => {
   // cache: "reload" bypasses the browser HTTP cache (GitHub Pages sends max-age=600), so a new version never stores stale files.
@@ -60,10 +63,11 @@ self.addEventListener("fetch", e => {
     return;
   }
   if (url.origin === location.origin) {
+    if (/\/adhan\/[a-z0-9-]+\.[0-9a-f]{10}\.aac$/.test(url.pathname)) { e.respondWith(savedAudio(req, ADHAN_CACHE, true)); return; }
     const quranFile = (/\/quran\/(fonts\/[a-z]+\.woff2|[a-z]+\.json)$/.test(url.pathname) && !url.pathname.endsWith("/index.json"))
       || /\/mushaf\/[a-z]+\.json$/.test(url.pathname);
     const uiFont = /\/fonts\/[a-z0-9-]+\.woff2$/.test(url.pathname);
-    const book = /\/kutub\/[a-z0-9-]+\.[0-9a-f]{10}\.json$/.test(url.pathname);
+    const book = /\/kutub\/[a-z0-9-]+(\/\d+)?\.[0-9a-f]{10}\.json$/.test(url.pathname);
     e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : uiFont ? FONT_CACHE : book ? KUTUB_CACHE : VERSION));
     return;
   }
@@ -76,7 +80,7 @@ self.addEventListener("fetch", e => {
   if (url.hostname === "quranenc.com" && url.pathname.startsWith("/api/v1/translation")) { e.respondWith(staleWhileRevalidate(req, TR_CACHE)); return; }
   // Recorded audio the user saved: answer from the device, with byte ranges so seeking works.
   // Everything else (and live radio streams) goes straight to the network.
-  if (url.pathname.endsWith(".mp3") && (url.hostname.endsWith("hisnmuslim.com") || url.hostname.endsWith("mp3quran.net"))) { e.respondWith(savedAudio(req)); return; }
+  if (url.pathname.endsWith(".mp3") && (url.hostname.endsWith("hisnmuslim.com") || url.hostname.endsWith("mp3quran.net"))) { e.respondWith(savedAudio(req, OFFLINE_AUDIO)); return; }
 });
 
 async function cacheFirst(req, cacheName, opportunistic = false) {
@@ -106,8 +110,12 @@ async function staleWhileRevalidate(req, cacheName) {
   return hit || net;
 }
 
-async function savedAudio(req) {
-  const hit = await (await caches.open(OFFLINE_AUDIO)).match(req.url);
+// Audio from a cache, with byte ranges so seeking works (Safari asks for ranges). keep: a file not saved yet is
+// fetched whole and saved (the adhan recordings); otherwise it goes to the network as asked.
+async function savedAudio(req, cacheName, keep = false) {
+  const cache = await caches.open(cacheName);
+  let hit = await cache.match(req.url);
+  if (!hit && keep) { try { const res = await fetch(req.url); if (res.ok) { await cache.put(req.url, res.clone()); hit = res; } } catch { /* below */ } }
   if (!hit) return fetch(req);
   const range = req.headers.get("range");
   if (!range) return hit;
@@ -122,3 +130,15 @@ async function savedAudio(req) {
     headers: { "Content-Type": hit.headers.get("Content-Type") || "audio/mpeg", "Content-Range": `bytes ${start}-${end}/${size}`, "Content-Length": String(end - start + 1), "Accept-Ranges": "bytes" },
   });
 }
+
+// A tap on a prayer notification opens the app on the prayer times (or brings it forward); its "stop" button stops the adhan.
+self.addEventListener("notificationclick", e => {
+  e.notification.close();
+  const open = e.notification.data?.url || "#/prayer";
+  e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
+    const win = list.find(c => c.url.startsWith(self.registration.scope));
+    if (e.action === "stop") { if (win) win.postMessage({ stopAdhan: true }); return; }
+    if (win) { win.postMessage({ open }); return win.focus(); }
+    return self.clients.openWindow(self.registration.scope + open);
+  }));
+});
