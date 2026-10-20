@@ -33,7 +33,7 @@
 
 مواقيت الصلاة
 • مواقيت الصلاة لمدينتك بطريقة الجهة المعتمدة في بلدك، تُحسب على جهازك وتعمل دون إنترنت، مع التاريخ الهجري وجدول الشهر.
-• تذكير قبل الصلاة، والأذان بصوت المسجد النبوي عند دخول الوقت والتطبيق مفتوح، وأذان خاص للفجر.
+• تذكير قبل الصلاة وإشعار عند دخول وقتها حتى والتطبيق مغلق، والأذان بصوت المسجد النبوي والتطبيق مفتوح، وأذان خاص للفجر.
 
 كتب السنة
 • صحيح البخاري، وصحيح مسلم، وسنن أبي داود والترمذي والنسائي وابن ماجه، والأربعون النووية، والأحاديث القدسية.
@@ -79,7 +79,7 @@ The Holy Quran
 
 Prayer times
 • Prayer times for your city with your country's official method, calculated on your device and available offline, with the Hijri date and a monthly timetable.
-• A reminder before each prayer, and the adhan from the Prophet's Mosque when its time comes while the app is open, with a Fajr adhan of its own.
+• A reminder before each prayer and a notification when its time comes, even when the app is closed, and the adhan from the Prophet's Mosque while it is open, with a Fajr adhan of its own.
 
 Hadith
 • Sahih al-Bukhari, Sahih Muslim, the Sunan of Abu Dawud, al-Tirmidhi, al-Nasa'i and Ibn Majah, the Forty Hadith of al-Nawawi, and Hadith Qudsi.

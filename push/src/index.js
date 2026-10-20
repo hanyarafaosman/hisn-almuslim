@@ -73,7 +73,7 @@ const vapidFor = env => {
 // minute; the rest are a minute late (README: a paid plan raises the limit). Rows are updated after their message.
 export async function run(env, now = Date.now()) {
   const max = Math.max(1, Math.min(Number(env.MAX_PUSH) || 40, 5000));
-  const { results } = await env.DB.prepare("SELECT endpoint, p256dh, auth, settings, next_at, next FROM subs WHERE next_at <= ?1 ORDER BY next_at LIMIT ?2").bind(now + 5000, max).all();
+  const { results } = await env.DB.prepare("SELECT endpoint, p256dh, auth, settings, next_at, next FROM subs WHERE next_at <= ?1 ORDER BY next_at LIMIT ?2").bind(now, max).all(); // never before its time
   const stats = { due: results.length, sent: 0, gone: 0, retry: 0, late: 0 };
   const stmts = [];
   if (results.length) {
