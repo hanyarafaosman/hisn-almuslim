@@ -6,3 +6,7 @@ Thumbs.db
 *.log
 .cache/
 _site/
+
+# The alerts server (push/): local wrangler state and the local test keys
+push/.wrangler/
+push/.dev.vars

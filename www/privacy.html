@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>سياسة الخصوصية | حصن ونور</title>
-  <meta name="description" content="سياسة الخصوصية لتطبيق حصن ونور: لا حسابات ولا إعلانات ولا تتبع، وكل ما تحفظه يبقى على جهازك.">
+  <meta name="description" content="سياسة الخصوصية لتطبيق حصن ونور: لا حسابات ولا إعلانات ولا تتبع، وما تحفظه يبقى على جهازك إلا ما تحتاجه تنبيهات الصلاة إن فعّلتها.">
   <link rel="canonical" href="https://hanyarafaosman.github.io/hisn-almuslim/privacy.html">
   <meta name="color-scheme" content="light dark">
   <link rel="icon" type="image/svg+xml" href="icons/favicon.svg">
@@ -34,7 +34,7 @@
 
   <section>
     <h2>الخلاصة</h2>
-    <p>تطبيق حصن ونور مجاني، بلا حسابات ولا إعلانات ولا أدوات تحليل أو تتبع. لا نجمع أي بيانات شخصية، ولا نرسل ما تحفظه في التطبيق إلى أي مكان.</p>
+    <p>تطبيق حصن ونور مجاني، بلا حسابات ولا إعلانات ولا أدوات تحليل أو تتبع. لا نجمع أي بيانات شخصية، وما تحفظه في التطبيق يبقى على جهازك. الاستثناء الوحيد تنبيهات الصلاة إن فعّلتها: يُحفَظ لها على خادم التطبيق مكانك مقرَّبًا وإعدادات التنبيه، كما في «تنبيهات الصلاة والتطبيق مغلق» أدناه.</p>
 
     <h2>ما يُحفظ على جهازك فقط</h2>
     <ul>
@@ -44,7 +44,7 @@
       <li>المحتوى الذي تختار حفظه للاستخدام دون اتصال: الروايات، والترجمات، والصوتيات.</li>
       <li>مكانك المختار لمواقيت الصلاة، وإعدادات التنبيهات والأذان، وملف الأذان إن اخترته من جهازك.</li>
     </ul>
-    <p>هذه البيانات في ذاكرة التطبيق على الجهاز، ولا تصل إلينا. تُحذف بمسح بيانات التطبيق أو بإزالته، ويمكن حذف بعضها من الإعدادات.</p>
+    <p>هذه البيانات في ذاكرة التطبيق على الجهاز، ولا تصل إلينا، عدا ما تحتاجه تنبيهات الصلاة إن فعّلتها كما يلي. تُحذف بمسح بيانات التطبيق أو بإزالته، ويمكن حذف بعضها من الإعدادات.</p>
 
     <h2>المحتوى من مواقع أخرى</h2>
     <p>عند استخدام بعض الأقسام، يجلب التطبيق المحتوى مباشرة من مصادره:</p>
@@ -62,14 +62,23 @@
     </ul>
     <p>كأي طلب على الإنترنت، تصل إلى هذه المواقع معلومات تقنية مثل عنوان IP ونوع المتصفح، وتخضع لسياسات الخصوصية الخاصة بها. لا يرسل التطبيق إليها أي شيء آخر.</p>
 
+    <h2>تنبيهات الصلاة والتطبيق مغلق</h2>
+    <p>لتصلك تنبيهات الصلاة والتطبيق مغلق، يرسل التطبيق حين تفعّل التنبيهات وتسمح بالإشعارات إلى خادم التطبيق على Cloudflare Workers:</p>
+    <ul>
+      <li>عنوان اشتراك الإشعارات الذي ينشئه متصفحك (Web Push) ومفتاحَيه.</li>
+      <li>مكانك مقرَّبًا إلى نحو كيلومتر (0.01 درجة)، والمنطقة الزمنية.</li>
+      <li>طريقة الحساب ووقت العصر وتعديلات الأوقات والتاريخ الهجري، وتنبيه كل صلاة، ودقائق التذكير، ولغة الواجهة.</li>
+    </ul>
+    <p>لا يُرسَل اسم مدينتك ولا أي معرّف لك. يستعمل الخادم هذه البيانات لحساب المواقيت وإرسال التنبيه في وقته فقط، عن طريق خدمة الإشعارات في متصفحك (Google أو Mozilla أو Apple أو Microsoft) برسالة مشفّرة لا تقرؤها تلك الخدمة، فيها اسم الصلاة ووقتها ونوع التنبيه. تُحذف هذه البيانات من الخادم حين توقف التنبيهات، أو حين يُبلغ المتصفح بانتهاء الاشتراك، مثلًا بعد مسح بيانات التطبيق أو إزالته. ويصل الخادمَ كأي طلب عنوانُ IP ونوع المتصفح، وتخضع استضافته لسياسة خصوصية Cloudflare.</p>
+
     <h2>الموقع والإشعارات</h2>
-    <p>لا يطلب التطبيق الوصول إلى موقعك إلا حين تضغط «استخدام موقعي الحالي» في مواقيت الصلاة، ويُستخدم الموقع على جهازك لحساب المواقيت، ولا يُرسَل إلا مقرَّبًا لمعرفة اسم المدينة كما سبق. ويمكنك بدلًا من ذلك البحث عن مدينتك. ولا يطلب إذن الإشعارات إلا حين تفعّل تنبيهات الصلاة. ويمكنك سحب الإذنين في أي وقت من إعدادات المتصفح أو الجهاز.</p>
+    <p>لا يطلب التطبيق الوصول إلى موقعك إلا حين تضغط «استخدام موقعي الحالي» في مواقيت الصلاة، ويُستخدم الموقع على جهازك لحساب المواقيت، ولا يُرسَل إلا مقرَّبًا: لمعرفة اسم المدينة، ولخادم التنبيهات إن فعّلتها، كما سبق. ويمكنك بدلًا من ذلك البحث عن مدينتك. ولا يطلب إذن الإشعارات إلا حين تفعّل تنبيهات الصلاة. ويمكنك سحب الإذنين في أي وقت من إعدادات المتصفح أو الجهاز.</p>
 
     <h2>تطبيق Android</h2>
     <p>نسخة Google Play تعرض هذا الموقع نفسه داخل Chrome بتقنية Trusted Web Activity، وتنطبق على المتصفح سياسة خصوصية Google Chrome. لا يطلب التطبيق صلاحيات الوصول إلى جهات الاتصال أو الكاميرا أو الميكروفون أو الملفات، ولا يطلب الموقع والإشعارات إلا لمواقيت الصلاة وتنبيهاتها كما سبق.</p>
 
     <h2>الأطفال</h2>
-    <p>التطبيق مناسب لكل الأعمار، ولا يجمع بيانات من أي مستخدم، صغيرًا كان أو كبيرًا.</p>
+    <p>التطبيق مناسب لكل الأعمار، ولا يجمع بيانات شخصية من أي مستخدم، صغيرًا كان أو كبيرًا، ولا يحفظ على خادمه إلا ما تحتاجه تنبيهات الصلاة كما سبق.</p>
 
     <h2>التغييرات والتواصل</h2>
     <p>أي تعديل على هذه السياسة يُنشر في هذه الصفحة مع تاريخه. للأسئلة أو الملاحظات: <a href="https://github.com/hanyarafaosman/hisn-almuslim/issues">صفحة البلاغات على GitHub</a>.</p>
@@ -77,12 +86,13 @@
 
   <section lang="en" dir="ltr">
     <h2>Privacy policy (English)</h2>
-    <p>Fortress and Light (حصن ونور) is free, with no accounts, no ads, and no analytics or tracking. We do not collect any personal data, and nothing you save in the app is sent anywhere.</p>
-    <p><b>Stored only on your device:</b> your settings, adhkar counters and daily progress, favorites, tasbih count, reading positions and bookmarks, the lesson or episode you reached in a series, your chosen reciter and translation, any content you save for offline use, and your place for prayer times with your alert and adhan settings (and the adhan file, if you chose one). It never reaches us. Clearing the app's data or uninstalling it deletes it.</p>
+    <p>Fortress and Light (حصن ونور) is free, with no accounts, no ads, and no analytics or tracking. We do not collect any personal data, and what you save in the app stays on your device. The one exception is prayer alerts, if you turn them on: for them, your place (rounded) and your alert settings are kept on the app's server, as described under “Prayer alerts while the app is closed” below.</p>
+    <p><b>Stored only on your device:</b> your settings, adhkar counters and daily progress, favorites, tasbih count, reading positions and bookmarks, the lesson or episode you reached in a series, your chosen reciter and translation, any content you save for offline use, and your place for prayer times with your alert and adhan settings (and the adhan file, if you chose one). It never reaches us, except what prayer alerts need if you turn them on, below. Clearing the app's data or uninstalling it deletes it.</p>
     <p><b>Content from other sites:</b> some sections load content directly from its sources: hisnmuslim.com (adhkar audio), mp3quran.net and radio stations (recitations and radio), islamhouse.com (audio lesson series), i.ytimg.com and YouTube (episode pictures, and the YouTube player at youtube-nocookie.com, loaded only when you play an episode and subject to Google's privacy policy), win.holol.com (the live channels of the Saudi Broadcasting Authority), quranenc.com (Quran translations), cdn.jsdelivr.net (hadith texts), static.qurancdn.com (printed Mushaf fonts), GitHub Pages (the app itself and backup copies), geocoding-api.open-meteo.com (the city name you type, when you search for a city for prayer times), and nominatim.openstreetmap.org (your position rounded to about a kilometre, once, to name your city when you use your current location). Like any internet request, these sites receive technical information such as your IP address and browser type, under their own privacy policies. The app sends them nothing else.</p>
-    <p><b>Location and notifications:</b> the app asks for your location only when you tap “Use my current location” in prayer times; it is used on your device to calculate the times and is sent only rounded, to name your city, as above. You can search for your city instead. It asks to show notifications only when you turn on prayer alerts. You can withdraw either permission at any time in your browser or device settings.</p>
+    <p><b>Prayer alerts while the app is closed:</b> so that prayer alerts reach you when the app is closed, the app sends the app's server on Cloudflare Workers, when you turn alerts on and allow notifications: the push subscription your browser creates (Web Push) and its keys; your place rounded to about a kilometre (0.01°) and its time zone; and the calculation method, Asr time, time and Hijri corrections, the alert of each prayer, the reminder minutes and the interface language. Your city's name and any identifier of you are not sent. The server uses this only to calculate the times and send each alert on time, through your browser's push service (Google, Mozilla, Apple or Microsoft), as an encrypted message that service cannot read, holding the prayer, its time and the kind of alert. The data is deleted from the server when you turn alerts off, or when the browser reports that the subscription has ended, for example after clearing the app's data or uninstalling it. Like any request, the server receives your IP address and browser type; its hosting is under Cloudflare's privacy policy.</p>
+    <p><b>Location and notifications:</b> the app asks for your location only when you tap “Use my current location” in prayer times; it is used on your device to calculate the times and is sent only rounded: to name your city, and to the alerts server if you turn alerts on, as above. You can search for your city instead. It asks to show notifications only when you turn on prayer alerts. You can withdraw either permission at any time in your browser or device settings.</p>
     <p><b>Android app:</b> the Google Play version shows this same website inside Chrome as a Trusted Web Activity; Google Chrome's privacy policy applies to the browser. The app does not request access to contacts, camera, microphone, or files, and asks for location and notifications only for prayer times and their alerts, as above.</p>
-    <p><b>Children:</b> the app is suitable for all ages and collects no data from anyone.</p>
+    <p><b>Children:</b> the app is suitable for all ages, collects no personal data from anyone, and keeps on its server only what prayer alerts need, as above.</p>
     <p><b>Changes and contact:</b> changes are posted on this page with their date. Questions: <a href="https://github.com/hanyarafaosman/hisn-almuslim/issues">GitHub issues</a>.</p>
   </section>
 
