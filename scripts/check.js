@@ -134,32 +134,43 @@ for (const box of [...asma.groups, ...asma.chapters]) {
   if (refs.some(n => !box.notes[n - 1]) || (box.head || []).some(n => !box.notes[n - 1])) fail(`asma: footnote without a note in ${box.title || "names " + box.names}`);
 }
 
-// Creed and fiqh: each book file is named after its id and the hash of its text, its contents point to places
-// that exist, and every footnote mark has its note. No book file is left that the index does not list.
+// Books of the library: each book file (contents and reading pages) and each part file (the text of reading pages)
+// is named after the hash of its bytes; the contents point to places that exist, and every footnote mark has its
+// note. No file is left that the index does not list.
 const kt = readJson("kutub/index.json");
-const ktFiles = new Set(kt.books.map(b => b.file));
-for (const f of fs.readdirSync(path.join(root, "kutub"))) if (f !== "index.json" && !ktFiles.has(f)) fail("kutub: file not in the index " + f);
+const ktHash = text => require("crypto").createHash("sha256").update(text.replace(/\r?\n$/, "")).digest("hex").slice(0, 10);
+const ktFiles = new Set(kt.books.flatMap(b => [b.file, ...(b.chunks || []).map((h, k) => `${b.id}/${k}.${h}.json`)]));
+const walk = d => fs.readdirSync(path.join(root, "kutub", d)).flatMap(f => fs.statSync(path.join(root, "kutub", d, f)).isDirectory() ? walk(d ? `${d}/${f}` : f) : [d ? `${d}/${f}` : f]);
+for (const f of walk("")) if (f !== "index.json" && !ktFiles.has(f)) fail("kutub: file not in the index " + f);
 if (new Set(kt.books.map(b => b.id)).size !== kt.books.length) fail("kutub: duplicate book ids");
 for (const b of kt.books) {
   if (!b.ar || !b.en || !b.by || !b.byEn || !(b.died > 0) || !b.about || !b.aboutEn || !b.edition || !/^https:\/\/app\.turath\.io\/book\/\d+$/.test(b.url)) fail("kutub: incomplete book " + b.id);
-  if (!["aqida", "fiqh"].includes(b.group) || (b.group === "fiqh") !== !!b.madhhab || (b.madhhab && !enStrings["kutub." + b.madhhab])) fail(`kutub: ${b.id} has a bad group or school`);
+  if (!kt.groups.includes(b.group) || !enStrings["kutub." + b.group] || !kt.authors[b.author] || (b.madhhab && !enStrings["kutub." + b.madhhab])) fail(`kutub: ${b.id} has a bad shelf, author or school`);
   const file = path.join(root, "kutub", b.file || "");
-  if (!fs.existsSync(file)) { fail("kutub: missing " + b.file); continue; }
+  if (!fs.existsSync(file) || !b.chunks?.length) { fail("kutub: missing " + b.file); continue; }
   const text = fs.readFileSync(file, "utf8");
-  const hash = require("crypto").createHash("sha256").update(text.replace(/\r?\n$/, "")).digest("hex").slice(0, 10);
-  if (b.file !== `${b.id}.${hash}.json`) fail(`kutub: ${b.file} does not match its text (rebuild with npm run kutub)`);
+  if (b.file !== `${b.id}.${ktHash(text)}.json`) fail(`kutub: ${b.file} does not match its text (rebuild with npm run kutub)`);
   const book = JSON.parse(text);
-  const anchors = s => new Set((s.body || []).map(x => x.a).filter(Boolean));
+  const parts = b.chunks.map((h, k) => {
+    const f = path.join(root, "kutub", b.id, `${k}.${h}.json`);
+    if (!fs.existsSync(f)) { fail(`kutub: missing ${b.id}/${k}.${h}.json`); return {}; }
+    const t = fs.readFileSync(f, "utf8"); if (ktHash(t) !== h) fail(`kutub: ${b.id}/${k}.${h}.json does not match its text`);
+    return JSON.parse(t);
+  });
+  const textOf = i => book.sections[i]?.c != null ? parts[book.sections[i].c]?.[i] : null;
+  const anchors = i => new Set((textOf(i)?.body || []).map(x => x.a).filter(Boolean));
   for (const e of book.toc) {
     const s = book.sections[e.s];
     if (!s || !e.t) { fail(`kutub: ${b.id} contents entry «${e.t}» points nowhere`); continue; }
-    if ((e.a && !anchors(s).has(e.a)) || (e.fn && !s.notes?.[e.fn - 1]) || ((e.a || e.fn) && !s.body)) fail(`kutub: ${b.id} contents entry «${e.t}» points to a missing place`);
+    if ((e.a && !anchors(e.s).has(e.a)) || (e.fn && !textOf(e.s)?.notes?.[e.fn - 1]) || ((e.a || e.fn) && s.c == null)) fail(`kutub: ${b.id} contents entry «${e.t}» points to a missing place`);
   }
-  if (!book.sections.some(s => s.body)) fail(`kutub: ${b.id} has no text`);
-  for (const s of book.sections) {
-    const refs = [...JSON.stringify([s.th || "", s.body || []]).matchAll(/⟦(\d+)⟧/g)].map(m => Number(m[1]));
-    if (refs.some(n => !s.notes?.[n - 1]) || (s.notes || []).some((x, i) => !refs.includes(i + 1))) fail(`kutub: ${b.id} «${s.t}» has a footnote mark without its note, or a note without its mark`);
-  }
+  if (!book.sections.some(s => s.c != null)) fail(`kutub: ${b.id} has no text`);
+  book.sections.forEach((s, i) => {
+    if (s.c == null) return;
+    const x = textOf(i); if (!x) { fail(`kutub: ${b.id} «${s.t}» has no text in part ${s.c}`); return; }
+    const refs = [...JSON.stringify([s.th || "", x.body || []]).matchAll(/⟦(\d+)⟧/g)].map(m => Number(m[1]));
+    if (refs.some(n => !x.notes?.[n - 1]) || (x.notes || []).some((y, k) => !refs.includes(k + 1))) fail(`kutub: ${b.id} «${s.t}» has a footnote mark without its note, or a note without its mark`);
+  });
 }
 
 // Adhan recordings: each file is named after its id and the hash of its bytes and is an AAC (ADTS) stream, each has its
