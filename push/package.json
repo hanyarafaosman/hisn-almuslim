@@ -1,0 +1,19 @@
+{
+  "name": "hisn-push",
+  "private": true,
+  "description": "حصن ونور: prayer alerts while the app is closed (Cloudflare Worker + D1, Web Push)",
+  "type": "module",
+  "scripts": {
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON test.js",
+    "keys": "node keys.js",
+    "dev": "wrangler dev --test-scheduled",
+    "db:local": "wrangler d1 migrations apply hisn-push --local",
+    "db:remote": "wrangler d1 migrations apply hisn-push --remote",
+    "deploy": "wrangler deploy",
+    "logs": "wrangler tail"
+  },
+  "devDependencies": {
+    "wrangler": "4.146.0"
+  },
+  "license": "MIT"
+}

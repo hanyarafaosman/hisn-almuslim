@@ -3,7 +3,8 @@
 //   errors   (exit 1): adhkar audio (hisnmuslim.com), Mushaf page fonts (static.qurancdn.com, verses.quran.foundation),
 //                      recitations API (mp3quran.net), translations API (quranenc.com), hadith books (jsDelivr),
 //                      tafsir books (quranenc.com, jsDelivr),
-//                      backup copy of the audio and page fonts (hisn-almuslim-assets, see www/js/mirror.js)
+//                      backup copy of the audio and page fonts (hisn-almuslim-assets, see www/js/mirror.js),
+//                      the prayer alerts server (push/, PUSH.url in www/js/prayer.js): it answers and its minute job runs
 //   warnings (exit 0): live radio stations, hadith radio stations, changed audio sizes,
 //                      city search and place names for prayer times (open-meteo.com, nominatim.openstreetmap.org)
 const fs = require("fs"), path = require("path");
@@ -212,6 +213,21 @@ async function placeSearch() {
   catch (e) { warn(G, e.message); }
 }
 
+// The prayer alerts server (push/): without it, alerts no longer reach phones while the app is closed.
+async function alertsServer() {
+  const G = "Prayer alerts server (push/)";
+  const url = (/const PUSH = \{ url: "([^"]*)"/.exec(fs.readFileSync(path.join(WWW, "js/prayer.js"), "utf8")) || [])[1];
+  if (!url) { warn(G, "not set up yet (PUSH.url in www/js/prayer.js is empty)"); return; }
+  try {
+    const r = await request(url + "/health");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    if (!corsOk(r)) throw new Error("no CORS header for " + ORIGIN);
+    const j = await r.json(), ago = (j.now - j.cron) / 60000;
+    if (!j.ok || !(ago < 10)) error(G, j.cron ? `the minute job last ran ${Math.round(ago)} minutes ago` : "the minute job has never run");
+    else pass(G, `${url} answers, minute job ran ${Math.round(ago * 60)} s ago`);
+  } catch (e) { error(G, e.message); }
+}
+
 async function radioList(G, list) {
   const bad = [];
   for (const r of list) { let res = await probe(r); if (!res.ok) res = await probe(r); if (!res.ok) bad.push(`${r.name} (${res.info})`); }
@@ -221,7 +237,7 @@ async function radioList(G, list) {
 const { live, sunnah = [] } = readJson("data/radios.json");
 
 (async () => {
-  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah), placeSearch()]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah), placeSearch(), alertsServer()]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);

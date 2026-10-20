@@ -3,8 +3,9 @@
 // OpenStreetMap Nominatim) or a city from Open-Meteo's geocoding search (GeoNames data, with each city's time zone).
 // Alerts: a reminder some minutes before each prayer, then at its time a notification and the adhan: a recording from
 // adhan/index.json (Wikimedia Commons, scripts/build-adhan.js) or an audio file the user chose (kept in ADHAN_CACHE).
-// A web page runs only while the browser keeps it alive, so the alerts come while the app is open or was recently
-// in the background; the page explains this to the user.
+// A web page runs only while the browser keeps it alive, so these alerts come while the app is open or was recently
+// in the background. When the app is closed, the server in push/ sends the same alerts by Web Push (syncPush below,
+// the push handler in sw.js); the page explains both to the user.
 import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.19.0";
 
 export const ADHAN_CACHE = "hisn-adhan-v1"; // the same name is in sw.js
@@ -25,7 +26,7 @@ export function setupPrayer(ctx) {
   const stored = LS.get("prayer", {});
   const state = { ...DEF, ...stored, mode: { ...DEF.mode, ...stored.mode }, adj: { ...stored.adj } };
   const memo = new Map();
-  const save = () => { LS.set("prayer", state); memo.clear(); schedule(); };
+  const save = () => { LS.set("prayer", state); memo.clear(); schedule(); syncPush(); };
 
   // ---------- place, time zone, formats ----------
   const deviceZone = () => { try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch { return "UTC"; } };
@@ -67,9 +68,13 @@ export function setupPrayer(ctx) {
   // ---------- the times ----------
   const method = () => state.method === "auto" || !METHODS[state.method] ? methodFor(state.loc?.cc) : state.method;
   const asrMode = () => state.asr === "auto" ? asrFor(state.loc?.cc) : state.asr;
+  // The place to two decimals (about a kilometre, a few seconds of the times): what the alerts server is sent, so the
+  // page and a notification from the server always show the same minute.
+  const round2 = x => Math.round(x * 100) / 100;
+  const place = () => ({ lat: round2(state.loc.lat), lng: round2(state.loc.lng) });
   function timesOn(day) {
     const k = `${day.y}-${day.m}-${day.d}`;
-    if (!memo.has(k)) memo.set(k, prayerTimes(day, state.loc, { method: method(), asr: asrMode(), high: state.high, adj: state.adj, hijriAdj: state.hijriAdj }));
+    if (!memo.has(k)) memo.set(k, prayerTimes(day, place(), { method: method(), asr: asrMode(), high: state.high, adj: state.adj, hijriAdj: state.hijriAdj }));
     return memo.get(k);
   }
   // The next of the five prayers after a moment.
@@ -183,12 +188,80 @@ export function setupPrayer(ctx) {
 
   // ---------- notifications ----------
   const notifSupported = () => "Notification" in window;
-  async function notify(title, body, { adhan = false } = {}) {
+  // at, kind ("before" or "now"): which alert this is, the same as in a notification from the server (sw.js).
+  async function notify(title, body, { adhan = false, at, kind } = {}) {
     if (!notifSupported() || Notification.permission !== "granted") return;
-    const opts = { body, icon: "icons/icon-192.png", tag: "prayer", renotify: true, silent: adhan, lang: getLang(), dir: "auto", data: { url: "#/prayer" },
+    const opts = { body, icon: "icons/icon-192.png", tag: "prayer", renotify: true, silent: adhan, lang: getLang(), dir: "auto", data: { url: "#/prayer", at, kind },
       ...(adhan ? { actions: [{ action: "stop", title: t("prayer.stopAdhan") }] } : {}) };
-    try { const reg = await navigator.serviceWorker?.getRegistration(); if (reg) { await reg.showNotification(title, opts); return; } } catch { /* below */ }
+    try {
+      const reg = await navigator.serviceWorker?.getRegistration();
+      if (reg) {
+        // The server's notification of this alert came first: no second one, or, while the adhan plays, the same one
+        // again without a sound so it gets the stop button.
+        if (at && (await reg.getNotifications({ tag: "prayer" })).some(n => n.data?.at === at && n.data?.kind === kind)) { if (!adhan) return; opts.renotify = false; }
+        await reg.showNotification(title, opts); return;
+      }
+    } catch { /* below */ }
     try { delete opts.actions; const n = new Notification(title, opts); n.onclick = () => { window.focus(); location.hash = "#/prayer"; n.close(); }; } catch { /* Android without a service worker */ }
+  }
+
+  // ---------- alerts while the app is closed (Web Push) ----------
+  // The server in push/ (a Cloudflare Worker) keeps this device's push subscription with the place rounded to 0.01°,
+  // the time zone, the calculation settings, the alert of each prayer and the language, works out the same times with
+  // js/prayer-calc.js, and sends a short message at each alert; sw.js shows it. All of it is deleted when the alerts
+  // are turned off. The key is the public half of the server's VAPID key pair (push/keys.js writes it here).
+  const PUSH = { url: "", key: "" };
+  // On the local dev server, a test server can be set in the console: localStorage.pushServer = JSON.stringify({ url, key }).
+  const pushServer = () => { const dev = /^(localhost|127\.0\.0\.1)$/.test(location.hostname) && LS.get("pushServer", null); return dev?.url && dev.key ? dev : PUSH; };
+  let pushState = LS.get("prayerPush", null) ? "on" : ""; // on | unsupported | failed | "" (not asked for)
+  let pushTimer = null, pushQueue = Promise.resolve();
+  function syncPush(delay = 1500) {
+    clearTimeout(pushTimer);
+    pushTimer = setTimeout(() => { pushQueue = pushQueue.then(pushNow).catch(() => setPushState("failed")); }, delay);
+  }
+  function setPushState(s) {
+    if (s === pushState) return; pushState = s;
+    if (/^#\/prayer\/?$/.test(location.hash) && !document.getElementById("sheet")) redraw(); // the note under "Alerts are on"
+  }
+  const b64u = bytes => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const unb64u = text => Uint8Array.from(atob(text.replace(/-/g, "+").replace(/_/g, "/")), c => c.charCodeAt(0));
+  const pushSettings = () => ({ lat: place().lat, lng: place().lng, tz: zone(), method: method(), asr: asrMode(), high: state.high, adj: state.adj, hijriAdj: state.hijriAdj, mode: state.mode, before: state.before, lang: getLang() });
+  async function pushNow() {
+    const srv = pushServer(), rec = LS.get("prayerPush", null);
+    // The service worker once it is active (none on the local dev server without ?sw).
+    const reg = "serviceWorker" in navigator ? await Promise.race([navigator.serviceWorker.ready, new Promise(r => setTimeout(r, 10000))]) : null;
+    const pm = srv.url && "PushManager" in window ? reg?.pushManager : null;
+    let sub = pm ? await pm.getSubscription().catch(() => null) : null;
+    if (!(state.alerts && state.loc && pm && notifSupported() && Notification.permission === "granted")) {
+      // Alerts off, or no way to get them while closed: the server forgets this device. An ended subscription is
+      // also dropped by the server at its next message, should this request not reach it.
+      if (rec || sub) {
+        const url = rec?.url || srv.url;
+        if (url) await fetch(url + "/unsubscribe", { method: "DELETE", body: JSON.stringify({ endpoint: sub?.endpoint || rec.endpoint }) }).catch(() => {});
+        await sub?.unsubscribe().catch(() => {});
+        LS.set("prayerPush", null);
+      }
+      await keepInfo(null);
+      return setPushState(state.alerts && srv.url && notifSupported() && Notification.permission === "granted" && !pm ? "unsupported" : "");
+    }
+    // A subscription made with another server key cannot be used: make a new one.
+    if (sub && sub.options?.applicationServerKey && b64u(sub.options.applicationServerKey) !== srv.key) { await sub.unsubscribe().catch(() => {}); sub = null; }
+    if (!sub) sub = await pm.subscribe({ userVisibleOnly: true, applicationServerKey: unb64u(srv.key) });
+    const settings = pushSettings(), sent = JSON.stringify({ url: srv.url, sub: sub.toJSON(), settings });
+    // Sent when something changed, and once a day anyway (the server may have dropped this device).
+    if (rec?.sent !== sent || !(Date.now() - rec.at < 864e5)) {
+      const old = rec?.endpoint && rec.endpoint !== sub.endpoint ? rec.endpoint : undefined;
+      const r = await fetch(srv.url + "/subscribe", { method: "POST", body: JSON.stringify({ sub: sub.toJSON(), settings, old }) });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      LS.set("prayerPush", { url: srv.url, endpoint: sub.endpoint, sent, at: Date.now() });
+    }
+    await keepInfo({ url: srv.url, key: srv.key, endpoint: sub.endpoint, settings });
+    setPushState("on");
+  }
+  // What sw.js needs to word a notification (and to subscribe again by itself): kept in the adhan cache.
+  async function keepInfo(push) {
+    const info = { lang: getLang(), tz: zone(), name: state.loc?.name || "", push };
+    try { await (await caches.open(ADHAN_CACHE)).put("prayer/push.json", new Response(JSON.stringify(info), { headers: { "content-type": "application/json" } })); } catch { /* no cache storage */ }
   }
 
   // ---------- alerts: what is due and when ----------
@@ -231,14 +304,14 @@ export function setupPrayer(ctx) {
     if (e.kind === "before") {
       const n = Math.max(1, Math.round((e.prayerAt - Date.now()) / 60000));
       if (visible) toast(t("prayer.soonTitle", { name, n }), { label: t("prayer.title"), fn: () => { location.hash = "#/prayer"; } });
-      else notify(t("prayer.soonTitle", { name, n }), body);
+      else notify(t("prayer.soonTitle", { name, n }), body, { at: e.prayerAt, kind: "before" });
       return;
     }
     const title = e.p === "sunrise" ? t("prayer.sunriseNow") : t("prayer.nowTitle", { name });
     let playing = false;
     if (e.kind === "adhan" && e.p !== "sunrise" && late <= GRACE.sound) playing = await play(voiceFor(e.p), { short: state.short, label: title });
     showBar({ p: e.p, at: e.at, name, canPlay: e.kind === "adhan" && e.p !== "sunrise" }, playing);
-    if (!visible) notify(title, body, { adhan: playing });
+    if (!visible) notify(title, body, { adhan: playing, at: e.at, kind: "now" });
   }
 
   // From the service worker: a tap on a notification, or its "stop" button.
@@ -246,7 +319,7 @@ export function setupPrayer(ctx) {
     if (e.data?.stopAdhan) stopAdhan();
     if (e.data?.open && location.hash !== e.data.open) location.hash = e.data.open;
   });
-  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { schedule(); tick(); } });
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { schedule(); tick(); syncPush(); } });
 
   async function enableAlerts() {
     if (notifSupported() && Notification.permission === "default") { try { await Notification.requestPermission(); } catch { /* old Safari: callback form */ } }
@@ -254,7 +327,9 @@ export function setupPrayer(ctx) {
     if (!notifSupported() || Notification.permission !== "granted") toast(t("prayer.notifOnlyOpen"));
     else toast(t("prayer.alertsEnabled"));
   }
-  const permNote = () => !notifSupported() ? t("prayer.notifUnsupported") : Notification.permission === "denied" ? t("prayer.notifDenied") : Notification.permission === "granted" ? t("prayer.notifGranted") : t("prayer.notifAsk");
+  const permNote = () => !notifSupported() ? t("prayer.notifUnsupported") : Notification.permission === "denied" ? t("prayer.notifDenied") : Notification.permission === "granted" ? t({ on: "prayer.pushOn", unsupported: "prayer.pushUnsupported", failed: "prayer.pushFailed" }[pushState] || "prayer.notifGranted") : t("prayer.notifAsk");
+  // Said before alerts are turned on, where the server can be used.
+  const pushNote = () => pushServer().url && "PushManager" in window ? `<p class="riwayah-note">${T("prayer.pushPrivacy")}</p>` : "";
 
   // ---------- choosing the place ----------
   const round = x => Math.round(x * 1000) / 1000;
@@ -354,7 +429,7 @@ export function setupPrayer(ctx) {
         <div class="setting"><span class="ic">${icon("star")}</span><div class="lbl">${T("prayer.lastThird")}</div><time>${esc(clock(nt.third))}</time></div></div>` : ""}
       <h2 class="section-title">${T("prayer.alerts")}</h2>
       <div class="card" id="pr-alerts">${alertsHtml()}</div>
-      <details class="info pr-how"><summary>${icon("bell")}<b>${T("prayer.howTitle")}</b></summary><p>${T("prayer.how")}</p><p>${T("prayer.howPhone")}</p></details>
+      <details class="info pr-how"><summary>${icon("bell")}<b>${T("prayer.howTitle")}</b></summary><p>${T("prayer.how")}</p><p>${T("prayer.howPhone")}</p>${pushNote()}</details>
       <h2 class="section-title">${T("prayer.calc")}</h2>
       <div class="card" id="pr-calc">
         <button class="setting row-btn" type="button" id="pr-method"><span class="ic">${icon("settings")}</span><div class="lbl">${T("prayer.method")}<small>${esc(state.method === "auto" ? t("prayer.methodAuto", { name: methodName(method()) }) : methodName(method()))}</small><small>${esc(methodSub(method()))}</small></div>${icon("back", "chev")}</button>
@@ -370,7 +445,7 @@ export function setupPrayer(ctx) {
   }
   const stepper = (key, value, shown) => `<div class="stepper"><button class="icon-btn" type="button" data-step="${key}" data-d="-1" aria-label="−">${icon("minus")}</button><span>${esc(value > 0 && !/^\+/.test(shown) ? "+" + shown : shown)}</span><button class="icon-btn" type="button" data-step="${key}" data-d="1" aria-label="+">${icon("plus")}</button></div>`;
   function alertsHtml() {
-    if (!state.alerts) return `<div class="setting wrap"><span class="ic">${icon("bell")}</span><div class="lbl">${T("prayer.alertsOff")}<small>${T("prayer.alertsHint")}</small></div><button class="btn" type="button" id="pr-enable">${T("prayer.enable")}</button></div>`;
+    if (!state.alerts) return `<div class="setting wrap"><span class="ic">${icon("bell")}</span><div class="lbl">${T("prayer.alertsOff")}<small>${T("prayer.alertsHint")}</small></div><button class="btn" type="button" id="pr-enable">${T("prayer.enable")}</button></div>${pushNote()}`;
     const custom = state.voice === "custom";
     return `<div class="setting"><span class="ic">${icon("bell")}</span><div class="lbl">${T("prayer.alertsOn")}<small>${esc(permNote())}</small></div><button class="switch on" type="button" id="pr-off" role="switch" aria-checked="true" aria-label="${T("prayer.alerts")}"></button></div>
       <div class="setting"><span class="ic">${icon("bell")}</span><div class="lbl">${T("prayer.before")}</div><select class="select" id="pr-before">${BEFORE.map(n => `<option value="${n}" ${state.before === n ? "selected" : ""}>${n ? T("prayer.minutes", { n }) : T("prayer.beforeOff")}</option>`).join("")}</select></div>
@@ -515,7 +590,9 @@ export function setupPrayer(ctx) {
 
   return {
     render, hubRow,
-    start() { schedule(); if (state.alerts) keepVoices(); },
+    start() { schedule(); if (state.alerts) keepVoices(); syncPush(3000); },
+    // The notifications from the server are written in the app's language.
+    langChanged: () => syncPush(),
     settingsLabel: () => state.loc ? placeName() : t("prayer.setLocation"),
     // For the about section: the recordings and their licences.
     credits: async () => { await voicesReady; return VOICES; },

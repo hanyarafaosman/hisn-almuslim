@@ -1,0 +1,29 @@
+# The prayer alerts server: a Cloudflare Worker with a D1 database (push/README.md). Run wrangler from this folder.
+name = "hisn-push"
+main = "src/index.js"
+compatibility_date = "2026-09-15"
+workers_dev = true
+preview_urls = false
+
+# The minute job that sends the alerts that are due.
+[triggers]
+crons = ["* * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "hisn-push"
+database_id = "00000000-0000-0000-0000-000000000000" # replaced by the id that `npx wrangler d1 create hisn-push` prints
+migrations_dir = "migrations"
+
+[vars]
+# The public half of the VAPID key pair (npm run keys); the same key is PUSH.key in www/js/prayer.js.
+# The private half is only a Worker secret: npx wrangler secret put VAPID_PRIVATE_KEY
+VAPID_PUBLIC_KEY = ""
+VAPID_SUBJECT = "https://hanyarafaosman.github.io/hisn-almuslim/"
+# Pages allowed to call the server from a browser (comma-separated).
+ORIGINS = "https://hanyarafaosman.github.io"
+# Messages per minute. The free plan allows 50 outside requests per run; on the paid plan raise it (README).
+MAX_PUSH = "40"
+
+[observability]
+enabled = true

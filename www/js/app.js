@@ -212,7 +212,7 @@ async function changeLang(code) {
   if (new URLSearchParams(location.search).has("lang")) history.replaceState(null, "", location.pathname + location.hash);
   await setLang(code, VERSION);
   if (showAdhkarTr() || code !== "ar") await loadEN().catch(() => {});
-  searchIndex = null; applyStatic(); route();
+  searchIndex = null; applyStatic(); route(); PR.langChanged();
 }
 function pickLanguage() {
   const body = Q.sheet(t("lang.choose"), `<div class="list flat">${LANGS.map(l => `<button class="row" data-l="${l.code}" lang="${l.code}"><div class="lbl" dir="auto">${esc(l.name)}${l.code !== getLang() ? `<span class="sub">${esc(languageName(l.code))}</span>` : ""}</div>${l.code === getLang() ? icon("check") : ""}</button>`).join("")}</div>`);
@@ -681,7 +681,7 @@ function renderSettings() {
       </div><div class="about">
         <b>${T("about.kutubTitle")}</b><br>${th("about.kutubText", {}, { link: link("https://app.turath.io", "turath.io") }, esc)}
       </div><div class="about">
-        <b>${T("about.prayerTitle")}</b><br>${th("about.prayerText", {}, { geo: link("https://open-meteo.com", "Open-Meteo"), osm: link("https://www.openstreetmap.org/copyright", "OpenStreetMap") }, esc)}
+        <b>${T("about.prayerTitle")}</b><br>${th("about.prayerText", {}, { geo: link("https://open-meteo.com", "Open-Meteo"), osm: link("https://www.openstreetmap.org/copyright", "OpenStreetMap"), cf: link("https://www.cloudflare.com/privacypolicy/", "Cloudflare") }, esc)}
         <br>${T("about.adhanText")}<br><span id="adhan-credits"></span>
       </div><div class="about">
         <b>${T("about.audioTitle")}</b><br>${th("about.audioText", {}, { link: link("https://mp3quran.net", "mp3quran.net") }, esc)}

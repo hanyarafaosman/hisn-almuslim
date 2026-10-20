@@ -184,6 +184,32 @@ for (const b of kt.books) {
   if (!cacheOf(pj) || cacheOf(pj) !== cacheOf(fs.readFileSync(path.join(root, "sw.js"), "utf8"))) fail("adhan: ADHAN_CACHE differs between sw.js and js/prayer.js");
 }
 
+// The prayer alerts server (push/): it imports the app's own js/prayer-calc.js (never a copy), the app and the server
+// use the same VAPID public key, sw.js reads what js/prayer.js leaves for it, and push/test.js passes (it needs
+// node:sqlite, Node 22.13 or later).
+{
+  const pj = fs.readFileSync(path.join(root, "js/prayer.js"), "utf8"), sw = fs.readFileSync(path.join(root, "sw.js"), "utf8");
+  const pushDir = path.join(root, "..", "push"), sched = fs.readFileSync(path.join(pushDir, "src/schedule.js"), "utf8");
+  if (!sched.includes('from "../../www/js/prayer-calc.js"')) fail("push/src/schedule.js must import www/js/prayer-calc.js");
+  const copies = fs.readdirSync(path.join(pushDir, "src")).filter(f => /prayer|calc/i.test(f));
+  if (copies.length) fail("push/src must not hold a copy of the prayer calculation: " + copies.join(", "));
+  const [, url, key] = /const PUSH = \{ url: "([^"]*)", key: "([^"]*)" \}/.exec(pj) || [];
+  const tomlKey = (/^VAPID_PUBLIC_KEY = "([^"]*)"/m.exec(fs.readFileSync(path.join(pushDir, "wrangler.toml"), "utf8")) || [])[1];
+  if (url === undefined || tomlKey === undefined) fail("PUSH in js/prayer.js or VAPID_PUBLIC_KEY in push/wrangler.toml not found");
+  else {
+    if (key !== tomlKey) fail("PUSH.key in js/prayer.js differs from VAPID_PUBLIC_KEY in push/wrangler.toml (rerun npm run keys in push/)");
+    if (url && (!/^https:\/\/[\w.-]+$/.test(url) || !/^[\w-]{87}$/.test(key))) fail("PUSH in js/prayer.js: an https address without a trailing slash, and the 65-byte public key");
+  }
+  const info = (/const PRAYER_INFO = "([^"]+)"/.exec(sw) || [])[1];
+  if (!info || !pj.includes(`put("${info}"`)) fail("sw.js PRAYER_INFO differs from the file js/prayer.js writes");
+  let sqlite = true; try { require("node:sqlite"); } catch { sqlite = false; }
+  if (!sqlite) console.log("⚠ push/test.js skipped: it needs node:sqlite (Node 22.13 or later)");
+  else {
+    const r = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", path.join(pushDir, "test.js")], { encoding: "utf8", cwd: pushDir });
+    if (r.status !== 0) fail("push/test.js: " + (r.stderr + r.stdout).split("\n").filter(l => l.startsWith("✗")).join("; "));
+  }
+}
+
 // Interface languages: every language listed in js/i18n.js has a strings file that passes check-i18n.js
 // LANGS entries look like ["fr", "Français"]; other arrays in the file do not end right after the second string.
 const langs = [...new Set([...fs.readFileSync(path.join(root, "js/i18n.js"), "utf8").matchAll(/\["([a-z]{2,3})", "[^"]+"\]/g)].map(m => m[1]))];
@@ -192,7 +218,8 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
+for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
+  "../push/src/index.js", "../push/src/webpush.js", "../push/src/schedule.js", "../push/keys.js", "../push/test.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }
