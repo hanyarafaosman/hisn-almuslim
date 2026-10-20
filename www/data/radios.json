@@ -1,6 +1,6 @@
 {
-  "checked": "2026-10-13",
-  "note": "Live Quran radio stations (live), and the mp3quran.net stations that read hadith books (sunnah, shown in the Hadith section). Each stream was verified to play from an HTTPS page on the date above. Re-check with: npm run check:radios",
+  "checked": "2026-10-20",
+  "note": "Live Quran radio stations (live); the mp3quran.net stations that read hadith books (sunnah, also shown in the Hadith section); and mp3quran.net stations on one subject (topics), each in a group of the radio page: quran, seerah, fiqh, misc. hide: mp3quran.net stations left out of the reciters list (eid: off the air outside the Eid days, qurango.net answers 502). Each stream was verified to play from an HTTPS page on the date above. Re-check with: npm run check:radios",
   "live": [
     {
       "id": "eg-cairo",
@@ -64,17 +64,165 @@
     {
       "id": "bukhari",
       "name": "صحيح البخاري",
-      "url": "https://qurango.net/radio/saheh-bokharee"
+      "url": "https://qurango.net/radio/saheh-bokharee",
+      "en": "Sahih al-Bukhari"
     },
     {
       "id": "muslim",
       "name": "صحيح مسلم",
-      "url": "https://qurango.net/radio/saheh-muslim"
+      "url": "https://qurango.net/radio/saheh-muslim",
+      "en": "Sahih Muslim"
     },
     {
       "id": "riyad",
       "name": "رياض الصالحين",
-      "url": "https://qurango.net/radio/riyad"
+      "url": "https://qurango.net/radio/riyad",
+      "en": "Riyad as-Salihin"
     }
+  ],
+  "topics": [
+    {
+      "id": "tafseer",
+      "group": "quran",
+      "name": "تفسير القرآن الكريم",
+      "en": "Tafsir of the Quran",
+      "url": "https://qurango.net/radio/tafseer"
+    },
+    {
+      "id": "mukhtasartafsir",
+      "group": "quran",
+      "name": "المختصر في تفسير القرآن الكريم",
+      "en": "Al-Mukhtasar fi Tafsir al-Quran",
+      "url": "https://qurango.net/radio/mukhtasartafsir"
+    },
+    {
+      "id": "tabri",
+      "group": "quran",
+      "name": "الخلاصة من تفسير الطبري",
+      "en": "The essence of at-Tabari’s Tafsir",
+      "url": "https://qurango.net/radio/tabri"
+    },
+    {
+      "id": "gareeb-quran",
+      "group": "quran",
+      "name": "تفسير غريب القرآن",
+      "en": "The rare words of the Quran",
+      "url": "https://qurango.net/radio/gareeb-quran"
+    },
+    {
+      "id": "sakeenah",
+      "group": "quran",
+      "name": "آيات السكينة",
+      "en": "Verses of tranquillity",
+      "url": "https://qurango.net/radio/sakeenah"
+    },
+    {
+      "id": "salma",
+      "group": "quran",
+      "name": "تلاوات خاشعة",
+      "en": "Humble recitations",
+      "url": "https://qurango.net/radio/salma"
+    },
+    {
+      "id": "tarateel",
+      "group": "quran",
+      "name": "تراتيل قصيرة متميزة",
+      "en": "Short distinguished recitations",
+      "url": "https://qurango.net/radio/tarateel"
+    },
+    {
+      "id": "albaqarah",
+      "group": "quran",
+      "name": "سورة البقرة لعدد من القراء",
+      "en": "Surah al-Baqarah by several reciters",
+      "url": "https://qurango.net/radio/albaqarah"
+    },
+    {
+      "id": "Surah_Al-Mulk",
+      "group": "quran",
+      "name": "سورة الملك",
+      "en": "Surah al-Mulk",
+      "url": "https://qurango.net/radio/Surah_Al-Mulk"
+    },
+    {
+      "id": "fi_zilal_alsiyra",
+      "group": "seerah",
+      "name": "في ظلال السيرة النبوية",
+      "en": "In the shade of the Prophet’s biography",
+      "url": "https://qurango.net/radio/fi_zilal_alsiyra"
+    },
+    {
+      "id": "almukhtasar_fi_alsiyra",
+      "group": "seerah",
+      "name": "المختصر في السيرة النبوية",
+      "en": "A short biography of the Prophet",
+      "url": "https://qurango.net/radio/almukhtasar_fi_alsiyra"
+    },
+    {
+      "id": "shmaeel",
+      "group": "seerah",
+      "name": "الشمائل المحمدية",
+      "en": "Ash-Shamaʾil al-Muhammadiyya",
+      "url": "https://qurango.net/radio/shmaeel"
+    },
+    {
+      "id": "sahabah",
+      "group": "seerah",
+      "name": "صور من حياة الصحابة والتابعين",
+      "en": "Scenes from the lives of the Companions and their followers",
+      "url": "https://qurango.net/radio/sahabah"
+    },
+    {
+      "id": "alanbiya",
+      "group": "seerah",
+      "name": "قصص الأنبياء",
+      "en": "Stories of the Prophets",
+      "url": "https://qurango.net/radio/alanbiya"
+    },
+    {
+      "id": "alaikhtiarat_alfiqhayh_bin_baz",
+      "group": "fiqh",
+      "name": "الاختيارات الفقهية للشيخ ابن باز في مسائل العبادات والمعاملات",
+      "en": "Ibn Baz’s fiqh choices in worship and dealings",
+      "url": "https://qurango.net/radio/alaikhtiarat_alfiqhayh_bin_baz"
+    },
+    {
+      "id": "fatwa",
+      "group": "fiqh",
+      "name": "الفتاوى العامة",
+      "en": "General fatwas",
+      "url": "https://qurango.net/radio/fatwa"
+    },
+    {
+      "id": "roqiah",
+      "group": "misc",
+      "name": "الرقية الشرعية",
+      "en": "Ruqyah from the Quran and Sunnah",
+      "url": "https://qurango.net/radio/roqiah"
+    },
+    {
+      "id": "athkar_sabah",
+      "group": "misc",
+      "name": "أذكار الصباح",
+      "en": "Morning adhkar",
+      "url": "https://qurango.net/radio/athkar_sabah"
+    },
+    {
+      "id": "athkar_masa",
+      "group": "misc",
+      "name": "أذكار المساء",
+      "en": "Evening adhkar",
+      "url": "https://qurango.net/radio/athkar_masa"
+    },
+    {
+      "id": "ramadan",
+      "group": "misc",
+      "name": "فضل شهر رمضان",
+      "en": "The virtues of Ramadan",
+      "url": "https://qurango.net/radio/ramadan"
+    }
+  ],
+  "hide": [
+    "eid"
   ]
 }

@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/videos.js", "js/vendor/hls.light.min.js", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "data/lessons.json", "data/videos.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -84,6 +84,34 @@ if (!mirrorBase || !fs.readFileSync(path.join(root, "sw.js"), "utf8").includes(`
 // Radios must be HTTPS (the app is served over HTTPS)
 const radios = readJson("data/radios.json");
 radios.live.forEach(r => { if (!r.url.startsWith("https://")) fail("radio must be https: " + r.id); });
+// The radio page and the channels page share six groups. Subject stations and audio series each sit in one, with Arabic and English names.
+const GROUPS = ["quran", "sunnah", "seerah", "aqeedah", "fiqh", "misc"];
+const unique = (list, what) => { if (new Set(list.map(x => x.id)).size !== list.length) fail(`${what}: duplicate ids`); };
+unique(radios.topics || [], "radio topics");
+(radios.topics || []).forEach(r => {
+  if (!r.url.startsWith("https://")) fail("radio must be https: topic " + r.id);
+  if (!GROUPS.includes(r.group) || r.group === "sunnah" || r.group === "aqeedah") fail(`radio topic ${r.id}: group ${r.group} (the sunnah list holds the hadith stations; creed has no station)`);
+  if (!r.name || !r.en) fail(`radio topic ${r.id}: needs name and en`);
+});
+const lessons = readJson("data/lessons.json"); unique(lessons.series, "audio series");
+lessons.series.forEach(s => {
+  if (!GROUPS.includes(s.group) || !s.ar || !s.en || !s.by || !s.byEn || !s.source || !s.sourceEn || !(s.ih > 0)) fail("audio series: incomplete " + s.id);
+  if (!s.tracks.length || s.tracks.some(([u]) => !/^https:\/\/[^/]+\/.+\.mp3$/.test(u))) fail(`audio series ${s.id}: every lesson needs an https MP3`);
+});
+// Video series: channels known, every episode a YouTube id; live channels HTTPS HLS.
+const videos = readJson("data/videos.json"); unique(videos.series, "video series"); let episodes = 0;
+videos.series.forEach(s => {
+  if (!GROUPS.includes(s.group) || !s.ar || !s.en || !s.by || !s.byEn || !videos.channels[s.ch]) fail("video series: incomplete " + s.id);
+  if (!s.parts.length) fail(`video series ${s.id}: no playlists`);
+  s.parts.forEach(p => {
+    if (!/^PL[\w-]+$/.test(p.list) || !p.eps.length) fail(`video series ${s.id}: bad playlist ${p.list}`);
+    if (s.parts.length > 1 && (!p.ar || !p.en)) fail(`video series ${s.id}: a part needs ar/en names`);
+    p.eps.forEach(e => { episodes++; if (!/^[\w-]{11}$/.test(e[0]) || typeof e[1] !== "string" || !(e[2] >= 0)) fail(`video series ${s.id}: bad episode ${JSON.stringify(e)}`); });
+  });
+});
+GROUPS.forEach(g => { if (!videos.series.some(s => s.group === g)) fail("video series: nothing in group " + g); });
+// A live channel is an HLS stream, or (yt) the YouTube channel of a mosque's lessons, broadcast while each is given.
+videos.live.forEach(c => { if (!(c.yt ? videos.channels[c.yt] : /^https:\/\/.+\.m3u8$/.test(c.url)) || !c.ar || !c.en || !c.at || !c.atEn) fail("live channel: incomplete " + c.id); });
 
 // Google Play listing texts (store/android/listing.md) must fit Play Console's limits.
 const listing = fs.readFileSync(path.join(root, "..", "store", "android", "listing.md"), "utf8");
@@ -170,12 +198,12 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
+for (const f of ["js/app.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/videos.js", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }
 
 console.log(ok
-  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${tx.books.length} tafsir books, ${asma.names.length} names of Allah, ${kt.books.length} creed and fiqh books, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios)`
+  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${tx.books.length} tafsir books, ${asma.names.length} names of Allah, ${kt.books.length} creed and fiqh books, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios, ${(radios.topics || []).length} subject radios, ${lessons.series.length} audio series, ${videos.series.length} video series / ${episodes} episodes, ${videos.live.length} live channels)`
   : "checks failed");
 process.exit(ok ? 0 : 1);
