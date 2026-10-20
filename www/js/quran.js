@@ -1,10 +1,11 @@
 /* ===== المصحف بالروايات + ترجمة المعاني + الاستماع + الإذاعات ===== */
 // Quran text and fonts: King Fahd Glorious Quran Printing Complex (KFGQPC), shown verbatim.
 // Translations of meanings: QuranEnc.com API (shown unchanged, with title and version).
-// Recitations and reciter radios: mp3quran.net API. Live stations: data/radios.json (verified list).
+// Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
+// Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.20.0";
-import { mirrorOf } from "./mirror.js?v=1.20.0";
+import * as off from "./offline.js?v=1.21.0";
+import { mirrorOf } from "./mirror.js?v=1.21.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -133,8 +134,9 @@ export function setupQuran(ctx) {
   const getRiwayatList = () => getJSON(`${API}/riwayat?language=${mp3Lang()}`).then(j => j.riwayat);
   const getReciters = rewaya => getJSON(`${API}/reciters?language=${mp3Lang()}&rewaya=${rewaya}`).then(j => j.reciters);
   const getReciterRadios = () => getJSON(`${API}/radios?language=${mp3Lang()}`).then(j => j.radios);
-  let liveRadios = null;
-  const getLiveRadios = async () => liveRadios || (liveRadios = await fetch("data/radios.json").then(r => r.json()).then(j => j.live));
+  const once = (url, fix) => { let p = null; return () => p ||= fetch(url).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(fix).catch(e => { p = null; throw e; }); };
+  const getRadios = once("data/radios.json", j => ({ live: j.live || [], sunnah: j.sunnah || [], topics: j.topics || [], hide: j.hide || [] }));
+  const getLessons = once("data/lessons.json", j => j);
 
   // ---------- translations of meanings (QuranEnc) ----------
   const getTrList = () => getJSON(`${QE}/translations/list?localization=${isAr() ? "ar" : "en"}`).then(j => j.translations || []);
@@ -185,22 +187,27 @@ export function setupQuran(ctx) {
     const now = () => q?.type === "surahs" ? { server: q.server, surah: q.list[q.idx], rid: q.rid || "", time: a.currentTime, paused: a.paused, jumping } : null;
     const tell = () => { const n = now(); listeners.forEach(f => f(n)); };
     const pad = n => String(n).padStart(3, "0");
-    const url = () => q.type === "radio" ? q.url : `${q.server}${pad(q.list[q.idx])}.mp3`;
-    const title = () => q.type === "radio" ? q.name : t("quran.surah", { name: surahName(q.list[q.idx]) });
+    // q.type: "surahs" (a reciter's surahs in order), "tracks" (the lessons of an audio series in order) or "radio" (a live stream).
+    const url = () => q.type === "radio" ? q.url : q.type === "tracks" ? q.list[q.idx][0] : `${q.server}${pad(q.list[q.idx])}.mp3`;
+    const title = () => q.type === "surahs" ? t("quran.surah", { name: surahName(q.list[q.idx]) }) : q.name;
     function render() {
       el.hidden = !q; document.body.classList.toggle("has-player", !!q); if (!q) return;
       // With the verse number beside it, the surah's name goes without "Surah" so both fit on a phone.
       t1.textContent = aya ? surahName(q.list[q.idx]) : title(); t2.textContent = q.sub || "";
-      ta.hidden = !aya; if (aya) ta.textContent = t("player.aya", { n: aya });
-      const surahs = q.type === "surahs"; prev.hidden = next.hidden = !surahs;
-      if (surahs) { prev.disabled = q.idx <= 0; next.disabled = q.idx >= q.list.length - 1; }
+      const lesson = q.type === "tracks" ? t("lessons.n", { n: q.idx + 1 }) : "";
+      ta.hidden = !aya && !lesson; ta.textContent = aya ? t("player.aya", { n: aya }) : lesson;
+      const steps = q.type !== "radio"; prev.hidden = next.hidden = !steps;
+      if (steps) {
+        prev.disabled = q.idx <= 0; next.disabled = q.idx >= q.list.length - 1;
+        prev.setAttribute("aria-label", t(lesson ? "player.prevLesson" : "player.prev")); next.setAttribute("aria-label", t(lesson ? "player.nextLesson" : "player.next"));
+      }
       btn.innerHTML = icon(a.paused ? "play" : "pause"); btn.setAttribute("aria-label", t(a.paused ? "common.play" : "common.pause"));
       document.querySelectorAll("[data-playing]").forEach(x => x.classList.toggle("on", x.dataset.playing === key()));
       if ("mediaSession" in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({ title: title(), artist: q.sub || "", album: t("app.name"), artwork: [{ src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }] });
+        navigator.mediaSession.metadata = new MediaMetadata({ title: lesson ? `${title()} (${lesson})` : title(), artist: q.sub || "", album: t("app.name"), artwork: [{ src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }] });
       }
     }
-    const failMsg = () => t(q.type === "radio" ? "radio.playFailed" : "listen.playFailed");
+    const failMsg = () => t(q.type === "radio" ? "radio.playFailed" : q.type === "tracks" ? "lessons.playFailed" : "listen.playFailed");
     let tok = 0;
     function start() {
       document.getElementById("audio")?.pause();
@@ -220,16 +227,20 @@ export function setupQuran(ctx) {
       }
       a.src = url();
       a.play().catch(() => { el.classList.remove("loading"); a.muted = false; jumping = false; toast(failMsg()); render(); tell(); });
+      if (q.type === "tracks") q.save?.(q.idx, typeof at === "number" ? at : 0);
       render(); tell();
     }
-    function step(d) { if (q?.type !== "surahs") return; const i = q.idx + d; if (i < 0 || i >= q.list.length) return; q.idx = i; start(); }
-    const key = () => !q ? "" : q.type === "radio" ? "radio:" + q.id : `surah:${q.server}:${q.list[q.idx]}`;
+    function step(d) { if (!q || q.type === "radio") return; const i = q.idx + d; if (i < 0 || i >= q.list.length) return; q.idx = i; start(); }
+    const key = () => !q ? "" : q.type === "radio" ? "radio:" + q.id : q.type === "tracks" ? `track:${q.id}:${q.idx}` : `surah:${q.server}:${q.list[q.idx]}`;
     a.addEventListener("playing", () => { el.classList.remove("loading"); render(); });
     a.addEventListener("waiting", () => el.classList.add("loading"));
     a.addEventListener("pause", () => { render(); tell(); });
-    a.addEventListener("ended", () => { if (q?.type === "surahs" && q.idx < q.list.length - 1) step(1); else render(); });
-    a.addEventListener("error", () => { if (!q || !a.getAttribute("src")) return; el.classList.remove("loading"); toast(q.type === "radio" ? t("radio.playFailed") : t("listen.loadFailed")); render(); });
+    a.addEventListener("ended", () => { if (q && q.type !== "radio" && q.idx < q.list.length - 1) step(1); else render(); });
+    a.addEventListener("error", () => { if (!q || !a.getAttribute("src")) return; el.classList.remove("loading"); toast(t(q.type === "radio" ? "radio.playFailed" : q.type === "tracks" ? "lessons.loadFailed" : "listen.loadFailed")); render(); });
     a.addEventListener("timeupdate", tell); a.addEventListener("seeked", tell);
+    // An audio series remembers the lesson and the minute reached (every few seconds while it plays).
+    let savedAt = 0;
+    a.addEventListener("timeupdate", () => { if (q?.type === "tracks" && !jumping && Date.now() - savedAt > 5000) { savedAt = Date.now(); q.save?.(q.idx, a.currentTime); } });
     btn.onclick = () => { if (!q) return; if (a.paused) { if (q.type === "radio") start(); else a.play().catch(() => {}); } else a.pause(); };
     prev.onclick = () => step(-1); next.onclick = () => step(1);
     $("#pl-close", el).onclick = () => { a.pause(); a.removeAttribute("src"); a.load(); q = null; jumping = false; aya = 0; render(); tell(); };
@@ -243,6 +254,11 @@ export function setupQuran(ctx) {
       // rid: the riwayah of the Quran text this recitation follows, when there is one (for following the verse).
       surahs({ server, list, start: s, sub, rid = "", at = null }) { const idx = list.indexOf(s); if (idx < 0) { toast(t("listen.surahUnavailable")); return; } q = { type: "surahs", server, list, idx, sub, rid, at }; start(); },
       radio({ id, url: u, name, sub }) { if (q?.type === "radio" && q.id === id && !a.paused) { a.pause(); return; } q = { type: "radio", id, url: u, name, sub }; start(); },
+      // list: [[mp3 url, description], …]; at: the second lesson `start` begins at; save(idx, seconds) is told the place reached.
+      tracks({ id, list, start: i = 0, at = null, name, sub, save }) {
+        if (q?.type === "tracks" && q.id === id && q.idx === i && a.getAttribute("src")) { if (a.paused) a.play().catch(() => {}); else a.pause(); return; }
+        q = { type: "tracks", id, list, idx: i, name, sub, save, at: at > 0 ? at : null }; start();
+      },
       pause() { a.pause(); },
       // The current track and time, and a function called with it on every change (about four times a second while playing).
       now, listen(f) { listeners.add(f); return () => listeners.delete(f); },
@@ -1228,29 +1244,97 @@ export function setupQuran(ctx) {
     });
   }
 
-  // ---------- radios ----------
+  // ---------- radios: six groups (the Quran, the Sunnah, the Seerah, creed, fiqh, other) ----------
+  // data/radios.json: live Quran stations, hadith book stations (sunnah) and one-subject mp3quran stations (topics, with a group).
+  // data/lessons.json: recorded audio series that play one lesson after another, for subjects no station broadcasts all day.
+  // Every other mp3quran station (the reciters) is listed in the Quran group.
+  const RADIO_GROUPS = ["quran", "sunnah", "seerah", "aqeedah", "fiqh", "misc"];
   let radioQuery = "";
-  async function renderRadio() {
+  const lessonState = () => LS.get("lessons", {}); // { seriesId: [lesson index, seconds] }
+  const saveLesson = (id, i, sec) => { const s = lessonState(); s[id] = [i, Math.floor(sec)]; LS.set("lessons", s); };
+  const stationTitle = r => isAr() ? r.name : r.en || r.name;
+  const seriesTitle = s => isAr() ? s.ar : s.en;
+  const lessonsBy = s => isAr() ? s.by : s.byEn;
+  // The path of a qurango.net stream («…/radio/<path>»): the same station in the API and in radios.json.
+  const radioPath = u => (/\/radio\/([^/?#]+)/.exec(u) || [])[1] || u;
+
+  async function renderRadio(parts = []) {
+    if (parts[0] === "lessons") return renderLessons(parts[1]);
     setNav("listen"); setHeader(t("radio.title")); const hash = location.hash;
+    let group = RADIO_GROUPS.includes(parts[0]) ? parts[0] : RADIO_GROUPS.includes(state.radioGroup) ? state.radioGroup : "quran";
     view.innerHTML = listenTabs("radio") + loading(t("radio.fetching"));
     const canHls = !!document.createElement("audio").canPlayType("application/vnd.apple.mpegurl");
-    const [live, reciters] = await Promise.all([getLiveRadios().catch(() => []), getReciterRadios().catch(() => null)]);
+    const [R, L, reciters] = await Promise.all([getRadios().catch(() => ({ live: [], sunnah: [], topics: [], hide: [] })), getLessons().catch(() => null), getReciterRadios().catch(() => null)]);
     if (stale(hash)) return;
     const stationName = r => { const k = "station." + r.id; const v = t(k); return v === k ? r.name : v; };
     const country = r => r.cc ? regionName(r.cc) : t("radio.variety");
-    const liveOk = live.filter(r => !r.hls || canHls);
-    const c = collator(); const rows = (reciters || []).filter(r => r.url).sort((x, y) => c.compare(x.name, y.name));
-    view.innerHTML = listenTabs("radio") + `<div id="radios">
-      <h2 class="section-title">${esc(t("radio.live"))}</h2>
-      <div class="list" id="live">${liveOk.map(r => `<button class="row" data-id="live:${r.id}" data-playing="radio:live:${r.id}"><div class="num">${icon("radio")}</div><div class="lbl">${esc(stationName(r))}<span class="sub">${esc(t("radio.liveSub", { country: country(r) }))}</span></div>${icon("play", "chev-play")}</button>`).join("")}</div>
-      <h2 class="section-title">${esc(t("radio.reciters"))}</h2>
-      ${reciters ? `<div class="searchbox">${icon("search")}<input id="radq" type="search" placeholder="${esc(t("radio.search"))}" value="${esc(radioQuery)}" autocomplete="off"></div><div class="list" id="rlist"></div>` : `<div class="empty">${esc(t("radio.listFailed"))}</div>`}
-      <p class="source-note">${esc(t("radio.sourceNote"))}</p></div>`;
-    const byId = new Map(); liveOk.forEach(r => byId.set("live:" + r.id, { id: "live:" + r.id, url: r.url, name: stationName(r), sub: t("radio.liveSub", { country: country(r) }) }));
-    rows.forEach(r => byId.set("rad:" + r.id, { id: "rad:" + r.id, url: r.url, name: r.name, sub: t("radio.mp3quran") }));
-    const draw = () => { const q = lower(radioQuery.trim()); const box = $("#rlist"); if (!box) return; box.innerHTML = rows.filter(r => !q || lower(r.name).includes(q)).map(r => `<button class="row" data-id="rad:${r.id}" data-playing="radio:rad:${r.id}"><div class="num">${icon("radio")}</div><div class="lbl" dir="auto">${esc(r.name)}</div>${icon("play", "chev-play")}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; player.refresh(); };
-    draw(); const qi = $("#radq"); if (qi) qi.oninput = () => { radioQuery = qi.value; draw(); };
-    $("#radios").addEventListener("click", e => { const b = e.target.closest("[data-id]"); if (b && byId.has(b.dataset.id)) player.radio(byId.get(b.dataset.id)); });
+    const liveOk = R.live.filter(r => !r.hls || canHls);
+    // Stations already listed under their subject, or as a live station, are not repeated among the reciters
+    // (nor the ones radios.json hides because they are off the air).
+    const claimed = new Set([...R.live, ...R.sunnah, ...R.topics].map(r => radioPath(r.url)).concat(R.hide));
+    const c = collator(); const rows = (reciters || []).filter(r => r.url && !claimed.has(radioPath(r.url))).sort((x, y) => c.compare(x.name, y.name));
+    const byId = new Map();
+    liveOk.forEach(r => byId.set("live:" + r.id, { id: "live:" + r.id, url: r.url, name: stationName(r), sub: t("radio.liveSub", { country: country(r) }) }));
+    [...R.sunnah.map(r => ({ ...r, group: "sunnah" })), ...R.topics].forEach(r => byId.set("top:" + r.id, { id: "top:" + r.id, url: r.url, name: stationTitle(r), sub: t("radio.mp3quran"), group: r.group }));
+    // The API's backup.qurango.net host answers HTTP 500 now and then; qurango.net serves the same streams.
+    rows.forEach(r => byId.set("rad:" + r.id, { id: "rad:" + r.id, url: r.url.replace("://backup.qurango.net/", "://qurango.net/"), name: r.name, sub: t("radio.mp3quran") }));
+
+    const row = (id, ic, name, sub, attrs = "") => `<button class="row" data-id="${esc(id)}" data-playing="radio:${esc(id)}"${attrs}><div class="num">${icon(ic)}</div><div class="lbl">${esc(name)}${sub ? `<span class="sub">${esc(sub)}</span>` : ""}</div>${icon("play", "chev-play")}</button>`;
+    const stations = g => [...byId.values()].filter(x => x.group === g).map(x => row(x.id, "radio", x.name, x.sub)).join("");
+    const lessonRows = g => {
+      const list = (L?.series || []).filter(s => s.group === g); if (!list.length) return "";
+      const at = lessonState();
+      return `<h2 class="section-title">${esc(t("radio.lessons"))}</h2><p class="radio-note">${esc(t("radio.lessonsNote"))}</p>
+        <div class="list">${list.map(s => { const p = at[s.id];
+          return `<a href="#/radio/lessons/${esc(s.id)}"><div class="num">${icon("headphones")}</div><div class="lbl">${esc(seriesTitle(s))}${isAr() ? "" : ` <span class="ar-name" lang="ar" dir="rtl">${esc(s.ar)}</span>`}<span class="sub">${esc(lessonsBy(s) + sep() + t("count.lessons", { n: s.tracks.length }))}${p ? esc(sep() + t("lessons.reached", { n: p[0] + 1 })) : ""}</span></div>${icon("back", "chev")}</a>`; }).join("")}</div>`;
+    };
+    const videosLink = g => `<div class="list" style="margin-top:12px"><a href="#/videos?g=${g}"><div class="num">${icon("video")}</div><div class="lbl">${esc(t("radio.videosLink", { group: t("media." + g) }))}</div>${icon("back", "chev")}</a></div>`;
+    const section = (title, html) => html ? `<h2 class="section-title">${esc(title)}</h2><div class="list">${html}</div>` : "";
+    function groupHtml(g) {
+      if (g === "quran") return section(t("radio.live"), liveOk.map(r => row("live:" + r.id, "radio", stationName(r), t("radio.liveSub", { country: country(r) }))).join(""))
+        + section(t("radio.topicsQuran"), stations("quran"))
+        + `<h2 class="section-title">${esc(t("radio.reciterStations"))}</h2>`
+        + (reciters ? `<div class="searchbox">${icon("search")}<input id="radq" type="search" placeholder="${esc(t("radio.search"))}" value="${esc(radioQuery)}" autocomplete="off"></div><div class="list" id="rlist"></div>` : `<div class="empty">${esc(t("radio.listFailed"))}</div>`);
+      return (g === "aqeedah" ? `<p class="radio-note card">${icon("book")}<span>${esc(t("radio.noAqeedahLive"))}</span></p>` : "")
+        + section(t("radio.allDay"), stations(g)) + lessonRows(g);
+    }
+    view.innerHTML = listenTabs("radio") + `<div class="chips radio-groups" id="rgroups" role="tablist">${RADIO_GROUPS.map(g => `<button class="chip" role="tab" data-g="${g}">${esc(t("media." + g))}</button>`).join("")}</div>
+      <div id="radios"></div>`;
+    const box = $("#radios");
+    const draw = () => { const q = lower(radioQuery.trim()); const list = $("#rlist"); if (!list) return; list.innerHTML = rows.filter(r => !q || lower(r.name).includes(q)).map(r => row("rad:" + r.id, "radio", r.name, "", ' dir="auto"')).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; player.refresh(); };
+    const show = g => {
+      group = g; state.radioGroup = g; save();
+      $("#rgroups").querySelectorAll("[data-g]").forEach(b => { const on = b.dataset.g === g; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
+      box.innerHTML = groupHtml(g) + videosLink(g) + `<p class="source-note">${esc(t(L && g !== "quran" ? "radio.sourceNoteLessons" : "radio.sourceNote"))}</p>`;
+      draw(); const qi = $("#radq"); if (qi) qi.oninput = () => { radioQuery = qi.value; draw(); };
+      player.refresh();
+    };
+    $("#rgroups").onclick = e => { const b = e.target.closest("[data-g]"); if (!b || b.dataset.g === group) return; history.replaceState(null, "", "#/radio/" + b.dataset.g); show(b.dataset.g); b.scrollIntoView({ inline: "nearest", block: "nearest" }); };
+    box.addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (b && byId.has(b.dataset.id)) player.radio(byId.get(b.dataset.id)); });
+    show(group);
+    $("#rgroups .chip.on")?.scrollIntoView({ inline: "nearest", block: "nearest" });
+  }
+
+  // An audio series: its lessons, played one after another; the lesson and minute reached are kept.
+  async function renderLessons(id) {
+    setNav("listen"); const hash = location.hash;
+    setHeader(t("radio.lessons"), { back: true }); view.innerHTML = loading();
+    let L; try { L = await getLessons(); } catch { if (!stale(hash)) view.innerHTML = `<div class="empty">${esc(t("common.dataFailed"))}</div>`; return; }
+    if (stale(hash)) return;
+    const s = L.series.find(x => x.id === id); if (!s) { location.hash = "#/radio/aqeedah"; return; }
+    setHeader(seriesTitle(s), { back: true });
+    const p = lessonState()[s.id];
+    const play = (i, at = 0) => player.tracks({ id: "les:" + s.id, list: s.tracks, start: i, at, name: seriesTitle(s), sub: lessonsBy(s), save: (k, sec) => { saveLesson(s.id, k, sec); } });
+    view.innerHTML = `<section class="lesson-head">
+        <div class="lh-title">${esc(seriesTitle(s))}${isAr() ? "" : `<span class="ar-name" lang="ar" dir="rtl">${esc(s.ar)}</span>`}</div>
+        <div class="lh-sub">${esc(lessonsBy(s) + sep() + t("count.lessons", { n: s.tracks.length }))}</div>
+        <div class="lh-actions">${p ? `<button class="btn" id="les-go">${icon("play")} ${esc(t("lessons.continue", { n: p[0] + 1 }))}</button>` : ""}<button class="btn ${p ? "ghost" : ""}" id="les-start">${icon("play")} ${esc(t("lessons.start"))}</button></div>
+      </section>
+      <div class="list" id="les-list">${s.tracks.map(([, d], i) => `<button class="row" data-i="${i}" data-playing="track:les:${esc(s.id)}:${i}"><div class="num">${num(i + 1)}</div><div class="lbl">${esc(t("lessons.n", { n: i + 1 }))}${d ? `<span class="sub" lang="ar" dir="rtl">${esc(d)}</span>` : ""}</div>${icon("play", "chev-play")}</button>`).join("")}</div>
+      <p class="source-note">${esc(t("lessons.source", { source: isAr() ? s.source : s.sourceEn }))} <a href="https://islamhouse.com/ar/audios/${s.ih}/" target="_blank" rel="noopener">IslamHouse.com</a></p>`;
+    if (p) $("#les-go").onclick = () => play(p[0], p[1]);
+    $("#les-start").onclick = () => play(0);
+    $("#les-list").onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; const i = Number(b.dataset.i); const at = lessonState()[s.id]; play(i, at && at[0] === i ? at[1] : 0); };
     player.refresh();
   }
 
@@ -1266,7 +1350,7 @@ export function setupQuran(ctx) {
     },
     // The latest reading place (a printed page or a verse), for the Home page.
     async resume() { await loadIndex(); const r = resumeInfo(); return r && { href: r.href, text: r.text }; },
-    listen: renderListen, radio: renderRadio, offline: renderOffline, mushaf: (ed, n, params) => renderPages(ed, n, params), player, sheet, closeSheet,
+    listen: renderListen, radio: parts => renderRadio(parts), offline: renderOffline, mushaf: (ed, n, params) => renderPages(ed, n, params), player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
     // Quran text of a riwayah (with its font) and surah names, for the tafsir pages.
     textOf: id => loadRiwayah(id), surahName,

@@ -1,14 +1,15 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.20.0";
-import { setupHadith } from "./hadith.js?v=1.20.0";
-import { setupTafsir } from "./tafsir.js?v=1.20.0";
-import { setupAsma } from "./asma.js?v=1.20.0";
-import { setupKutub } from "./kutub.js?v=1.20.0";
-import { setupPrayer } from "./prayer.js?v=1.20.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.20.0";
-import { mirrorOf } from "./mirror.js?v=1.20.0";
+import { setupQuran } from "./quran.js?v=1.21.0";
+import { setupHadith } from "./hadith.js?v=1.21.0";
+import { setupTafsir } from "./tafsir.js?v=1.21.0";
+import { setupAsma } from "./asma.js?v=1.21.0";
+import { setupKutub } from "./kutub.js?v=1.21.0";
+import { setupPrayer } from "./prayer.js?v=1.21.0";
+import { setupVideos } from "./videos.js?v=1.21.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.21.0";
+import { mirrorOf } from "./mirror.js?v=1.21.0";
 
-const VERSION = "1.20.0";
+const VERSION = "1.21.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -200,6 +201,12 @@ const PR = setupPrayer({
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
 
+// ---------- Islamic channels: scholars' lessons on video in series, and the live channels of the Two Holy Mosques ----------
+const V = setupVideos({
+  view, $, esc, icon, t, num, sep, getLang, LS, toast, Q,
+  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
+});
+
 // ---------- language ----------
 function applyStatic() {
   document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
@@ -231,7 +238,7 @@ function setHeader(title, { back = false, actions = "", onTitle = null } = {}) {
 titleEl.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && titleEl.onclick) { e.preventDefault(); titleEl.onclick(); } });
 backBtn.addEventListener("click", () => { if (history.length > 1) history.back(); else location.hash = "#/"; });
 // Bottom bar: Home, Quran, Adhkar, Hadith, More. Pages reached from "More" highlight that tab.
-const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more" };
+const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more", videos: "more" };
 function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll(".bottom-nav a").forEach(a => a.classList.toggle("on", a.dataset.nav === name)); }
 
 function route() {
@@ -249,7 +256,8 @@ function route() {
     case "settings": return renderSettings();
     case "quran": return Q.quran(parts.slice(1), params);
     case "listen": return Q.listen(parts.slice(1), params);
-    case "radio": return Q.radio();
+    case "radio": return Q.radio(parts.slice(1));
+    case "videos": return V.render(parts.slice(1), params);
     case "offline": return Q.offline();
     case "mushaf": return Q.mushaf(parts[1], Number(parts[2]), params);
     case "search": return renderHub(params.get("q") || "");
@@ -299,6 +307,7 @@ const HUB_TILES = [
   { href: "#/kutub", icon: "kutub", label: () => t("kutub.title") },
   { href: "#/listen", icon: "headphones", label: () => t("listen.recitations") },
   { href: "#/radio", icon: "radio", label: () => t("listen.radios") },
+  { href: "#/videos", icon: "video", label: () => t("videos.title") },
   { href: "#/tasbih", icon: "beads", label: () => t("nav.tasbih") },
 ];
 function renderHub(q = "") {
@@ -334,11 +343,12 @@ function renderHub(q = "") {
   const doSearch = async () => {
     const query = input.value.trim(); const r = adhkarSearch(query, 20); if (!r) return tiles();
     const mine = ++seq;
-    const [surahs, names, books] = await Promise.all([Q.searchSurahs(query).catch(() => []), AS.search(query).catch(() => []), KT.search(query).catch(() => [])]); if (mine !== seq) return;
+    const [surahs, names, books, series] = await Promise.all([Q.searchSurahs(query).catch(() => []), AS.search(query).catch(() => []), KT.search(query).catch(() => []), V.search(query).catch(() => [])]); if (mine !== seq) return;
     results.innerHTML =
       (surahs.length ? `<h2 class="section-title">${T("quran.surahs")}</h2><div class="list">${surahs.slice(0, 8).map(x => `<a href="${x.href}"><div class="num">${num(x.n)}</div><div class="lbl">${esc(x.name)}</div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
       + (names.length ? `<h2 class="section-title">${T("asma.title")}</h2><div class="list">${names.slice(0, 6).map(x => `<a href="${x.href}"><div class="num">${num(x.n)}</div><div class="lbl" lang="ar" dir="rtl">${esc(x.name)}</div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
       + (books.length ? `<h2 class="section-title">${T("kutub.title")}</h2><div class="list">${books.slice(0, 6).map(x => `<a href="${x.href}"><div class="num">${icon(x.icon)}</div><div class="lbl">${esc(x.name)}<span class="sub">${esc(x.sub)}</span></div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
+      + (series.length ? `<h2 class="section-title">${T("videos.title")}</h2><div class="list">${series.slice(0, 6).map(x => `<a href="${x.href}"><div class="num">${icon("video")}</div><div class="lbl">${esc(x.name)}<span class="sub">${esc(x.sub)}</span></div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
       + `<div class="list" style="margin-top:12px"><a href="#/quran?q=${encodeURIComponent(query)}"><div class="num">${icon("quran")}</div><div class="lbl">${T("hub.searchQuran", { q: query })}</div>${icon("back", "chev")}</a></div>`
       + (r.count ? r.html : "");
   };
@@ -350,7 +360,7 @@ function renderMore() {
   setNav("more"); setHeader(t("nav.more"));
   const rows = [
     ["#/prayer", "prayer", t("prayer.title")], ["#/tafsir", "tafsir", t("tafsir.books")], ["#/asma", "asma", t("asma.title")], ["#/kutub", "kutub", t("kutub.title")],
-    ["#/listen", "headphones", t("listen.recitations")], ["#/radio", "radio", t("listen.radios")], ["#/tasbih", "beads", t("nav.tasbih")],
+    ["#/listen", "headphones", t("listen.recitations")], ["#/radio", "radio", t("listen.radios")], ["#/videos", "video", t("videos.title")], ["#/tasbih", "beads", t("nav.tasbih")],
     ["#/fav", "star", t("common.favorites")], ["#/extras", "book", t("extra.section")], ["#/offline", "download", t("offline.title")], ["#/settings", "settings", t("nav.settings")],
   ];
   view.innerHTML = `<div class="list">${rows.map(([href, ic, label]) => `<a href="${href}"><div class="num">${icon(ic)}</div><div class="lbl">${esc(label)}</div>${icon("back", "chev")}</a>`).join("")}</div>`;

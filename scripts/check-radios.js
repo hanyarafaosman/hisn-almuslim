@@ -1,7 +1,7 @@
-// Checks that each radio in www/data/radios.json (live Quran stations and hadith stations) is reachable and returns audio.
+// Checks that each radio in www/data/radios.json (live Quran stations, hadith stations, subject stations) is reachable and returns audio.
 // Usage: npm run check:radios
 const fs = require("fs"), path = require("path");
-const { live, sunnah = [] } = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "www", "data", "radios.json"), "utf8"));
+const { live, sunnah = [], topics = [] } = JSON.parse(fs.readFileSync(path.join(__dirname, "..", "www", "data", "radios.json"), "utf8"));
 
 async function probe(r) {
   const ctl = new AbortController(); const t = setTimeout(() => ctl.abort(), 10000);
@@ -27,6 +27,10 @@ if (require.main === module) (async () => {
   for (const r of sunnah) {
     const { ok, info } = await probe(r); if (!ok) bad++;
     console.log(`${ok ? "✓" : "✗"} 📖 ${r.name} (hadith) · ${info}`);
+  }
+  for (const r of topics) {
+    const { ok, info } = await probe(r); if (!ok) bad++;
+    console.log(`${ok ? "✓" : "✗"} 🎙 ${r.name} (${r.group}) · ${info}`);
   }
   console.log(bad ? `\n${bad} station(s) need attention` : "\n✓ all stations responded");
   process.exit(bad ? 1 : 0);
