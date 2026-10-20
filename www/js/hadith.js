@@ -1,7 +1,7 @@
 /* ===== كتب الحديث: الكتب الستة والأربعون النووية والقدسية ===== */
 // Texts: fawazahmed0/hadith-api (Unlicense), loaded per section from a pinned, immutable jsDelivr release.
 // Arabic book and section titles: AhmedBaset/hadith-json. Built by scripts/build-hadith-index.js.
-import * as off from "./offline.js?v=1.17.0";
+import * as off from "./offline.js?v=1.19.0";
 
 const HADITH_STORE = off.STORES.HADITH;
 

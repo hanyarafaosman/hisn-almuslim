@@ -1,13 +1,14 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.17.0";
-import { setupHadith } from "./hadith.js?v=1.17.0";
-import { setupTafsir } from "./tafsir.js?v=1.17.0";
-import { setupAsma } from "./asma.js?v=1.17.0";
-import { setupKutub } from "./kutub.js?v=1.17.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.17.0";
-import { mirrorOf } from "./mirror.js?v=1.17.0";
+import { setupQuran } from "./quran.js?v=1.19.0";
+import { setupHadith } from "./hadith.js?v=1.19.0";
+import { setupTafsir } from "./tafsir.js?v=1.19.0";
+import { setupAsma } from "./asma.js?v=1.19.0";
+import { setupKutub } from "./kutub.js?v=1.19.0";
+import { setupPrayer } from "./prayer.js?v=1.19.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.19.0";
+import { mirrorOf } from "./mirror.js?v=1.19.0";
 
-const VERSION = "1.17.0";
+const VERSION = "1.19.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -193,6 +194,11 @@ const KT = setupKutub({
   view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel, Q,
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
+// ---------- prayer times, reminders and the adhan ----------
+const PR = setupPrayer({
+  view, $, esc, icon, toast, t, num, sep, getLang, LS, share, SITE, sheet: (...a) => Q.sheet(...a), closeSheet: () => Q.closeSheet(),
+  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
+});
 
 // ---------- language ----------
 function applyStatic() {
@@ -252,6 +258,7 @@ function route() {
     case "tafsir": return TF.render(parts.slice(1), params);
     case "asma": return AS.render(parts.slice(1));
     case "kutub": return KT.render(parts.slice(1), params);
+    case "prayer": return PR.render(parts.slice(1), params);
     case "more": return renderMore();
     // Unknown address (for example a link to a newer version's page): show Home but keep the address,
     // so the page opens once the app updates instead of the link being lost.
@@ -311,6 +318,7 @@ function renderHub(q = "") {
       <h2>${esc(greet)}</h2>
       <p class="verse" lang="ar" dir="rtl">«فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ»</p>
       <p class="verse-ref">${T("home.verseRef")}</p>
+      ${PR.hubRow()}
       <a class="now" href="#/cat/${now.id}">${icon(now.ic)}<div><small>${T("hub.now")}</small><b>${esc(now.label)}</b><div class="progress light"><div style="width:${p.pct}%"></div></div></div><span class="pct">${T("common.percent", { n: p.pct })}</span></a>
       ${reading ? `<a class="now" id="hub-quran" href="#/quran">${icon("quran")}<div><small>${T("quran.continue")}</small><b id="hub-last">…</b></div>${icon("back", "chev")}</a>` : ""}
     </section>
@@ -341,7 +349,7 @@ function renderHub(q = "") {
 function renderMore() {
   setNav("more"); setHeader(t("nav.more"));
   const rows = [
-    ["#/tafsir", "tafsir", t("tafsir.books")], ["#/asma", "asma", t("asma.title")], ["#/kutub", "kutub", t("kutub.title")],
+    ["#/prayer", "prayer", t("prayer.title")], ["#/tafsir", "tafsir", t("tafsir.books")], ["#/asma", "asma", t("asma.title")], ["#/kutub", "kutub", t("kutub.title")],
     ["#/listen", "headphones", t("listen.recitations")], ["#/radio", "radio", t("listen.radios")], ["#/tasbih", "beads", t("nav.tasbih")],
     ["#/fav", "star", t("common.favorites")], ["#/extras", "book", t("extra.section")], ["#/offline", "download", t("offline.title")], ["#/settings", "settings", t("nav.settings")],
   ];
@@ -628,6 +636,7 @@ function renderSettings() {
       <div class="setting"><span class="ic">${icon("globe")}</span><div class="lbl">${T("common.language")}<small>${T("settings.languageHint")}</small></div><button class="btn ghost" id="lang-btn">${esc(curLang?.name || getLang())}</button></div>
     </div>
     <div class="card">
+      <a class="setting" href="#/prayer"><span class="ic">${icon("prayer")}</span><div class="lbl">${T("prayer.settings")}<small>${esc(PR.settingsLabel())}</small></div>${icon("back", "chev")}</a>
       <a class="setting" href="#/offline"><span class="ic">${icon("download")}</span><div class="lbl">${T("offline.manage")}<small>${T("offline.manageHint")}</small></div>${icon("back", "chev")}</a>
     </div>
     <h2 class="section-title">${T("settings.appearance")}</h2>
@@ -672,6 +681,9 @@ function renderSettings() {
       </div><div class="about">
         <b>${T("about.kutubTitle")}</b><br>${th("about.kutubText", {}, { link: link("https://app.turath.io", "turath.io") }, esc)}
       </div><div class="about">
+        <b>${T("about.prayerTitle")}</b><br>${th("about.prayerText", {}, { geo: link("https://open-meteo.com", "Open-Meteo"), osm: link("https://www.openstreetmap.org/copyright", "OpenStreetMap") }, esc)}
+        <br>${T("about.adhanText")}<br><span id="adhan-credits"></span>
+      </div><div class="about">
         <b>${T("about.audioTitle")}</b><br>${th("about.audioText", {}, { link: link("https://mp3quran.net", "mp3quran.net") }, esc)}
         <br><small>${T("about.version", { v: VERSION })}</small>
         <br>${link(`${SITE}privacy.html`, t("about.privacy"))}
@@ -690,6 +702,7 @@ function renderSettings() {
   view.querySelectorAll("[data-scale]").forEach(b => b.onclick = () => setScale(settings.scale + 0.1 * Number(b.dataset.scale)));
   $("#lang-btn").onclick = pickLanguage;
   Q.translationLabel().then(l => { const x = $("#qtr-label"); if (x) x.textContent = l; });
+  PR.credits().then(vs => { const x = $("#adhan-credits"); if (x) x.innerHTML = vs.map(v => `${esc(PR.voiceName(v.id))}: ${esc(v.by)}${sep()}${link(v.licenseUrl, v.license)}${sep()}${link(v.url, "Wikimedia Commons")}`).join("<br>"); });
   $("#qtr-btn").onclick = () => Q.pickTranslation(renderSettings);
   $("#reset-progress").onclick = () => { progress = { date: todayKey(), counts: {} }; saveProgress(); toast(t("settings.todayReset")); };
   $("#clear-fav").onclick = () => { if (!favorites.size) return toast(t("settings.favEmpty")); if (confirm(t("settings.confirmClearFav"))) { favorites.clear(); saveFav(); renderSettings(); toast(t("settings.cleared")); } };
@@ -738,5 +751,5 @@ applyTheme();
 const startLang = detect(settings.lang, RETURNING, PAGE_LANG);
 if (new URLSearchParams(location.search).get("lang") === startLang) { settings.lang = startLang; saveSettings(); }
 Promise.all([setLang(startLang, VERSION).catch(() => setLang("ar", VERSION)), loadData()])
-  .then(async () => { if (showAdhkarTr() || getLang() !== "ar") await loadEN().catch(() => {}); applyStatic(); route(); registerSW(); offerDeviceLang(); })
+  .then(async () => { if (showAdhkarTr() || getLang() !== "ar") await loadEN().catch(() => {}); applyStatic(); route(); registerSW(); offerDeviceLang(); PR.start(); })
   .catch(err => { view.innerHTML = `<div class="empty">Could not load the data · تعذّر تحميل البيانات<br><small>${esc(err.message)}</small><br><br><button class="btn" onclick="location.reload()">↻</button></div>`; });
