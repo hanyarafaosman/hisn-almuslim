@@ -4,7 +4,8 @@
 //                      recitations API (mp3quran.net), translations API (quranenc.com), hadith books (jsDelivr),
 //                      tafsir books (quranenc.com, jsDelivr),
 //                      backup copy of the audio and page fonts (hisn-almuslim-assets, see www/js/mirror.js)
-//   warnings (exit 0): live radio stations, hadith radio stations, changed audio sizes
+//   warnings (exit 0): live radio stations, hadith radio stations, changed audio sizes,
+//                      city search and place names for prayer times (open-meteo.com, nominatim.openstreetmap.org)
 const fs = require("fs"), path = require("path");
 const { probe } = require("./check-radios.js");
 const { loadMirror } = require("./build-mirror.js");
@@ -201,6 +202,16 @@ async function tafsirBooks() {
   } catch (e) { error(G, e.message); }
 }
 
+// Prayer times: finding a city, and naming a GPS position. Warnings only: without them the times still work by GPS.
+async function placeSearch() {
+  let G = "City search (open-meteo.com)";
+  try { const c = (await getJSON("https://geocoding-api.open-meteo.com/v1/search?name=Cairo&count=1&language=ar&format=json")).results?.[0]; if (c?.timezone && c.country_code) pass(G, `${c.name}, ${c.timezone}`); else warn(G, "no city or time zone in the answer"); }
+  catch (e) { warn(G, e.message); }
+  G = "Place names (nominatim.openstreetmap.org)";
+  try { const j = await getJSON("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=10&lat=30.04&lon=31.24&accept-language=ar"); if (j.address?.country_code) pass(G, j.address.city || j.name || "ok"); else warn(G, "no address in the answer"); }
+  catch (e) { warn(G, e.message); }
+}
+
 async function radioList(G, list) {
   const bad = [];
   for (const r of list) { let res = await probe(r); if (!res.ok) res = await probe(r); if (!res.ok) bad.push(`${r.name} (${res.info})`); }
@@ -210,7 +221,7 @@ async function radioList(G, list) {
 const { live, sunnah = [] } = readJson("data/radios.json");
 
 (async () => {
-  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah)]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah), placeSearch()]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);

@@ -31,6 +31,10 @@
 • تلاوات كاملة لكبار القرّاء، وترجمة معاني القرآن بأكثر من 50 لغة من موسوعة القرآن الكريم.
 • علامة توقف، ومتابعة القراءة من آخر موضع، وبحث بالإملاء العادي.
 
+مواقيت الصلاة
+• مواقيت الصلاة لمدينتك بطريقة الجهة المعتمدة في بلدك، تُحسب على جهازك وتعمل دون إنترنت، مع التاريخ الهجري وجدول الشهر.
+• تذكير قبل الصلاة، والأذان بصوت المسجد النبوي عند دخول الوقت والتطبيق مفتوح، وأذان خاص للفجر.
+
 كتب السنة
 • صحيح البخاري، وصحيح مسلم، وسنن أبي داود والترمذي والنسائي وابن ماجه، والأربعون النووية، والأحاديث القدسية.
 • درجة كل حديث كما في المصدر، مع ترجمة الأحاديث.
@@ -72,6 +76,10 @@ The Holy Quran
 • Pages of the Madinah Mushaf, identical to the printed 1405 AH and 1421 AH editions.
 • Full recitations by renowned reciters, and translations of the meanings in more than 50 languages from the Noble Quran Encyclopedia.
 • Bookmarks, resume reading, and search.
+
+Prayer times
+• Prayer times for your city with your country's official method, calculated on your device and available offline, with the Hijri date and a monthly timetable.
+• A reminder before each prayer, and the adhan from the Prophet's Mosque when its time comes while the app is open, with a Fajr adhan of its own.
 
 Hadith
 • Sahih al-Bukhari, Sahih Muslim, the Sunan of Abu Dawud, al-Tirmidhi, al-Nasa'i and Ibn Majah, the Forty Hadith of al-Nawawi, and Hadith Qudsi.
