@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.24.0";
-import { mirrorOf } from "./mirror.js?v=1.24.0";
+import * as off from "./offline.js?v=1.25.0";
+import { mirrorOf } from "./mirror.js?v=1.25.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -62,7 +62,7 @@ export function setupQuran(ctx) {
   if (!Array.isArray(state.marks)) {
     const b = state.bookmark; state.marks = b ? [{ r: b.r, s: b.s, a: b.a, t: Date.now() }] : []; delete state.bookmark; save();
   }
-  // The printed pages open in the colour-coded Tajweed print (since 1.24.0; the 1421 print where its fonts are unknown).
+  // The printed pages open in the colour-coded Tajweed print (since 1.25.0; the 1421 print where its fonts are unknown).
   // Readers on the former default move to it once; a print chosen after that is kept.
   const DEFAULT_ED = "tajweed";
   if (!state.edDefault) {

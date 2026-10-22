@@ -762,9 +762,17 @@ details.info { display: block; }
 .pr-how p { margin: 8px 0 0; color: var(--muted); }
 .pr-setup { padding: 14px; }
 .pr-setup > * + * { margin-top: 10px; }
+.pr-welcome > * + *, #pr-w-pick > * + * { margin-top: 10px; }
+.pr-welcome > p:first-child { margin: 0; line-height: 1.7; }
+.pr-w-on { display: flex; align-items: center; gap: 8px; margin-bottom: 0; color: var(--primary); font-weight: 700; }
+.pr-w-on svg { width: 20px; height: 20px; flex: none; }
+.pr-allow { padding: 4px 14px 14px; border-bottom: 1px solid var(--border); }
 .btn.busy { opacity: .6; pointer-events: none; }
 .list .row > .ic { color: var(--primary); }
 .pr-voice .lbl { text-align: start; padding: 0; color: inherit; background: none; }
+.pr-vgroup { margin: 14px 4px 6px; color: var(--muted); font-size: .85rem; font-weight: 700; }
+.pr-vgroup:first-child { margin-top: 0; }
+.pr-vown { margin-top: 14px; }
 .pr-voice [data-play] { color: var(--primary); }
 .pr-voice [data-play].on { background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .sheet .riwayah-note a { color: var(--primary); }

@@ -2,11 +2,13 @@
 // The times are calculated on the device (js/prayer-calc.js) for a place the user picks: their GPS position (named by
 // OpenStreetMap Nominatim) or a city from Open-Meteo's geocoding search (GeoNames data, with each city's time zone).
 // Alerts: a reminder some minutes before each prayer, then at its time a notification and the adhan: a recording from
-// adhan/index.json (Wikimedia Commons, scripts/build-adhan.js) or an audio file the user chose (kept in ADHAN_CACHE).
+// adhan/index.json (Wikimedia Commons and archive.org, scripts/build-adhan.js) or an audio file the user chose (kept in
+// ADHAN_CACHE).
 // A web page runs only while the browser keeps it alive, so these alerts come while the app is open or was recently
 // in the background. When the app is closed, the server in push/ sends the same alerts by Web Push (syncPush below,
-// the push handler in sw.js); the page explains both to the user.
-import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.24.0";
+// the push handler in sw.js); the page explains both to the user. The alerts are on unless the user turns them off:
+// on a phone, a window asks for the place and the notifications permission a moment after the app first starts.
+import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.25.0";
 
 export const ADHAN_CACHE = "hisn-adhan-v1"; // the same name is in sw.js
 
@@ -20,7 +22,7 @@ export function setupPrayer(ctx) {
   const BEFORE = [0, 5, 10, 15, 20, 30, 45];
   const DEF = {
     loc: null, method: "auto", asr: "auto", high: "angle", adj: {}, hijriAdj: 0,
-    alerts: false, before: 15, short: false, voice: "madinah", fajrVoice: "malmo-fajr", customName: "",
+    alerts: true, off: false, before: 15, short: false, voice: "madinah", fajrVoice: "malmo-fajr", customName: "", // off: the user turned the alerts off
     mode: { fajr: "adhan", sunrise: "off", dhuhr: "adhan", asr: "adhan", maghrib: "adhan", isha: "adhan" },
   };
   const stored = LS.get("prayer", {});
@@ -129,7 +131,7 @@ export function setupPrayer(ctx) {
   // (not while a recitation or a dhikr plays, which a phone could pause for it).
   let unlocked = false;
   function unlock() {
-    if (unlocked || !state.alerts || !audio.paused) return;
+    if (unlocked || !state.alerts || !state.loc || !audio.paused) return;
     if (["audio", "qaudio"].some(id => document.getElementById(id)?.paused === false)) return;
     const v = voiceMeta(DEF.voice); if (!v) return;
     unlocked = true; audio.muted = true; audio.src = v.file;
@@ -309,21 +311,40 @@ export function setupPrayer(ctx) {
     }
     const title = e.p === "sunrise" ? t("prayer.sunriseNow") : t("prayer.nowTitle", { name });
     let playing = false;
-    if (e.kind === "adhan" && e.p !== "sunrise" && late <= GRACE.sound) playing = await play(voiceFor(e.p), { short: state.short, label: title });
+    if (e.kind === "adhan" && e.p !== "sunrise" && late <= GRACE.sound) { soundOf = e.at; playing = await play(voiceFor(e.p), { short: state.short, label: title }); }
     showBar({ p: e.p, at: e.at, name, canPlay: e.kind === "adhan" && e.p !== "sunrise" }, playing);
     if (!visible) notify(title, body, { adhan: playing, at: e.at, kind: "now" });
+  }
+  let soundOf = null; // the prayer time whose adhan was last started
+  // A tap on the notification of a prayer's time (from the server while the app was closed, or from the page): the
+  // adhan, if that prayer has it and it is still under GRACE.notice late (the tap asks for it, unlike a sound by itself).
+  async function adhanFromTap(at) {
+    const now = Date.now(), e = events(now - GRACE.notice, now).find(x => x.at === at && x.kind === "adhan" && x.p !== "sunrise");
+    if (!e || soundOf === at) return;
+    soundOf = at;
+    const name = pname(e.p, e.day), title = t("prayer.nowTitle", { name });
+    showBar({ p: e.p, at, name, canPlay: true }, await play(voiceFor(e.p), { short: state.short, label: title }));
   }
 
   // From the service worker: a tap on a notification, or its "stop" button.
   navigator.serviceWorker?.addEventListener("message", e => {
     if (e.data?.stopAdhan) stopAdhan();
     if (e.data?.open && location.hash !== e.data.open) location.hash = e.data.open;
+    if (e.data?.adhan) adhanFromTap(e.data.adhan);
   });
   document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { schedule(); tick(); syncPush(); } });
 
+  // The notifications permission, asked inside a tap (Firefox and Safari ask only then).
+  async function askNotif() {
+    if (!notifSupported() || Notification.permission !== "default") return;
+    try { await Notification.requestPermission(); } catch { /* old Safari: callback form */ }
+    syncPush(0);
+  }
+  // Allowed or blocked later from the browser's site settings: the server is told at once.
+  navigator.permissions?.query({ name: "notifications" }).then(s => { s.onchange = () => { syncPush(0); redraw(); }; }).catch(() => {});
   async function enableAlerts() {
-    if (notifSupported() && Notification.permission === "default") { try { await Notification.requestPermission(); } catch { /* old Safari: callback form */ } }
-    state.alerts = true; unlocked = false; unlock(); save(); keepVoices();
+    await askNotif();
+    state.alerts = true; state.off = false; unlocked = false; unlock(); save(); keepVoices();
     if (!notifSupported() || Notification.permission !== "granted") toast(t("prayer.notifOnlyOpen"));
     else toast(t("prayer.alertsEnabled"));
   }
@@ -356,14 +377,17 @@ export function setupPrayer(ctx) {
       btn?.classList.remove("busy"); setLoc(loc); done();
     }, () => { btn?.classList.remove("busy"); toast(t("prayer.gpsFailed")); }, { timeout: 20000, maximumAge: 30 * 60000 });
   }
-  function picker(box, done) {
+  // The place: GPS or a city search. The tap that picks it also asks for the notifications permission, since the
+  // alerts are on (welcome: the window that also turns them back on).
+  function picker(box, done, welcome = false) {
     box.innerHTML = `<button class="btn block" id="pk-gps" type="button">${icon("pin")} ${T("prayer.useGps")}</button>
       <p class="riwayah-note">${T("prayer.gpsHint")}</p>
       <div class="searchbox small">${icon("search")}<input id="pk-q" type="search" placeholder="${T("prayer.searchCity")}" autocomplete="off" enterkeyhint="search"></div>
       <div id="pk-res"></div>`;
-    const gb = $("#pk-gps", box); gb.onclick = () => gps(done, gb);
+    const tap = () => { if (welcome) { state.alerts = true; state.off = false; } if (state.alerts) askNotif(); };
+    const gb = $("#pk-gps", box); gb.onclick = () => { tap(); gps(done, gb); };
     const res = $("#pk-res", box); let seq = 0, wait = null, found = [];
-    res.onclick = e => { const b = e.target.closest("[data-i]"); if (b) { setLoc(found[Number(b.dataset.i)]); done(); } };
+    res.onclick = e => { const b = e.target.closest("[data-i]"); if (b) { tap(); setLoc(found[Number(b.dataset.i)]); done(); } };
     $("#pk-q", box).oninput = e => {
       clearTimeout(wait); const q = e.target.value.trim(); const mine = ++seq;
       if (q.length < 2) { res.innerHTML = ""; return; }
@@ -380,6 +404,33 @@ export function setupPrayer(ctx) {
   function pickPlace() {
     const body = ctx.sheet(t("prayer.location"), "", { tall: true });
     picker(body, () => { ctx.closeSheet(); toast(t("prayer.placeSet", { name: state.loc.name })); redraw(); });
+  }
+
+  // ---------- on a phone: the times and their alerts set up in one tap ----------
+  // Sites can notify only once the person allows it, and the times need the place. So a moment after the app starts,
+  // a window asks for both, until the alerts work, the user turns them off, or it was closed 3 times (3 days apart).
+  const ASKED = "prayerAsked";
+  const phone = () => /Android|iPhone|iPad|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1)
+    || matchMedia("(display-mode: standalone)").matches;
+  const needsSetup = () => !state.loc || !state.alerts || (notifSupported() && Notification.permission === "default");
+  function welcome() {
+    const note = k => `<p class="riwayah-note">${T(k)}</p>`;
+    const closed = !notifSupported() ? note("prayer.notifUnsupported") : Notification.permission === "denied" ? note("prayer.notifDenied")
+      : "PushManager" in window ? `<p class="pr-w-on">${icon("check")} ${T("prayer.pushOn")}</p>` : "";
+    const body = ctx.sheet(t("prayer.settings"), `<div class="pr-welcome"><p>${T("prayer.welcomeLead")}</p>${closed}<div id="pr-w-pick"></div>
+      <button class="btn ghost block" type="button" data-close>${T("install.later")}</button></div>`, { tall: !state.loc });
+    const box = $("#pr-w-pick", body), done = () => { ctx.closeSheet(); toast(t(state.alerts && notifSupported() && Notification.permission === "granted" ?"prayer.alertsEnabled" : "prayer.placeSet", { name: state.loc.name })); redraw(); };
+    if (state.loc) { box.innerHTML = `<button class="btn block" type="button" id="pr-w-go">${icon("bell")} ${T("prayer.enable")}</button>`; $("#pr-w-go", box).onclick = async () => { await enableAlerts(); ctx.closeSheet(); redraw(); }; }
+    else picker(box, done, true);
+  }
+  function autoWelcome(delay) {
+    setTimeout(function tryOpen() {
+      if (state.off || !phone() || !needsSetup() || /^#\/prayer/.test(location.hash)) return;
+      const asked = LS.get(ASKED, { at: 0, n: 0 });
+      if (asked.n >= 3 || Date.now() - asked.at < 3 * 864e5) return;
+      if (document.getElementById("sheet") || document.visibilityState !== "visible") { setTimeout(tryOpen, 8000); return; }
+      LS.set(ASKED, { at: Date.now(), n: asked.n + 1 }); welcome();
+    }, delay);
   }
 
   // ---------- the prayer times page ----------
@@ -448,6 +499,7 @@ export function setupPrayer(ctx) {
     if (!state.alerts) return `<div class="setting wrap"><span class="ic">${icon("bell")}</span><div class="lbl">${T("prayer.alertsOff")}<small>${T("prayer.alertsHint")}</small></div><button class="btn" type="button" id="pr-enable">${T("prayer.enable")}</button></div>${pushNote()}`;
     const custom = state.voice === "custom";
     return `<div class="setting"><span class="ic">${icon("bell")}</span><div class="lbl">${T("prayer.alertsOn")}<small>${esc(permNote())}</small></div><button class="switch on" type="button" id="pr-off" role="switch" aria-checked="true" aria-label="${T("prayer.alerts")}"></button></div>
+      ${notifSupported() && Notification.permission === "default" ? `<div class="center pr-allow"><button class="btn" type="button" id="pr-allow">${icon("bell")} ${T("prayer.allowNotif")}</button></div>` : ""}
       <div class="setting"><span class="ic">${icon("bell")}</span><div class="lbl">${T("prayer.before")}</div><select class="select" id="pr-before">${BEFORE.map(n => `<option value="${n}" ${state.before === n ? "selected" : ""}>${n ? T("prayer.minutes", { n }) : T("prayer.beforeOff")}</option>`).join("")}</select></div>
       <button class="setting row-btn" type="button" id="pr-voice"><span class="ic">${icon("volume")}</span><div class="lbl">${T("prayer.voice")}<small>${esc(voiceName(state.voice))}</small></div>${icon("back", "chev")}</button>
       <button class="setting row-btn" type="button" id="pr-fvoice"><span class="ic">${icon("fajr")}</span><div class="lbl">${T("prayer.fajrVoice")}<small>${esc(voiceName(state.fajrVoice))}</small></div>${icon("back", "chev")}</button>
@@ -469,7 +521,8 @@ export function setupPrayer(ctx) {
       save(); toast(`${pname(p)}: ${t("prayer.mode." + state.mode[p])}`); redraw();
     });
     const en = $("#pr-enable"); if (en) en.onclick = async () => { await enableAlerts(); redraw(); };
-    const off = $("#pr-off"); if (off) off.onclick = () => { state.alerts = false; stopAdhan(); save(); toast(t("prayer.alertsDisabled")); redraw(); };
+    const off = $("#pr-off"); if (off) off.onclick = () => { state.alerts = false; state.off = true; stopAdhan(); save(); toast(t("prayer.alertsDisabled")); redraw(); };
+    const allow = $("#pr-allow"); if (allow) allow.onclick = async () => { await askNotif(); redraw(); };
     const bf = $("#pr-before"); if (bf) bf.onchange = () => { state.before = Number(bf.value); save(); };
     const vb = $("#pr-voice"); if (vb) vb.onclick = () => pickVoice(false);
     const fb = $("#pr-fvoice"); if (fb) fb.onclick = () => pickVoice(true);
@@ -499,16 +552,22 @@ export function setupPrayer(ctx) {
   }
   async function pickVoice(fajr) {
     await voicesReady;
-    const ids = fajr ? [...VOICES.filter(v => v.fajr).map(v => v.id), "same"] : [...VOICES.filter(v => !v.fajr).map(v => v.id), "custom"];
+    // The recordings by place (Makkah and Madinah, the Egyptian reciters, other mosques), then "as the other prayers"
+    // or the user's own file.
+    const own = fajr ? "same" : "custom";
+    const groups = ["hijaz", "egypt", "world"].map(g => [g, VOICES.filter(v => !v.fajr === !fajr && v.group === g).map(v => v.id)]).filter(([, ids]) => ids.length);
     const cur = fajr ? state.fajrVoice : state.voice;
-    const credit = v => v ? `${v.by}${sep()}${v.license}${sep()}${t("prayer.minutesShort", { n: Math.round(v.seconds / 6) / 10 })}` : "";
-    const body = ctx.sheet(t(fajr ? "prayer.fajrVoice" : "prayer.voice"), `<div class="list flat">${ids.map(id => {
+    // An archive.org copy has no licence to show: its source and length only.
+    const credit = v => v ? [v.by, v.license, t("prayer.minutesShort", { n: Math.round(v.seconds / 6) / 10 })].filter(Boolean).join(sep()) : "";
+    const row = id => {
       const v = VOICES.find(x => x.id === id), playable = id !== "same" && (id !== "custom" || state.customName);
       return `<div class="row pr-voice"><button class="lbl" type="button" data-v="${id}">${esc(voiceName(id))}<span class="sub">${esc(id === "custom" ? t(state.customName ? "prayer.customChange" : "prayer.customPick") : id === "same" ? voiceName(state.voice) : credit(v))}</span></button>
         ${playable ? `<button class="icon-btn" type="button" data-play="${id}" aria-label="${T("common.listen")}">${icon("play")}</button>` : ""}${cur === id ? icon("check") : ""}</div>`;
-    }).join("")}</div>
+    };
+    const body = ctx.sheet(t(fajr ? "prayer.fajrVoice" : "prayer.voice"), `${groups.map(([g, ids]) => `<h4 class="pr-vgroup">${T("prayer.g." + g)}</h4><div class="list flat">${ids.map(row).join("")}</div>`).join("")}
+      <div class="list flat pr-vown">${row(own)}</div>
       ${fajr ? `<p class="riwayah-note">${T("prayer.fajrNote")}</p>` : ""}
-      <p class="riwayah-note">${T("prayer.voicesSource")} ${VOICES.map(v => `<a href="${esc(v.url)}" target="_blank" rel="noopener">${esc(voiceName(v.id))}</a>`).join(sep())}</p>
+      <p class="riwayah-note">${T("prayer.voicesSource")} ${VOICES.map(v => `<a href="${esc(v.url)}" target="_blank" rel="noopener">${esc(voiceName(v.id))}</a>`).join(" • ")}</p>
       <input type="file" id="pr-file" accept="audio/*" hidden>`);
     const file = $("#pr-file", body);
     file.onchange = async () => {
@@ -590,7 +649,13 @@ export function setupPrayer(ctx) {
 
   return {
     render, hubRow,
-    start() { schedule(); if (state.alerts) keepVoices(); syncPush(3000); },
+    start() {
+      schedule(); if (state.alerts && state.loc) keepVoices(); syncPush(3000); autoWelcome(4000);
+      // Opened by a tap on the notification of a prayer's time (sw.js): ?adhan=<that time>.
+      const q = new URLSearchParams(location.search), at = Number(q.get("adhan"));
+      if (q.has("adhan")) { q.delete("adhan"); const rest = q.toString(); history.replaceState(history.state, "", location.pathname + (rest ? "?" + rest : "") + location.hash); }
+      if (at) adhanFromTap(at);
+    },
     // The notifications from the server are written in the app's language.
     langChanged: () => syncPush(),
     settingsLabel: () => state.loc ? placeName() : t("prayer.setLocation"),

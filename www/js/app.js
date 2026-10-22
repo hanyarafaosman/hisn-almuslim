@@ -1,17 +1,17 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.24.0";
-import { setupHadith } from "./hadith.js?v=1.24.0";
-import { setupTafsir } from "./tafsir.js?v=1.24.0";
-import { setupAsma } from "./asma.js?v=1.24.0";
-import { setupKutub } from "./kutub.js?v=1.24.0";
-import { setupPrayer } from "./prayer.js?v=1.24.0";
-import { setupVideos } from "./videos.js?v=1.24.0";
-import { setupInstall } from "./install.js?v=1.24.0";
-import { setupTajweed } from "./tajweed.js?v=1.24.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.24.0";
-import { mirrorOf } from "./mirror.js?v=1.24.0";
+import { setupQuran } from "./quran.js?v=1.25.0";
+import { setupHadith } from "./hadith.js?v=1.25.0";
+import { setupTafsir } from "./tafsir.js?v=1.25.0";
+import { setupAsma } from "./asma.js?v=1.25.0";
+import { setupKutub } from "./kutub.js?v=1.25.0";
+import { setupPrayer } from "./prayer.js?v=1.25.0";
+import { setupVideos } from "./videos.js?v=1.25.0";
+import { setupInstall } from "./install.js?v=1.25.0";
+import { setupTajweed } from "./tajweed.js?v=1.25.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.25.0";
+import { mirrorOf } from "./mirror.js?v=1.25.0";
 
-const VERSION = "1.24.0";
+const VERSION = "1.25.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -725,7 +725,7 @@ function renderSettings() {
   view.querySelectorAll("[data-scale]").forEach(b => b.onclick = () => setScale(settings.scale + 0.1 * Number(b.dataset.scale)));
   $("#lang-btn").onclick = pickLanguage;
   Q.translationLabel().then(l => { const x = $("#qtr-label"); if (x) x.textContent = l; });
-  PR.credits().then(vs => { const x = $("#adhan-credits"); if (x) x.innerHTML = vs.map(v => `${esc(PR.voiceName(v.id))}: ${esc(v.by)}${sep()}${link(v.licenseUrl, v.license)}${sep()}${link(v.url, "Wikimedia Commons")}`).join("<br>"); });
+  PR.credits().then(vs => { const x = $("#adhan-credits"); if (x) x.innerHTML = vs.map(v => `${esc(PR.voiceName(v.id))}: ${v.license ? `${esc(v.by)}${sep()}${link(v.licenseUrl, v.license)}${sep()}${link(v.url, "Wikimedia Commons")}` : link(v.url, "archive.org")}`).join("<br>"); });
   $("#qtr-btn").onclick = () => Q.pickTranslation(renderSettings);
   $("#reset-progress").onclick = () => { progress = { date: todayKey(), counts: {} }; saveProgress(); toast(t("settings.todayReset")); };
   $("#clear-fav").onclick = () => { if (!favorites.size) return toast(t("settings.favEmpty")); if (confirm(t("settings.confirmClearFav"))) { favorites.clear(); saveFav(); renderSettings(); toast(t("settings.cleared")); } };

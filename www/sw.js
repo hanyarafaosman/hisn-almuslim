@@ -1,5 +1,5 @@
 /* Service worker: offline-first app shell for حصن ونور */
-const VERSION = "hisn-v1.24.0";
+const VERSION = "hisn-v1.25.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./js/prayer.js", "./js/prayer-calc.js", "./js/videos.js", "./js/install.js", "./js/tajweed.js", "./adhan/index.json", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./data/lessons.json", "./data/videos.json", "./data/tajweed.json", "./quran/index.json",
@@ -134,14 +134,16 @@ async function savedAudio(req, cacheName, keep = false) {
 }
 
 // A tap on a prayer notification opens the app on the prayer times (or brings it forward); its "stop" button stops the adhan.
+// A tap on the notification of a prayer's time also asks the app for that prayer's adhan (adhanFromTap in js/prayer.js).
 self.addEventListener("notificationclick", e => {
   e.notification.close();
-  const open = e.notification.data?.url || "#/prayer";
+  const { url: open = "#/prayer", at, kind } = e.notification.data || {};
+  const adhan = kind === "now" && Number.isFinite(at) ? at : undefined;
   e.waitUntil(self.clients.matchAll({ type: "window", includeUncontrolled: true }).then(list => {
     const win = list.find(c => c.url.startsWith(self.registration.scope));
     if (e.action === "stop") { if (win) win.postMessage({ stopAdhan: true }); return; }
-    if (win) { win.postMessage({ open }); return win.focus(); }
-    return self.clients.openWindow(self.registration.scope + open);
+    if (win) { win.postMessage({ open, adhan }); return win.focus(); }
+    return self.clients.openWindow(self.registration.scope + (adhan ? "?adhan=" + adhan : "") + open);
   }));
 });
 
@@ -176,7 +178,8 @@ async function prayerPush(d) {
   const title = kind === "before" ? t("prayer.soonTitle", { name, n: Math.max(1, Math.round((d.at - Date.now()) / 60000)) })
     : d.p === "sunrise" ? t("prayer.sunriseNow") : t("prayer.nowTitle", { name });
   const sep = ["ar", "fa", "ur", "ps"].includes(lang) ? "، " : ", ";
-  return self.registration.showNotification(title, { body: clock + (info.name ? sep + info.name : ""), icon, tag: "prayer", renotify: !shown, lang, dir: "auto", ...(kind === "now" ? { timestamp: d.at } : {}), data: { url: "#/prayer", at: d.at, kind } });
+  const body = clock + (info.name ? sep + info.name : "") + (d.kind === "adhan" && d.p !== "sunrise" ? "\n" + t("prayer.tapAdhan") : "");
+  return self.registration.showNotification(title, { body, icon, tag: "prayer", renotify: !shown, lang, dir: "auto", ...(kind === "now" ? { timestamp: d.at } : {}), data: { url: "#/prayer", at: d.at, kind } });
 }
 // The strings of a language (i18n/<code>.json, from the app's cache or the network), with English for missing keys;
 // a small copy of t() in js/i18n.js: {name} placeholders, plural objects, the language's digits (Arabic-Indic for Arabic).
