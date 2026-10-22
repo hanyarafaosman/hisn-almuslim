@@ -1,6 +1,6 @@
 {
   "name": "hisn-almuslim",
-  "version": "1.23.0",
+  "version": "1.24.0",
   "private": true,
   "description": "حصن ونور - أذكار حصن المسلم والمصحف وكتب السنة، يعمل على جميع الأنظمة (PWA + Capacitor)",
   "scripts": {

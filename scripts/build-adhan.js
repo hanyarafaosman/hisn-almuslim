@@ -1,5 +1,8 @@
 // Builds www/adhan/: the adhan recordings played at prayer times, with their sources and licences (adhan/index.json).
-// Each recording comes from Wikimedia Commons under a free licence, pinned by the SHA-1 Commons gives for the file.
+// Most come from Wikimedia Commons under a free licence. The voices of the famous Egyptian reciters and of the muezzins of
+// Makkah and Madinah exist under no free licence: those are copies from the Internet Archive (archive.org) that carry no
+// licence, added at the owner's request; their rights belong to their holders, and a file is removed if they ask.
+// Every file is pinned by the SHA-1 Commons or archive.org gives for it.
 // Only the adhan itself is kept (from its first takbir to the end of the last «لا إله إلا الله»); it is mixed to mono,
 // brought to one loudness, and encoded as AAC (ADTS, 96 kb/s: the lowest rate the Windows encoder takes), which every
 // browser and phone plays. Headless Chrome does the decoding and encoding (Web Audio and WebCodecs), so no other
@@ -14,37 +17,66 @@ const UA = "hisn-almuslim-build/1.0 (https://github.com/hanyarafaosman/hisn-almu
 
 // start/end: seconds of the source kept (end: null = to the end). short: where the four opening takbirs end, in the
 // kept recording (for the "takbirs only" choice). The boundaries were read from the loudness of each recording:
-// the pauses between the sentences of the adhan are clear in all three.
+// the pauses between the sentences of the adhan are clear in all of them (12 sentences, 14 at Fajr).
 // fajr: the recording includes «الصلاة خير من النوم» and is offered for Fajr only.
+// group: where the voice is listed (hijaz: Makkah and Madinah, egypt: Egyptian reciters, world: other mosques).
+// commons: a file on Wikimedia Commons; archive: [item, file] on archive.org.
 const VOICES = [
   {
-    id: "madinah", commons: "33937 ejaz215 call-to-prayer-from-the-prophet-s-mo.ogg", sha1: "4aa432b9e44804e7d72af4429bd743aa5fa9e3a4",
+    id: "madinah", group: "hijaz", commons: "33937 ejaz215 call-to-prayer-from-the-prophet-s-mo.ogg", sha1: "4aa432b9e44804e7d72af4429bd743aa5fa9e3a4",
     start: 0.8, end: null, fadeOut: 0.3, short: 36.2,
     by: "ejaz215", license: "CC BY 3.0", licenseUrl: "https://creativecommons.org/licenses/by/3.0/", origin: "https://freesound.org/people/ejaz215/sounds/33937/",
   },
+  // Sheikh Ali Ahmed Mulla, Masjid al-Haram: Isha, 12 Rabi al-Awwal 1434.
+  { id: "makkah-mulla", group: "hijaz", archive: ["IshaAthan12-3-1434SheikhAliMulla", "IshaAthan12-3-1434SheikhAliMulla.mp3"], sha1: "943e2d4d133144e6b543626f68760dfa434e2f76", start: 0, end: null, fadeOut: 0.6, short: 34.6 },
+  // Sheikh Abdulmajeed al-Surayhi, his first adhan at the Prophet's Mosque (2 Ramadan 1432).
+  { id: "madinah-surayhi", group: "hijaz", archive: ["AbdulMajeed_Al-Suraihy_Athan", "Sheikh_AbdulMajeed_Al-Suraihy_1st_AThan_In_Madina_2-9-1432.mp3"], sha1: "a16cf3834aa0188e5e0e18c45d8faf989447b067", start: 0, end: null, fadeOut: 0.5, short: 25.6 },
+  // «The sad adhan»: al-Surayhi while he was the muezzin of Quba Mosque.
+  { id: "sad", group: "hijaz", archive: ["bel_319", "لأذان الحزين بصوت عبد المجيد السريحي.mp3"], sha1: "5dfb0c1fff41b40ce26a91ccb340659a1cae29e6", start: 0, end: null, fadeOut: 0.5, short: 34.2 },
+  // Sheikh Ali Ahmed Mulla, Fajr at Masjid al-Haram, 6 September 2013.
+  { id: "makkah-mulla-fajr", group: "hijaz", fajr: true, archive: ["MakkahFajrAdhan6913SheikhAliMullah", "Makkah Fajr Adhan 6-9-13 Sheikh Ali Mullah.mp3"], sha1: "78f046f1d0db691842b9f5032148469b0f1415fa", start: 0, end: 241, fadeOut: 0.5, short: 29.8 },
+  { id: "basit", group: "egypt", archive: ["m_389", "%D8%A7%D8%B0%D8%A7%D9%86 %D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D8%A8%D8%A7%D8%B3%D8%B7 %D8%AD%D8%A7%D9%81%D8%B8.MP3"], sha1: "3d67ac5cddb32211ebef6bf1a9c23abdd4ccfddd", start: 2, end: 227, fadeOut: 0.5, short: 28.1 },
+  // Sheikh Mohamed Refaat: Maghrib.
+  { id: "refaat", group: "egypt", archive: ["hasan_20190421", "اذان المغرب لفضيلة الشيخ محمد رفعت رحمة الله.mp3"], sha1: "5a89d9b2fdecb5bc2532b27268e1c102b49fb5c2", start: 0.8, end: null, fadeOut: 0.8, short: 26.9 },
+  { id: "husary", group: "egypt", archive: ["20240913_20240913_1950", "الحصري الأذان.mp3"], sha1: "b0d456998d6b144cc7a651da5d0a94de2b6f2f85", start: 0.5, end: 221, fadeOut: 0.5, short: 32.1 },
+  // Sheikh Mohamed Siddiq al-Minshawi, the 1950s.
+  { id: "minshawi", group: "egypt", archive: ["20230209_20230209_1744", "اذان نادر جدا تخشع له القلوب بصوت الشيخ محمد صديق المنشاوي من فترة الخمسينات.mp3"], sha1: "5d476b15d7e095201f538a9e2c696448632e3cfe", start: 0.8, end: null, fadeOut: 0.3, short: 25.9 },
   {
-    id: "shalqar", commons: "Adhan in Shalqar mosque.webm", sha1: "5d7301c0c142d8e5d8f281f4dd02846eaf05529b",
+    id: "shalqar", group: "world", commons: "Adhan in Shalqar mosque.webm", sha1: "5d7301c0c142d8e5d8f281f4dd02846eaf05529b",
     start: 2.9, end: 134.2, fadeOut: 0.8, short: 21.7,
     by: "Esetok", license: "CC BY-SA 4.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/4.0/",
   },
   {
-    id: "malmo-fajr", commons: "Eid al-Fitr Fajr azan at Malmö Mosque - 19 August 2012.webm", sha1: "bc75d5cee271efb67f03d3f35474a9362fce103f",
+    id: "malmo-fajr", group: "world", commons: "Eid al-Fitr Fajr azan at Malmö Mosque - 19 August 2012.webm", sha1: "bc75d5cee271efb67f03d3f35474a9362fce103f",
     start: 12.5, end: null, fadeOut: 0.6, short: 35.5, fajr: true,
     by: "Islamic Center Malmö", license: "CC BY 3.0", licenseUrl: "https://creativecommons.org/licenses/by/3.0/",
   },
 ];
 
 const commonsPage = f => "https://commons.wikimedia.org/wiki/File:" + encodeURIComponent(f.replace(/ /g, "_"));
-async function source(v) {
-  const file = path.join(CACHE, v.id + path.extname(v.commons));
-  const sha1 = b => crypto.createHash("sha1").update(b).digest("hex");
-  if (fs.existsSync(file) && sha1(fs.readFileSync(file)) === v.sha1) return file;
+const pageOf = v => v.commons ? commonsPage(v.commons) : "https://archive.org/details/" + v.archive[0];
+// The download address and SHA-1 the source gives for the file now.
+async function locate(v) {
+  if (v.archive) {
+    const [item, name] = v.archive;
+    const meta = await (await fetch(`https://archive.org/metadata/${item}`, { headers: { "user-agent": UA } })).json();
+    const f = (meta.files || []).find(x => x.name === name);
+    if (!f) throw new Error(`${v.id}: ${name} is no longer on archive.org`);
+    return { url: `https://archive.org/download/${item}/${encodeURIComponent(name)}`, sha1: f.sha1 };
+  }
   const api = `https://commons.wikimedia.org/w/api.php?action=query&format=json&prop=imageinfo&iiprop=url|sha1&titles=${encodeURIComponent("File:" + v.commons)}`;
   const info = Object.values((await (await fetch(api, { headers: { "user-agent": UA } })).json()).query.pages)[0].imageinfo?.[0];
   if (!info) throw new Error(`${v.id}: ${v.commons} is no longer on Commons`);
-  if (info.sha1 !== v.sha1) throw new Error(`${v.id}: the file on Commons changed (sha1 ${info.sha1}); listen to it and set new boundaries`);
-  console.log(`↓ ${v.commons}`);
-  const res = await fetch(info.url.split("?")[0], { headers: { "user-agent": UA } }); if (!res.ok) throw new Error(`${v.id}: HTTP ${res.status}`);
+  return { url: info.url.split("?")[0], sha1: info.sha1 };
+}
+async function source(v) {
+  const file = path.join(CACHE, v.id + path.extname(v.commons || v.archive[1]).toLowerCase());
+  const sha1 = b => crypto.createHash("sha1").update(b).digest("hex");
+  if (fs.existsSync(file) && sha1(fs.readFileSync(file)) === v.sha1) return file;
+  const info = await locate(v);
+  if (info.sha1 !== v.sha1) throw new Error(`${v.id}: the source file changed (sha1 ${info.sha1}); listen to it and set new boundaries`);
+  console.log(`↓ ${v.commons || v.archive.join("/")}`);
+  const res = await fetch(info.url, { headers: { "user-agent": UA } }); if (!res.ok) throw new Error(`${v.id}: HTTP ${res.status}`);
   const buf = Buffer.from(await res.arrayBuffer()); if (sha1(buf) !== v.sha1) throw new Error(`${v.id}: download does not match its sha1`);
   fs.mkdirSync(CACHE, { recursive: true }); fs.writeFileSync(file, buf); return file;
 }
@@ -106,7 +138,7 @@ const browser = () => [process.env.CHROME, "C:/Program Files/Google/Chrome/Appli
   setTimeout(() => fs.rmSync(profile, { recursive: true, force: true }), 1000);
 
   fs.mkdirSync(OUT, { recursive: true });
-  const index = { source: "Wikimedia Commons", voices: [] }; let failed = false;
+  const index = { source: "Wikimedia Commons, archive.org", voices: [] }; let failed = false;
   for (const v of VOICES) {
     const r = results[v.id];
     if (!r || r.error) { failed = true; console.error(`✗ ${v.id}: ${r ? r.error : "no result (timeout)"}`); continue; }
@@ -114,8 +146,9 @@ const browser = () => [process.env.CHROME, "C:/Program Files/Google/Chrome/Appli
     const hash = crypto.createHash("sha256").update(r.aac).digest("hex").slice(0, 10);
     const file = `adhan/${v.id}.${hash}.aac`;
     fs.writeFileSync(path.join(ROOT, "www", file), r.aac);
-    index.voices.push({ id: v.id, file, bytes: r.aac.length, seconds: r.seconds, short: v.short, ...(v.fajr ? { fajr: true } : {}),
-      by: v.by, license: v.license, licenseUrl: v.licenseUrl, url: commonsPage(v.commons), ...(v.origin ? { origin: v.origin } : {}) });
+    // An archive.org copy has no licence: by is the site, and url its page there.
+    index.voices.push({ id: v.id, group: v.group, file, bytes: r.aac.length, seconds: r.seconds, short: v.short, ...(v.fajr ? { fajr: true } : {}),
+      ...(v.commons ? { by: v.by, license: v.license, licenseUrl: v.licenseUrl } : { by: "archive.org" }), url: pageOf(v), ...(v.origin ? { origin: v.origin } : {}) });
     console.log(`✓ ${file} ${Math.round(r.aac.length / 1024)} KB, ${r.seconds} s, gain ${r.gain} dB`);
   }
   if (failed) process.exit(1);

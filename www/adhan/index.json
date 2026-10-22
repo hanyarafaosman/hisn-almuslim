@@ -1,8 +1,9 @@
 {
- "source": "Wikimedia Commons",
+ "source": "Wikimedia Commons, archive.org",
  "voices": [
   {
    "id": "madinah",
+   "group": "hijaz",
    "file": "adhan/madinah.8806453a29.aac",
    "bytes": 2229394,
    "seconds": 185.78,
@@ -14,7 +15,89 @@
    "origin": "https://freesound.org/people/ejaz215/sounds/33937/"
   },
   {
+   "id": "makkah-mulla",
+   "group": "hijaz",
+   "file": "adhan/makkah-mulla.8540fcd6dd.aac",
+   "bytes": 2762431,
+   "seconds": 230.18,
+   "short": 34.6,
+   "by": "archive.org",
+   "url": "https://archive.org/details/IshaAthan12-3-1434SheikhAliMulla"
+  },
+  {
+   "id": "madinah-surayhi",
+   "group": "hijaz",
+   "file": "adhan/madinah-surayhi.a977fe3aae.aac",
+   "bytes": 2262831,
+   "seconds": 188.55,
+   "short": 25.6,
+   "by": "archive.org",
+   "url": "https://archive.org/details/AbdulMajeed_Al-Suraihy_Athan"
+  },
+  {
+   "id": "sad",
+   "group": "hijaz",
+   "file": "adhan/sad.8965c93c8d.aac",
+   "bytes": 2685527,
+   "seconds": 223.79,
+   "short": 34.2,
+   "by": "archive.org",
+   "url": "https://archive.org/details/bel_319"
+  },
+  {
+   "id": "makkah-mulla-fajr",
+   "group": "hijaz",
+   "file": "adhan/makkah-mulla-fajr.ef4924a818.aac",
+   "bytes": 2892277,
+   "seconds": 241,
+   "short": 29.8,
+   "fajr": true,
+   "by": "archive.org",
+   "url": "https://archive.org/details/MakkahFajrAdhan6913SheikhAliMullah"
+  },
+  {
+   "id": "basit",
+   "group": "egypt",
+   "file": "adhan/basit.7db158df55.aac",
+   "bytes": 2700101,
+   "seconds": 225,
+   "short": 28.1,
+   "by": "archive.org",
+   "url": "https://archive.org/details/m_389"
+  },
+  {
+   "id": "refaat",
+   "group": "egypt",
+   "file": "adhan/refaat.ebd6fc133d.aac",
+   "bytes": 2795589,
+   "seconds": 232.94,
+   "short": 26.9,
+   "by": "archive.org",
+   "url": "https://archive.org/details/hasan_20190421"
+  },
+  {
+   "id": "husary",
+   "group": "egypt",
+   "file": "adhan/husary.1bcb117b5e.aac",
+   "bytes": 2646239,
+   "seconds": 220.5,
+   "short": 32.1,
+   "by": "archive.org",
+   "url": "https://archive.org/details/20240913_20240913_1950"
+  },
+  {
+   "id": "minshawi",
+   "group": "egypt",
+   "file": "adhan/minshawi.366fa3594b.aac",
+   "bytes": 2267568,
+   "seconds": 188.95,
+   "short": 25.9,
+   "by": "archive.org",
+   "url": "https://archive.org/details/20230209_20230209_1744"
+  },
+  {
    "id": "shalqar",
+   "group": "world",
    "file": "adhan/shalqar.3d7b83439a.aac",
    "bytes": 1575706,
    "seconds": 131.3,
@@ -26,6 +109,7 @@
   },
   {
    "id": "malmo-fajr",
+   "group": "world",
    "file": "adhan/malmo-fajr.aa0e8cd948.aac",
    "bytes": 2820758,
    "seconds": 235.05,
