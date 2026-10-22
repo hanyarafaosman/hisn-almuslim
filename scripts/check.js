@@ -202,8 +202,9 @@ for (const b of kt.books) {
 }
 
 // Adhan recordings: each file is named after its id and the hash of its bytes and is an AAC (ADTS) stream, each has its
-// licence, source and an interface name, there is one for Fajr and one for the other prayers (the defaults in js/prayer.js),
-// and no file is left that the index does not list. The service worker and js/prayer.js keep them in the same cache.
+// source (a Commons file with its free licence, or an archive.org item, which has none), its group in the voice list and
+// an interface name, there is one for Fajr and one for the other prayers (the defaults in js/prayer.js), and no file is
+// left that the index does not list. The service worker and js/prayer.js keep them in the same cache.
 {
   const ax = readJson("adhan/index.json"), files = new Set(ax.voices.map(v => v.file));
   for (const f of fs.readdirSync(path.join(root, "adhan"))) if (f !== "index.json" && !files.has("adhan/" + f)) fail("adhan: file not in the index " + f);
@@ -213,8 +214,11 @@ for (const b of kt.books) {
     const buf = fs.readFileSync(file), hash = require("crypto").createHash("sha256").update(buf).digest("hex").slice(0, 10);
     if (v.file !== `adhan/${v.id}.${hash}.aac` || buf.length !== v.bytes) fail(`adhan: ${v.file} does not match its bytes (rebuild with npm run adhan)`);
     if (!(buf[0] === 0xff && (buf[1] & 0xf0) === 0xf0)) fail(`adhan: ${v.file} is not an AAC (ADTS) stream`);
-    if (!v.by || !v.license || !/^https:\/\/creativecommons\.org\//.test(v.licenseUrl) || !/^https:\/\/commons\.wikimedia\.org\/wiki\/File:/.test(v.url) || !(v.seconds > 60) || !(v.short > 5 && v.short < v.seconds)) fail("adhan: incomplete entry " + v.id);
+    const commons = !!v.license && /^https:\/\/creativecommons\.org\//.test(v.licenseUrl) && /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/.test(v.url);
+    const archive = !v.license && v.by === "archive.org" && /^https:\/\/archive\.org\/details\/[\w.-]+$/.test(v.url);
+    if (!v.by || !(commons || archive) || !(v.seconds > 60) || !(v.short > 5 && v.short < v.seconds)) fail("adhan: incomplete entry " + v.id);
     if (!enStrings["prayer.v." + v.id]) fail(`adhan: no prayer.v.${v.id} string`);
+    if (!enStrings["prayer.g." + v.group]) fail(`adhan: ${v.id} has no group with a prayer.g.<group> string`);
   }
   const pj = fs.readFileSync(path.join(root, "js/prayer.js"), "utf8");
   const def = (/voice: "([\w-]+)", fajrVoice: "([\w-]+)"/.exec(pj) || []).slice(1);
