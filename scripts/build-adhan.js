@@ -35,12 +35,17 @@ const VOICES = [
   { id: "sad", group: "hijaz", archive: ["bel_319", "لأذان الحزين بصوت عبد المجيد السريحي.mp3"], sha1: "5dfb0c1fff41b40ce26a91ccb340659a1cae29e6", start: 0, end: null, fadeOut: 0.5, short: 34.2 },
   // Sheikh Ali Ahmed Mulla, Fajr at Masjid al-Haram, 6 September 2013.
   { id: "makkah-mulla-fajr", group: "hijaz", fajr: true, archive: ["MakkahFajrAdhan6913SheikhAliMullah", "Makkah Fajr Adhan 6-9-13 Sheikh Ali Mullah.mp3"], sha1: "78f046f1d0db691842b9f5032148469b0f1415fa", start: 0, end: 241, fadeOut: 0.5, short: 29.8 },
-  { id: "basit", group: "egypt", archive: ["m_389", "%D8%A7%D8%B0%D8%A7%D9%86 %D8%B9%D8%A8%D8%AF%D8%A7%D9%84%D8%A8%D8%A7%D8%B3%D8%B7 %D8%AD%D8%A7%D9%81%D8%B8.MP3"], sha1: "3d67ac5cddb32211ebef6bf1a9c23abdd4ccfddd", start: 2, end: 227, fadeOut: 0.5, short: 28.1 },
+  // Sheikh Abdul Basit Abdus Samad: the adhan he gave after reciting al-Isra in Baghdad, from a collection of his
+  // recordings (only the adhan is kept, not the recitation before it).
+  { id: "basit", group: "egypt", archive: ["enregistrement_abdelbasset", "الاسراء والاذان - بغداد العراق.mp3"], sha1: "1f4873b99db4c7f67a7adb9b54f84087d3cfcd21", start: 810.7, end: 1016.5, fadeOut: 0.5, short: 20.5 },
   // Sheikh Mohamed Refaat: Maghrib.
   { id: "refaat", group: "egypt", archive: ["hasan_20190421", "اذان المغرب لفضيلة الشيخ محمد رفعت رحمة الله.mp3"], sha1: "5a89d9b2fdecb5bc2532b27268e1c102b49fb5c2", start: 0.8, end: null, fadeOut: 0.8, short: 26.9 },
   { id: "husary", group: "egypt", archive: ["20240913_20240913_1950", "الحصري الأذان.mp3"], sha1: "b0d456998d6b144cc7a651da5d0a94de2b6f2f85", start: 0.5, end: 221, fadeOut: 0.5, short: 32.1 },
   // Sheikh Mohamed Siddiq al-Minshawi, the 1950s.
   { id: "minshawi", group: "egypt", archive: ["20230209_20230209_1744", "اذان نادر جدا تخشع له القلوب بصوت الشيخ محمد صديق المنشاوي من فترة الخمسينات.mp3"], sha1: "5d476b15d7e095201f538a9e2c696448632e3cfe", start: 0.8, end: null, fadeOut: 0.3, short: 25.9 },
+  // Sheikh Abdul Basit's Fajr adhan as Maspero Zaman (Egyptian TV) airs it: the MP4 archive.org made from the TV capture,
+  // whose MP2 sound browsers cannot decode.
+  { id: "basit-fajr", group: "egypt", fajr: true, archive: ["20200520_20200520_2319", "عبد الباسط آذان الفجر.mp4"], sha1: "213f64f85bfe2bef087d7af7a3c441895de6d743", start: 0.5, end: null, fadeOut: 0.5, short: 19.9 },
   {
     id: "shalqar", group: "world", commons: "Adhan in Shalqar mosque.webm", sha1: "5d7301c0c142d8e5d8f281f4dd02846eaf05529b",
     start: 2.9, end: 134.2, fadeOut: 0.8, short: 21.7,
@@ -135,7 +140,8 @@ const browser = () => [process.env.CHROME, "C:/Program Files/Google/Chrome/Appli
   const chrome = spawn(exe, ["--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", `--user-data-dir=${profile}`, `http://127.0.0.1:${server.address().port}/page`], { stdio: "ignore" });
   const timer = setTimeout(finish, 300000);
   await done; clearTimeout(timer); chrome.kill(); server.close();
-  setTimeout(() => fs.rmSync(profile, { recursive: true, force: true }), 1000);
+  // Windows may keep the profile locked a while after Chrome exits: retry, and leave the temp folder if it stays locked.
+  setTimeout(() => { try { fs.rmSync(profile, { recursive: true, force: true, maxRetries: 10, retryDelay: 300 }); } catch {} }, 1000);
 
   fs.mkdirSync(OUT, { recursive: true });
   const index = { source: "Wikimedia Commons, archive.org", voices: [] }; let failed = false;

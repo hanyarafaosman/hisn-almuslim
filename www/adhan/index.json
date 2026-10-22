@@ -58,12 +58,12 @@
   {
    "id": "basit",
    "group": "egypt",
-   "file": "adhan/basit.7db158df55.aac",
-   "bytes": 2700101,
-   "seconds": 225,
-   "short": 28.1,
+   "file": "adhan/basit.5d522b31d9.aac",
+   "bytes": 2469860,
+   "seconds": 205.8,
+   "short": 20.5,
    "by": "archive.org",
-   "url": "https://archive.org/details/m_389"
+   "url": "https://archive.org/details/enregistrement_abdelbasset"
   },
   {
    "id": "refaat",
@@ -94,6 +94,17 @@
    "short": 25.9,
    "by": "archive.org",
    "url": "https://archive.org/details/20230209_20230209_1744"
+  },
+  {
+   "id": "basit-fajr",
+   "group": "egypt",
+   "file": "adhan/basit-fajr.e840274b04.aac",
+   "bytes": 2366763,
+   "seconds": 197.21,
+   "short": 19.9,
+   "fajr": true,
+   "by": "archive.org",
+   "url": "https://archive.org/details/20200520_20200520_2319"
   },
   {
    "id": "shalqar",

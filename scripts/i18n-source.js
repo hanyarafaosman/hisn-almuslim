@@ -240,6 +240,7 @@ const S = {
   "prayer.v.refaat": ["الشيخ محمد رفعت", "Sheikh Mohamed Refaat"],
   "prayer.v.husary": ["الشيخ محمود خليل الحصري", "Sheikh Mahmoud Khalil al-Husary"],
   "prayer.v.minshawi": ["الشيخ محمد صديق المنشاوي", "Sheikh Mohamed Siddiq al-Minshawi"],
+  "prayer.v.basit-fajr": ["أذان الفجر، الشيخ عبد الباسط عبد الصمد", "Fajr adhan, Sheikh Abdul Basit Abdus Samad"],
   "prayer.v.custom": ["ملف أذان من جهازك", "An adhan file from your device"],
   "prayer.customPick": ["اختر ملفًا صوتيًا من جهازك", "Choose an audio file on your device"],
   "prayer.customChange": ["اضغط لاختيار ملف آخر", "Tap to choose another file"],
