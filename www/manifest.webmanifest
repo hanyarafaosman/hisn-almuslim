@@ -16,6 +16,12 @@
     "education",
     "lifestyle"
   ],
+  "related_applications": [
+    {
+      "platform": "webapp",
+      "url": "https://hanyarafaosman.github.io/hisn-almuslim/manifest.webmanifest"
+    }
+  ],
   "icons": [
     {
       "src": "icons/icon-192.png",
