@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.24.0";
-import { mirrorOf } from "./mirror.js?v=1.24.0";
+import * as off from "./offline.js?v=1.26.0";
+import { mirrorOf } from "./mirror.js?v=1.26.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -61,6 +61,14 @@ export function setupQuran(ctx) {
   // Bookmarks: any number of verses, newest first. Versions before 1.10 kept a single one (state.bookmark).
   if (!Array.isArray(state.marks)) {
     const b = state.bookmark; state.marks = b ? [{ r: b.r, s: b.s, a: b.a, t: Date.now() }] : []; delete state.bookmark; save();
+  }
+  // The printed pages open in the colour-coded Tajweed print (since 1.25.0; the 1421 print where its fonts are unknown).
+  // Readers on the former default move to it once; a print chosen after that is kept.
+  const DEFAULT_ED = "tajweed";
+  if (!state.edDefault) {
+    if (state.mushafEd === "1421") state.mushafEd = DEFAULT_ED;
+    if (state.lastPage?.ed === "1421") state.lastPage.ed = DEFAULT_ED;
+    state.edDefault = DEFAULT_ED; save();
   }
   const stale = hash => location.hash !== hash; // user navigated away while we were loading
   const isAr = () => getLang() === "ar";
@@ -380,7 +388,7 @@ export function setupQuran(ctx) {
     const onPages = location.hash.startsWith("#/mushaf/"), inReader = location.hash.startsWith("#/quran/") && !!follower;
     const A = v.rid === "hafs" && !inReader ? await loadAyat().catch(() => null) : null;
     const pages = A && (onPages || homeMode(A) === "pages");
-    autoHref = pages ? pageHref(state.mushafEd || "1421", A.pageOf(v.s, Math.max(1, v.a))) : `#/quran/${v.rid}/${v.s}`;
+    autoHref = pages ? pageHref(state.mushafEd || DEFAULT_ED, A.pageOf(v.s, Math.max(1, v.a))) : `#/quran/${v.rid}/${v.s}`;
     if (onPages && pages) location.replace(autoHref); else location.hash = autoHref;
   };
   // Scrolling the reader by hand stops following (a printed page keeps following until it is turned by hand).
@@ -433,7 +441,7 @@ export function setupQuran(ctx) {
   // Where a place opens. mode "pages": the printed page (Hafs only, with the verse marked when flash is set);
   // mode "text": the reader, verse by verse.
   function placeHref(mode, rid, s, a, { A, flash = true } = {}) {
-    if (mode === "pages" && rid === "hafs" && A) return pageHref(state.mushafEd || "1421", A.pageOf(s, a), flash ? `${s}:${a}` : "");
+    if (mode === "pages" && rid === "hafs" && A) return pageHref(state.mushafEd || DEFAULT_ED, A.pageOf(s, a), flash ? `${s}:${a}` : "");
     return `#/quran/${rid}/${s}` + (a > 1 ? `?a=${a}` : "");
   }
   // Surahs chosen on the Quran page open on the printed page (Hafs) or verse by verse, as the reader chose;
@@ -492,7 +500,7 @@ export function setupQuran(ctx) {
     if (m) surahMatches(meta, m[1].trim()).slice(0, 3).forEach(i => aya(i + 1, +m[2]));
     if (/^\d{1,3}$/.test(a)) {
       const n = +a;
-      if (meta.id === "hafs" && n <= 604 && n >= 1) rows.push(`<a href="${pageHref(state.mushafEd || "1421", n)}"><div class="num">${icon("quran")}</div><div class="lbl">${esc(t("quran.gotoPage", { n }))}<span class="sub">${esc(t("quran.surah", { name: surahName(surahOfPage(n), meta) }))}</span></div>${chev()}</a>`);
+      if (meta.id === "hafs" && n <= 604 && n >= 1) rows.push(`<a href="${pageHref(state.mushafEd || DEFAULT_ED, n)}"><div class="num">${icon("quran")}</div><div class="lbl">${esc(t("quran.gotoPage", { n }))}<span class="sub">${esc(t("quran.surah", { name: surahName(surahOfPage(n), meta) }))}</span></div>${chev()}</a>`);
       if (n >= 1 && n <= meta.juz.length) { const [s, v] = meta.juz[n - 1]; rows.push(`<a href="${placeHref(mode, meta.id, s, v, { A, flash: false })}"><div class="num">${icon("layers")}</div><div class="lbl">${esc(t("quran.juz", { n }))}<span class="sub">${esc(t("quran.juzStart", { surah: surahName(s, meta), aya: v }))}</span></div>${chev()}</a>`); }
     }
     const names = surahMatches(meta, m ? m[1].trim() : q);
@@ -606,7 +614,7 @@ export function setupQuran(ctx) {
     if (stale(hash)) return;
     $("#q-tr-pick").onclick = () => pickTranslation(renderHome);
     const mode = homeMode(A);
-    const res = resumeInfo(); const lp = state.lastPage || { ed: state.mushafEd || "1421", p: 1 };
+    const res = resumeInfo(); const lp = state.lastPage || { ed: state.mushafEd || DEFAULT_ED, p: 1 };
     view.innerHTML = `
       <div class="chips" role="tablist" aria-label="${esc(t("quran.riwayah"))}">${INDEX.riwayat.map(r => `<button class="chip ${r.id === meta.id ? "on" : ""}" data-r="${r.id}" role="tab" aria-selected="${r.id === meta.id}">${esc(rShort(r))}</button>`).join("")}</div>
       <p class="riwayah-note">${esc(t("quran.riwayahOf", { name: rName(meta) }))}${sep()}${esc(t("count.ayat", { n: meta.ayat }))} <span id="cached"></span></p>
@@ -614,6 +622,7 @@ export function setupQuran(ctx) {
         ${res ? `<a class="resume main" href="${res.href}">${icon(res.icon)}<div><b>${esc(t("quran.continue"))}</b><span>${esc(res.text)}</span></div></a>` : ""}
         ${res?.kind !== "page" ? `<a class="resume" href="${pageHref(lp.ed, lp.p)}">${icon("quran")}<div><b>${esc(t("mushaf.pages"))}</b><span>${esc(t("mushaf.ed" + lp.ed))}${sep()}${esc(t("quran.page", { n: lp.p }))}</span></div></a>` : ""}
         <a class="resume" href="#/tafsir">${icon("tafsir")}<div><b>${esc(t("tafsir.books"))}</b><span>${esc(t("tafsir.homeHint"))}</span></div></a>
+        <a class="resume" href="#/tajweed">${icon("palette")}<div><b>${esc(t("tajweed.title"))}</b><span>${esc(t("tajweed.hint"))}</span></div></a>
       </div>
       ${A ? `<div class="open-in"><span>${esc(t("quran.openIn"))}</span><div class="segmented" id="q-view"><button data-v="pages" class="${mode === "pages" ? "on" : ""}">${icon("quran")} ${esc(t("mushaf.pages"))}</button><button data-v="text" class="${mode === "text" ? "on" : ""}">${icon("list", "flip")} ${esc(t("quran.viewText"))}</button></div></div>` : ""}
       <div id="finder"></div>`;
@@ -680,7 +689,7 @@ export function setupQuran(ctx) {
 
     const showRec = x => { const b = $("#q-rec"); if (b) b.innerHTML = `${icon("headphones")} <span dir="auto">${esc(x.name)}</span>`; };
     const playWith = x => { following = true; player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}`, rid: meta.id }); showRec(x); };
-    const qp = $("#q-page"); if (qp) qp.onclick = () => { const a = curAya(); location.hash = pageHref(state.mushafEd || "1421", ayat[a - 1][1], `${s}:${a}`); };
+    const qp = $("#q-page"); if (qp) qp.onclick = () => { const a = curAya(); location.hash = pageHref(state.mushafEd || DEFAULT_ED, ayat[a - 1][1], `${s}:${a}`); };
     $("#q-idx").onclick = () => openIdx(); $("#q-search").onclick = () => openIdx(true);
     $("#q-play").onclick = () => { const r = state.reciters[meta.id]; r ? playWith(r) : pickReciter(meta, playWith); };
     $("#q-rec").onclick = () => pickReciter(meta, playWith);
@@ -791,7 +800,7 @@ export function setupQuran(ctx) {
   // Each word is a King Fahd Complex glyph drawn by the font of its page, so lines break exactly as in print.
   // The colour-coded Tajweed print (KFGQPC / Dar Al-Maarifah, QCF V4) draws the same glyph codes as the 1421 print.
   const EDITIONS = { 1405: { v: "v1", key: "w1" }, 1421: { v: "v2", key: "w2" }, tajweed: { v: "v4", key: "w2" } };
-  let PAGES = null, pageFirst = null, FONTS = {}, JALALA = null;
+  let PAGES = null, pageFirst = null, FONTS = {}, JALALA = null, tajweedFonts = null;
   const fetchJSON = async u => { const r = await fetch(u); if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); };
   async function loadPages() {
     if (!PAGES) {
@@ -858,7 +867,7 @@ export function setupQuran(ctx) {
     try { [, , A] = await Promise.all([loadIndex(), loadPages(), loadAyat().catch(() => null)]); loadFont(riw("hafs")); } catch (e) { return failed(e, () => renderPages(ed, n, params)); }
     if (stale(hash)) return;
     // An unknown print (or the Tajweed one when its fonts list could not load) opens the last print used.
-    if (!editions().includes(String(ed))) { const e2 = editions().includes(String(state.mushafEd)) ? state.mushafEd : "1421"; location.replace(pageHref(e2, n, params.get("v") || "")); return; }
+    if (!editions().includes(String(ed))) { const e2 = [state.mushafEd, DEFAULT_ED].find(x => editions().includes(String(x))) || "1421"; location.replace(pageHref(e2, n, params.get("v") || "")); return; }
     state.mushafEd = ed; state.lastPage = { ed, p: n, t: Date.now() }; save();
     timedServers().catch(() => {}); // known before a verse's "listen" is tapped
     const info = pageInfo(n, A); const key = EDITIONS[ed].key; const hafs = riw("hafs");
@@ -901,10 +910,11 @@ export function setupQuran(ctx) {
           <button class="icon-btn" id="m-next" aria-label="${esc(t("mushaf.next"))}"${n >= 604 ? " disabled" : ""}>${icon("back", "flip")}</button>
         </div>
         <output class="mm-where" id="m-range-out" for="m-range">${esc(where())}</output>
-        <div class="mtools">
+        <div class="mtools${ed === "tajweed" ? " five" : ""}">
           <button data-tool="listen" id="m-listen">${icon("play")}<span>${esc(t("common.listen"))}</span></button>
           <button data-tool="reciter" aria-label="${esc(t("quran.chooseReciter"))}">${icon("headphones")}<span id="m-rec" dir="auto">${esc(recName())}</span></button>
           <button data-tool="theme" id="m-theme" aria-label="${esc(themeAria())}">${themeBtn()}</button>
+          ${ed === "tajweed" ? `<button data-tool="colours" aria-label="${esc(t("tajweed.keyAria"))}">${icon("palette")}<span>${esc(t("tajweed.colours"))}</span></button>` : ""}
           <button data-tool="print" aria-label="${esc(t("mushaf.chooseEdition"))}">${icon("layers")}<span>${esc(t("mushaf.print"))}</span></button>
         </div>
       </div>`;
@@ -987,6 +997,7 @@ export function setupQuran(ctx) {
       const tool = e.target.closest("[data-tool]")?.dataset.tool; if (!tool) return;
       keepUi();
       if (tool === "print") return openPrint();
+      if (tool === "colours") return ctx.tajweed().keySheet();
       if (tool === "theme") { ctx.toggleTheme(); if (ed === "tajweed") tajweedPalette(); const b = $("#m-theme"); b.innerHTML = themeBtn(); b.setAttribute("aria-label", themeAria()); return; }
       const now = player.now(), v = recited(now);
       if (tool === "reciter") return pickReciter(hafs, x => {
@@ -1003,7 +1014,8 @@ export function setupQuran(ctx) {
     // Print and colours: the three prints, and the name of Allah in colour.
     const openPrint = () => {
       const size = e2 => t("offline.size", { size: off.fmtSize(FONTS[EDITIONS[e2].v].bytes, getLang()) });
-      const body = sheet(t("mushaf.display"), `<div class="list flat">${editions().map(e2 => `<button class="row" data-ed="${e2}"><div class="lbl">${esc(t("mushaf.ed" + e2))}${e2 === "tajweed" ? `<span class="sub">${esc(t("mushaf.tajweedNote"))}</span>` : ""}<span class="sub">${esc(size(e2))}</span></div>${e2 === ed ? icon("check") : ""}</button>`).join("")}</div>
+      const body = sheet(t("mushaf.display"), `<div class="list flat">${editions().map(e2 => `<button class="row" data-ed="${e2}"><div class="lbl">${esc(t("mushaf.ed" + e2))}${e2 === "tajweed" ? `<span class="sub">${esc(t("mushaf.tajweedNote"))}</span>` : ""}<span class="sub">${esc(size(e2))}</span></div>${e2 === ed ? icon("check") : ""}</button>`).join("")}
+        ${editions().includes("tajweed") ? `<a class="row" href="#/tajweed"><div class="num">${icon("palette")}</div><div class="lbl">${esc(t("tajweed.title"))}<span class="sub">${esc(t("tajweed.hint"))}</span></div>${icon("back", "chev")}</a>` : ""}</div>
         ${JALALA ? `<div class="list flat"><div class="row"><div class="lbl">${esc(t("mushaf.jalala"))}<span class="sub">${esc(t("mushaf.jalalaNote", { n: JALALA.count }))}</span></div><button class="switch ${state.jalala ? "on" : ""}" id="m-jl" role="switch" aria-checked="${!!state.jalala}" aria-label="${esc(t("mushaf.jalala"))}"></button></div></div>` : ""}
         <p class="source-note">${esc(t("mushaf.source"))}</p>`);
       body.onclick = e => {
@@ -1354,5 +1366,12 @@ export function setupQuran(ctx) {
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
     // Quran text of a riwayah (with its font) and surah names, for the tafsir pages.
     textOf: id => loadRiwayah(id), surahName,
+    // For the Tajweed rules page: the Tajweed print's font of page n (with its backup copy), and the surah names.
+    // Only mushaf/tajweed.json is needed for that, not the pages (madinah.json, about 900 KB).
+    async tajweedFont(n) {
+      if (!FONTS.v4) { tajweedFonts ||= fetchJSON("mushaf/tajweed.json").then(tj => { FONTS = { ...FONTS, ...tj.fonts }; }).finally(() => { tajweedFonts = null; }); await tajweedFonts; }
+      return loadPageFont("tajweed", n);
+    },
+    async surahNames() { await loadIndex(); return n => surahName(n); },
   };
 }
