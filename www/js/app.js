@@ -1,15 +1,16 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.22.0";
-import { setupHadith } from "./hadith.js?v=1.22.0";
-import { setupTafsir } from "./tafsir.js?v=1.22.0";
-import { setupAsma } from "./asma.js?v=1.22.0";
-import { setupKutub } from "./kutub.js?v=1.22.0";
-import { setupPrayer } from "./prayer.js?v=1.22.0";
-import { setupVideos } from "./videos.js?v=1.22.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.22.0";
-import { mirrorOf } from "./mirror.js?v=1.22.0";
+import { setupQuran } from "./quran.js?v=1.23.0";
+import { setupHadith } from "./hadith.js?v=1.23.0";
+import { setupTafsir } from "./tafsir.js?v=1.23.0";
+import { setupAsma } from "./asma.js?v=1.23.0";
+import { setupKutub } from "./kutub.js?v=1.23.0";
+import { setupPrayer } from "./prayer.js?v=1.23.0";
+import { setupVideos } from "./videos.js?v=1.23.0";
+import { setupInstall } from "./install.js?v=1.23.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.23.0";
+import { mirrorOf } from "./mirror.js?v=1.23.0";
 
-const VERSION = "1.22.0";
+const VERSION = "1.23.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -207,6 +208,9 @@ const V = setupVideos({
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
 
+// ---------- installing the app: the install window opens by itself on every device that can install ----------
+const IN = setupInstall({ $, esc, icon, t, th, LS, toast, copyText, SITE, sheet: (...a) => Q.sheet(...a), closeSheet: () => Q.closeSheet() });
+
 // ---------- language ----------
 function applyStatic() {
   document.querySelectorAll("[data-i18n]").forEach(el => { el.textContent = t(el.dataset.i18n); });
@@ -331,8 +335,10 @@ function renderHub(q = "") {
       <a class="now" href="#/cat/${now.id}">${icon(now.ic)}<div><small>${T("hub.now")}</small><b>${esc(now.label)}</b><div class="progress light"><div style="width:${p.pct}%"></div></div></div><span class="pct">${T("common.percent", { n: p.pct })}</span></a>
       ${reading ? `<a class="now" id="hub-quran" href="#/quran">${icon("quran")}<div><small>${T("quran.continue")}</small><b id="hub-last">…</b></div>${icon("back", "chev")}</a>` : ""}
     </section>
+    ${IN.card()}
     <div class="searchbox">${icon("search")}<input id="q" type="search" placeholder="${T("hub.searchPlaceholder")}" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></div>
     <div id="results"></div>`;
+  IN.bind(view);
   if (reading) Q.resume().then(r => { const a = document.getElementById("hub-quran"); if (!a || !r) return; a.href = r.href; $("#hub-last").textContent = r.text; }).catch(() => {});
   const input = $("#q"), results = $("#results");
   const tiles = () => {
@@ -632,16 +638,13 @@ function renderTasbih() {
 }
 document.addEventListener("keydown", e => { if (e.code === "Space" && location.hash === "#/tasbih" && !e.target.closest("button,input,select")) { e.preventDefault(); $("#tap")?.click(); } });
 
-let installPrompt = null;
-window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installPrompt = e; if (location.hash === "#/settings") renderSettings(); });
 function renderSettings() {
   setNav("settings"); setHeader(t("nav.settings"), { back: true });
   const sw = (key, label, small, ic, on = settings[key]) => `<div class="setting"><span class="ic">${icon(ic)}</span><div class="lbl">${T(label)}<small>${T(small)}</small></div><button class="switch ${on ? "on" : ""}" data-sw="${key}" role="switch" aria-checked="${!!on}" aria-label="${T(label)}"></button></div>`;
-  const standalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone;
   const link = (href, text) => `<a href="${href}" target="_blank" rel="noopener" style="color:var(--primary)">${esc(text)}</a>`;
   const curLang = LANGS.find(l => l.code === getLang());
   view.innerHTML = `
-    ${!standalone ? `<div class="card"><div class="setting"><span class="ic">${icon("install")}</span><div class="lbl">${T("settings.install")}<small>${T(installPrompt ? "settings.installHint" : "settings.installManual")}</small></div>${installPrompt ? `<button class="btn" id="install">${T("settings.installBtn")}</button>` : ""}</div></div>` : ""}
+    ${IN.card()}
     <div class="card">
       <div class="setting"><span class="ic">${icon("globe")}</span><div class="lbl">${T("common.language")}<small>${T("settings.languageHint")}</small></div><button class="btn ghost" id="lang-btn">${esc(curLang?.name || getLang())}</button></div>
     </div>
@@ -716,7 +719,7 @@ function renderSettings() {
   $("#qtr-btn").onclick = () => Q.pickTranslation(renderSettings);
   $("#reset-progress").onclick = () => { progress = { date: todayKey(), counts: {} }; saveProgress(); toast(t("settings.todayReset")); };
   $("#clear-fav").onclick = () => { if (!favorites.size) return toast(t("settings.favEmpty")); if (confirm(t("settings.confirmClearFav"))) { favorites.clear(); saveFav(); renderSettings(); toast(t("settings.cleared")); } };
-  const ib = $("#install"); if (ib) ib.onclick = async () => { installPrompt.prompt(); const { outcome } = await installPrompt.userChoice; if (outcome === "accepted") { installPrompt = null; renderSettings(); } };
+  IN.bind(view);
 }
 
 // ---------- service worker ----------
@@ -761,5 +764,5 @@ applyTheme();
 const startLang = detect(settings.lang, RETURNING, PAGE_LANG);
 if (new URLSearchParams(location.search).get("lang") === startLang) { settings.lang = startLang; saveSettings(); }
 Promise.all([setLang(startLang, VERSION).catch(() => setLang("ar", VERSION)), loadData()])
-  .then(async () => { if (showAdhkarTr() || getLang() !== "ar") await loadEN().catch(() => {}); applyStatic(); route(); registerSW(); offerDeviceLang(); PR.start(); })
+  .then(async () => { if (showAdhkarTr() || getLang() !== "ar") await loadEN().catch(() => {}); applyStatic(); route(); registerSW(); offerDeviceLang(); PR.start(); IN.start(); })
   .catch(err => { view.innerHTML = `<div class="empty">Could not load the data · تعذّر تحميل البيانات<br><small>${esc(err.message)}</small><br><br><button class="btn" onclick="location.reload()">↻</button></div>`; });
