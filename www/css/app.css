@@ -803,3 +803,13 @@ details.info { display: block; }
 .install .in-steps li { display: flex; align-items: flex-start; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; line-height: 1.7; }
 .install .in-steps .n { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; font-weight: 700; flex: none; }
 .install .in-ic { width: 22px; height: 22px; vertical-align: -5px; color: #0a84ff; margin-inline: 2px; }
+
+/* ---------- الباحث الفقهي (#/faqih) ---------- */
+.fq-form { display: grid; gap: 10px; margin: 12px 0 10px; }
+.fq-form .btn svg { width: 20px; height: 20px; }
+.fq-examples { margin-bottom: 8px; }
+.fq-examples .chip { font-family: var(--font-text); font-weight: 400; font-size: .95rem; }
+.fq-q { font-family: var(--font-text); font-weight: 400; font-size: 1.05rem; line-height: 1.7; }
+.fq-scholars { margin: 10px 4px 0; color: var(--muted); font-size: .85rem; }
+.fq-scholars a { color: var(--primary); font-weight: 700; }
+.empty .fq-scholars { margin-top: 14px; }

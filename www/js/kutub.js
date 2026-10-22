@@ -41,7 +41,7 @@ export function setupKutub(ctx) {
   }
   const bookOf = id => IX.books.find(b => b.id === id);
   const title = b => isAr() ? b.ar : b.en;
-  const by = b => `${isAr() ? b.by : b.byEn} (${t("kutub.died", { year: num(b.died) })})`;
+  const by = b => (isAr() ? b.by : b.byEn) + (b.died ? ` (${t("kutub.died", { year: num(b.died) })})` : ""); // an institution has no death year
   const school = b => b.madhhab ? t("kutub." + b.madhhab) + sep() : "";
   const authorName = key => IX.authors[key] ? (isAr() ? IX.authors[key].ar : IX.authors[key].en) : key;
   const pageNo = (v, p) => (v ? t("kutub.vol", { n: num(Number(v) || v) }) + sep() : "") + t("kutub.page", { n: num(p) });

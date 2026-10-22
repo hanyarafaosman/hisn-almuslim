@@ -1,8 +1,8 @@
 /* Service worker: offline-first app shell for حصن ونور */
-const VERSION = "hisn-v1.23.0";
+const VERSION = "hisn-v1.24.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./js/prayer.js", "./js/prayer-calc.js", "./js/videos.js", "./js/install.js", "./adhan/index.json", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./data/lessons.json", "./data/videos.json", "./quran/index.json",
+  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./js/faqih.js", "./js/prayer.js", "./js/prayer-calc.js", "./js/videos.js", "./js/install.js", "./adhan/index.json", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./data/lessons.json", "./data/videos.json", "./quran/index.json",
   "./i18n/ar.json", "./i18n/en.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png", "./icons/favicon.svg"
 ];
