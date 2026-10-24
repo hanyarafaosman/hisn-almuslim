@@ -3,7 +3,7 @@
 // OpenStreetMap Nominatim), a city from Open-Meteo's geocoding search (GeoNames data, with each city's time zone), or
 // coordinates, time zone and country typed by hand (no location permission and no connection needed).
 // Alerts: a reminder some minutes before each prayer, then at its time a notification and the adhan: a recording from
-// adhan/index.json (Wikimedia Commons and archive.org, scripts/build-adhan.js) or an audio file the user chose (kept in
+// adhan/index.json (Wikimedia Commons, archive.org and islamweb.net, scripts/build-adhan.js) or an audio file the user chose (kept in
 // ADHAN_CACHE).
 // A web page runs only while the browser keeps it alive, so these alerts come while the app is open or was recently
 // in the background. When the app is closed, the server in push/ sends the same alerts by Web Push (syncPush below,
@@ -610,7 +610,7 @@ export function setupPrayer(ctx) {
     const own = fajr ? "same" : "custom";
     const groups = ["hijaz", "egypt", "world"].map(g => [g, VOICES.filter(v => !v.fajr === !fajr && v.group === g).map(v => v.id)]).filter(([, ids]) => ids.length);
     const cur = fajr ? state.fajrVoice : state.voice;
-    // An archive.org copy has no licence to show: its source and length only.
+    // A copy from archive.org or islamweb.net has no licence to show: its source and length only.
     const credit = v => v ? [v.by, v.license, t("prayer.minutesShort", { n: Math.round(v.seconds / 6) / 10 })].filter(Boolean).join(sep()) : "";
     const row = id => {
       const v = VOICES.find(x => x.id === id), playable = id !== "same" && (id !== "custom" || state.customName);

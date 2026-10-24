@@ -731,7 +731,7 @@ function renderSettings() {
   view.querySelectorAll("[data-scale]").forEach(b => b.onclick = () => setScale(settings.scale + 0.1 * Number(b.dataset.scale)));
   $("#lang-btn").onclick = pickLanguage;
   Q.translationLabel().then(l => { const x = $("#qtr-label"); if (x) x.textContent = l; });
-  PR.credits().then(vs => { const x = $("#adhan-credits"); if (x) x.innerHTML = vs.map(v => `${esc(PR.voiceName(v.id))}: ${v.license ? `${esc(v.by)}${sep()}${link(v.licenseUrl, v.license)}${sep()}${link(v.url, "Wikimedia Commons")}` : link(v.url, "archive.org")}`).join("<br>"); });
+  PR.credits().then(vs => { const x = $("#adhan-credits"); if (x) x.innerHTML = vs.map(v => `${esc(PR.voiceName(v.id))}: ${v.license ? `${esc(v.by)}${sep()}${link(v.licenseUrl, v.license)}${sep()}${link(v.url, "Wikimedia Commons")}` : link(v.url, v.by)}`).join("<br>"); });
   $("#qtr-btn").onclick = () => Q.pickTranslation(renderSettings);
   $("#reset-progress").onclick = () => { progress = { date: todayKey(), counts: {} }; saveProgress(); toast(t("settings.todayReset")); };
   $("#clear-fav").onclick = () => { if (!favorites.size) return toast(t("settings.favEmpty")); if (confirm(t("settings.confirmClearFav"))) { favorites.clear(); saveFav(); renderSettings(); toast(t("settings.cleared")); } };
