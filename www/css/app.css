@@ -940,3 +940,37 @@ details.info { display: block; }
 .hj-out .lbl b { display: block; }
 .hj-out .lbl small { display: block; color: var(--muted); font-weight: 400; font-size: .8rem; }
 .hj-out .btn[hidden] { display: none; }
+
+/* ===== اتجاه القبلة ===== */
+.qb-hero { display: grid; gap: 4px; text-align: center; justify-items: center; }
+.qb-hero .pr-place { justify-self: stretch; }
+.qb-hero .qb-ic { width: 56px; height: 56px; border-radius: 18px; background: rgba(255,255,255,.16); display: grid; place-items: center; }
+.qb-hero .qb-ic svg { width: 30px; height: 30px; }
+.qb-hero .quick { justify-self: stretch; grid-template-columns: 1fr; }
+.qb-deg { font-size: 3.2rem; font-weight: 800; line-height: 1.1; direction: ltr; margin-top: 6px; letter-spacing: -.02em; }
+.qb-dir { font-weight: 600; opacity: .95; }
+.qb-km { opacity: .8; font-size: .82rem; }
+.qb-card { padding: 16px; display: grid; gap: 12px; }
+.qb-compass { width: min(76vw, 300px); aspect-ratio: 1; margin: 0 auto; direction: ltr; }
+.qb-compass svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.qb-dial { transform-box: fill-box; transform-origin: center; transition: transform .3s ease-out; }
+.qb-ring { fill: var(--surface-2); stroke: var(--border); stroke-width: 2; transition: stroke .2s; }
+.qb-compass.on .qb-ring { stroke: var(--primary); stroke-width: 4; }
+.qb-ticks line { stroke: var(--muted); stroke-width: 1.5; opacity: .5; }
+.qb-ticks line.mid { opacity: .8; }
+.qb-ticks line.big { stroke: var(--text); stroke-width: 3; opacity: 1; }
+.qb-letters text { fill: var(--muted); font-size: 20px; font-weight: 700; text-anchor: middle; dominant-baseline: middle; font-family: inherit; }
+.qb-letters text.north { fill: var(--primary); }
+.qb-kaaba line { stroke: var(--accent); stroke-width: 5; stroke-linecap: round; }
+.qb-kaaba circle { fill: var(--accent); }
+.qb-kaaba use { color: #1a1a1a; }
+.qb-center { fill: var(--text); }
+.qb-pointer { fill: var(--primary); }
+.qb-compass.on .qb-pointer { fill: var(--accent); }
+.qb-state { text-align: center; min-height: 2.8rem; }
+.qb-state b { display: block; font-size: 1.05rem; }
+.qb-compass.on + .qb-state b { color: var(--primary); }
+.qb-state small { display: block; color: var(--muted); font-size: .82rem; margin-top: 2px; }
+.qb-note { margin: 0; color: var(--muted); font-size: .82rem; text-align: center; line-height: 1.7; }
+.qb-time { font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { .qb-dial { transition: none; } }
