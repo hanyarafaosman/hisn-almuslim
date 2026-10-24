@@ -8,7 +8,7 @@
 // in the background. When the app is closed, the server in push/ sends the same alerts by Web Push (syncPush below,
 // the push handler in sw.js); the page explains both to the user. The alerts are on unless the user turns them off:
 // on a phone, a window asks for the place and the notifications permission a moment after the app first starts.
-import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.26.0";
+import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.27.0";
 
 export const ADHAN_CACHE = "hisn-adhan-v1"; // the same name is in sw.js
 

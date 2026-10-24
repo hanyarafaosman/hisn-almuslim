@@ -870,3 +870,12 @@ a.tj-ex:active { transform: scale(.98); }
 .pill.zoom button:active, .pill.zoom button:hover { background: color-mix(in srgb, var(--primary) 14%, transparent); }
 .pill.zoom button svg { width: 16px; height: 16px; }
 .pill.zoom b { min-width: 3.4em; text-align: center; font-variant-numeric: tabular-nums; }
+/* ---------- الباحث الفقهي (#/faqih) ---------- */
+.fq-form { display: grid; gap: 10px; margin: 12px 0 10px; }
+.fq-form .btn svg { width: 20px; height: 20px; }
+.fq-examples { margin-bottom: 8px; }
+.fq-examples .chip { font-family: var(--font-text); font-weight: 400; font-size: .95rem; }
+.fq-q { font-family: var(--font-text); font-weight: 400; font-size: 1.05rem; line-height: 1.7; }
+.fq-scholars { margin: 10px 4px 0; color: var(--muted); font-size: .85rem; }
+.fq-scholars a { color: var(--primary); font-weight: 700; }
+.empty .fq-scholars { margin-top: 14px; }

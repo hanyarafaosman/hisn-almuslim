@@ -9,7 +9,10 @@
 // alone is 30 MB). Every name carries a hash of its bytes: a corrected part gets a new name and devices never keep
 // an old copy.
 // Usage: node scripts/build-kutub.js
+//        node scripts/build-kutub.js --only=mawsua-kuwaitiya --dry   (check one book's build without writing anything)
 const fs = require("fs"), path = require("path"), crypto = require("crypto");
+const ARGS = Object.fromEntries(process.argv.slice(2).map(a => { const m = /^--([\w-]+)(?:=(.*))?$/.exec(a); return m ? [m[1], m[2] ?? true] : [a, true]; }));
+const ONLY = ARGS.only ? String(ARGS.only).split(",") : null, DRY = !!ARGS.dry;
 const ROOT = path.join(__dirname, "..");
 const CACHE = path.join(ROOT, ".cache", "kutub");
 const OUT = path.join(ROOT, "www", "kutub");
@@ -21,6 +24,7 @@ const API = "https://api.turath.io", FILES = "https://files.turath.io";
 // to: its last page (later pages are the editor's conclusion and references); skip: [first, last] page ranges
 // left out in between (an index printed at the end of a volume).
 // items: the book has no chapters, only numbered paragraphs (one page; the contents lists each paragraph).
+// marks "text": the headings are read from the marks in the text, not from turath.io's index of headings (see build()).
 // group: the shelf of the library (GROUPS); author: a key of AUTHORS, for browsing the books of one author.
 const GROUPS = ["aqida", "hadith", "fiqh", "usul", "tafsir", "sira", "suluk", "fatawa"];
 const AUTHORS = {
@@ -37,6 +41,7 @@ const AUTHORS = {
   "hajjawi": { ar: "الحجاوي", en: "Al-Hajjawi" },
   "ibn-abd-al-wahhab": { ar: "محمد بن عبد الوهاب", en: "Muhammad ibn ʿAbd al-Wahhab" },
   "qahtani": { ar: "سعيد بن وهف القحطاني", en: "Saʿid ibn Wahf al-Qahtani" },
+  "kuwait-awqaf": { ar: "وزارة الأوقاف الكويتية", en: "Kuwait Ministry of Awqaf" }, // an institution: died is 0
 };
 const QUDAMAH = { author: "ibn-qudamah", died: 620, by: "موفق الدين ابن قدامة المقدسي", byEn: "Muwaffaq ad-Din Ibn Qudamah al-Maqdisi" };
 const HAZM = { author: "ibn-hazm", died: 456, by: "ابن حزم الأندلسي", byEn: "Ibn Hazm al-Andalusi" };
@@ -208,6 +213,12 @@ const BOOKS = [
     ar: "مراتب الإجماع", en: "Maratib al-Ijmaʿ",
     about: "ما أجمع عليه العلماء في العبادات والمعاملات والاعتقاد، كما جمعه ابن حزم. والحواشي تعقبات ابن تيمية عليه في «نقد مراتب الإجماع»، أضافها معدّ النسخة الإلكترونية.",
     aboutEn: "What the scholars agreed upon in worship, transactions and belief, as gathered by Ibn Hazm. The footnotes are Ibn Taymiyyah's remarks on it from Naqd Maratib al-Ijmaʿ, added by the preparer of the digital copy.",
+  },
+  {
+    id: "mawsua-kuwaitiya", turath: 11430, loose: true, marks: "text", group: "fiqh", author: "kuwait-awqaf", died: 0, unit: "auto",
+    ar: "الموسوعة الفقهية الكويتية", en: "The Kuwaiti Encyclopedia of Fiqh", by: "وزارة الأوقاف والشئون الإسلامية بالكويت", byEn: "Kuwait Ministry of Awqaf and Islamic Affairs",
+    about: "أوسع موسوعة في الفقه الإسلامي: مصطلحات الفقه مرتبة على حروف المعجم، وفي كل مصطلح أقوال المذاهب الأربعة وغيرها بأدلتها. خمسة وأربعون جزءًا، وتراجم الفقهاء في آخرها.",
+    aboutEn: "The largest encyclopedia of Islamic fiqh: the terms of fiqh in alphabetical order, each with the views of the four schools and others with their proofs. Forty-five volumes, with the biographies of the jurists at the end.",
   },
   {
     id: "siyasa", turath: 31237, group: "fiqh", ...TAYMIYYAH, unit: "auto",
@@ -409,7 +420,7 @@ function build(cfg, info, whole, problems, infos) {
   // A problem fails the build, unless it was checked by hand and listed in the book's "known"; infos are only printed.
   const say = (pg, msg) => ((cfg.known || []).includes(`p${pg}: ${msg}`) ? infos : problems).push(`${cfg.id} p${pg}: ${msg}`);
   const tell = (pg, msg) => infos.push(`${cfg.id} p${pg}: ${msg}`);
-  const headings = info.indexes.headings;
+  let headings = info.indexes.headings;
   const first = cfg.from || 1, last = cfg.to || whole.pages.length;
   // Pages outside the book's own text: before from, after to, the skip ranges (an index printed between two volumes),
   // and Shamela's catalogue card of the book (its first lines: الكتاب / المؤلف / الناشر …).
@@ -423,6 +434,10 @@ function build(cfg, info, whole, problems, infos) {
   const NESTED = /(<span data-type=["']title["'][^>]*>)([^<]*)<span data-type=["']title["'][^>]*?\bid=["']?toc-(\d+)["']?[^>]*>([^<]*)<\/span>([^<]*)<\/span>/;
   const pages = whole.pages.slice(0, last).map((p, i) => {
     let text = p.text;
+    // marks "text": stray marks around one or two letters inside a heading (the encyclopedia's «ا<span…>ل</span>قاضي»)
+    // are dropped; a mark that opens inside a word takes the whole word.
+    if (cfg.marks === "text") text = text.replace(/<span data-type=["']title["'][^>]*>([^<]{0,4})<\/span>/g, (m, inner) => norm(inner).length <= 2 ? inner : m)
+      .replace(/(^|\n)([^\s<>]+)(<span data-type=["']title["'][^>]*>)/g, (m, a, w, span) => a + span + w);
     while (NESTED.test(text)) text = text.replace(NESTED, (m, outer, before, n, inner, after) => { twice.add(Number(n)); return outer + before + inner + after + "</span>"; });
     text = text.replace(/<span data-type=["']title["'][^>]*>[\s\S]*?<\/span>/g, m => m.replace(/\s*\n\s*/g, " "))
       .replace(/&(quot|amp|lt|gt|apos|#39|nbsp);/g, (m, k) => ENTITY[k]);
@@ -430,6 +445,20 @@ function build(cfg, info, whole, problems, infos) {
     let at = text.search(/^_{5,}\s*$/m); if (at < 0) at = text.search(/^<hr>\s*$/m);
     return { idx: i + 1, page: p.page, vol: p.vol, body: at < 0 ? text : text.slice(0, at), foot: at < 0 ? "" : text.slice(at).replace(/^(_+|<hr>)[^\n]*\n?/, "") };
   });
+
+  // marks "text": the index of headings turath.io gives does not follow the marks in the text (the encyclopedia moved
+  // the jurists' biographies to its end, the index did not), so the headings are read from the marks themselves:
+  // toc-N with its level (data-level) and page. A number no mark carries is a gap that nothing points to.
+  if (cfg.marks === "text") {
+    const found = []; let level = 1;
+    for (const p of pages) for (const m of (p.body + "\n" + p.foot).matchAll(/<span data-type=["']title["']([^>]*?)\bid=["']?toc-(\d+)["']?([^>]*)>([\s\S]*?)<\/span>/g)) {
+      const n = Number(m[2]); if (found[n - 1]) continue;
+      level = Number((/data-level=["']?(\d+)/.exec(m[1] + m[3]) || [])[1]) || level;
+      found[n - 1] = { title: m[4].replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim(), level, page: p.idx };
+    }
+    headings = Array.from({ length: Math.max(found.length, headings.length) }, (_, k) => found[k] || { title: `toc-${k + 1}`, level: 1, page: 0, gap: true });
+    tell(0, `${found.filter(Boolean).length} headings read from the marks in the text (the index lists ${info.indexes.headings.length})`);
+  }
 
   // ---------- headings the edition did not mark in the text: find their line on their page ----------
   const marked = new Set(pages.flatMap(p => [...(p.body + p.foot).matchAll(/\bid=["']?toc-(\d+)/g)].map(m => Number(m[1]))));
@@ -655,8 +684,8 @@ function build(cfg, info, whole, problems, infos) {
       return t || "";
     });
   });
-  const missing = headings.map((h, k) => k).filter(k => !toc[k] && !twice.has(k + 1) && !outside(headings[k].page));
-  if (!cfg.items && missing.length) problems.push(`${cfg.id}: headings not placed: ${missing.map(k => headings[k].title).join(" | ")}`);
+  const missing = headings.map((h, k) => k).filter(k => !toc[k] && !twice.has(k + 1) && !headings[k].gap && !outside(headings[k].page));
+  if (!cfg.items && missing.length) problems.push(`${cfg.id}: headings not placed: ${missing.map(k => `${headings[k].title} (toc-${k + 1}, page ${headings[k].page})`).join(" | ")}`);
 
   // A reading page with no text of its own is a group title in the contents (for example «كتاب الطهارة» before its chapters),
   // unless its heading has a footnote (I'lam al-Muwaqqiʿin): then it is a short page with the heading and its note.
@@ -693,6 +722,7 @@ function build(cfg, info, whole, problems, infos) {
   fs.mkdirSync(OUT, { recursive: true });
   const keep = new Set(["index.json"]);
   for (const cfg of BOOKS) {
+    if (ONLY && !ONLY.includes(cfg.id)) continue;
     const info = await getText(`${cfg.turath}.info.json`, `${API}/book?id=${cfg.turath}&include=indexes&ver=3`);
     const whole = await getText(`${cfg.turath}.json`, `${FILES}/books-v3/${cfg.turath}.json`);
     if (whole.pages.length !== info.indexes.page_map.length) problems.push(`${cfg.id}: ${whole.pages.length} pages in the book file, ${info.indexes.page_map.length} in its index`);
@@ -724,14 +754,14 @@ function build(cfg, info, whole, problems, infos) {
     const chunks = parts.map((list, k) => {
       const data = JSON.stringify(Object.fromEntries(list)); const hash = hashOf(data);
       const file = `${cfg.id}/${k}.${hash}.json`; keep.add(file);
-      fs.mkdirSync(path.join(OUT, cfg.id), { recursive: true }); fs.writeFileSync(path.join(OUT, file), data + "\n");
+      if (!DRY) { fs.mkdirSync(path.join(OUT, cfg.id), { recursive: true }); fs.writeFileSync(path.join(OUT, file), data + "\n"); }
       return hash;
     });
     const data = JSON.stringify({ id: cfg.id, sections: heads, toc: book.toc });
     const file = `${cfg.id}.${hashOf(data)}.json`; keep.add(file);
-    fs.writeFileSync(path.join(OUT, file), data + "\n");
+    if (!DRY) fs.writeFileSync(path.join(OUT, file), data + "\n");
     const m = info.meta;
-    const { turath, unit, from, to, skip, items, known, loose, ...meta } = cfg;
+    const { turath, unit, from, to, skip, items, known, loose, marks, ...meta } = cfg;
     index.books.push({
       ...meta, file, chunks, bytes: total, title: m.name,
       edition: m.info.split("\n").map(x => x.trim()).filter(x => x && !/^\[/.test(x)).join("\n"),
@@ -749,9 +779,10 @@ function build(cfg, info, whole, problems, infos) {
       else if (!keep.has(rel)) fs.unlinkSync(path.join(OUT, rel));
     }
   };
-  sweep("");
+  if (!DRY && !ONLY) sweep("");
   if (infos.length) console.log("· " + infos.join("\n· "));
   if (problems.length) { console.error("✗ " + problems.join("\n✗ ")); process.exitCode = 1; }
+  if (DRY || ONLY) { console.log(`${DRY ? "dry run" : "partial build"}: ${index.books.length} book(s) checked, www/kutub/index.json not written`); return; }
   fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify(index, null, 1) + "\n");
   console.log(`✓ www/kutub: ${index.books.length} books`);
 })().catch(e => { console.error(e); process.exit(1); });
