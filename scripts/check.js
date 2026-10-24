@@ -244,7 +244,7 @@ for (const b of kt.books) {
     if (!(buf[0] === 0xff && (buf[1] & 0xf0) === 0xf0)) fail(`adhan: ${v.file} is not an AAC (ADTS) stream`);
     const commons = !!v.license && /^https:\/\/creativecommons\.org\//.test(v.licenseUrl) && /^https:\/\/commons\.wikimedia\.org\/wiki\/File:/.test(v.url);
     const archive = !v.license && v.by === "archive.org" && /^https:\/\/archive\.org\/details\/[\w.-]+$/.test(v.url);
-    const islamweb = !v.license && v.by === "islamweb.net" && /^https:\/\/www\.islamweb\.net\//.test(v.url);
+    const islamweb = !v.license && v.by === "islamweb.net" && /^https:\/\/audio\.islamweb\.net\/audio\/index\.php\?page=audioinfo&audioid=\d+$/.test(v.url);
     if (!v.by || !(commons || archive || islamweb) || !(v.seconds > 60) || !(v.short > 5 && v.short < v.seconds)) fail("adhan: incomplete entry " + v.id);
     if (!enStrings["prayer.v." + v.id]) fail(`adhan: no prayer.v.${v.id} string`);
     if (!enStrings["prayer.g." + v.group]) fail(`adhan: ${v.id} has no group with a prayer.g.<group> string`);
