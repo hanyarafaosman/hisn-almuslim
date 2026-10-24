@@ -274,13 +274,13 @@ html[dir="rtl"] .flip, html[dir="ltr"] .dir { transform: scaleX(-1); }
 .link { display: inline-flex; align-items: center; gap: 6px; color: var(--primary); font-weight: 700; font-size: .88rem; margin-inline-start: auto; padding: 4px 6px; }
 .link svg { width: 18px; height: 18px; }
 
-.mushaf { background: var(--paper); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); padding: 14px 6px 6px; }
+.mushaf { --qz: 1; background: var(--paper); border: 1px solid var(--border); border-radius: 18px; box-shadow: var(--shadow); padding: 14px 6px 6px; } /* --qz: the reader's own size for the verses */
 .surah-head { margin: 0 8px 10px; padding: 8px; border: 2px solid var(--gold); border-radius: 12px; text-align: center; background: color-mix(in srgb, var(--gold) 10%, transparent); position: relative; }
 .surah-head::before { content: ""; position: absolute; inset: 3px; border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent); border-radius: 9px; pointer-events: none; }
 .surah-head span { font-family: var(--font-text); font-weight: 700; font-size: 1.35rem; color: var(--primary-2); }
 :root[data-theme="dark"] .surah-head span { color: var(--gold); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .surah-head span { color: var(--gold); } }
-.basmala { text-align: center; font-family: var(--qfont), var(--font-text); font-size: calc(1.6rem * var(--scale)); line-height: 2.2; padding: 4px 0 8px; }
+.basmala { text-align: center; font-family: var(--qfont), var(--font-text); font-size: calc(1.6rem * var(--scale) * var(--qz, 1)); line-height: 2.2; padding: 4px 0 8px; }
 .juz-mark { display: flex; align-items: center; gap: 10px; margin: 10px 12px; color: var(--gold); font-size: .85rem; font-weight: 700; }
 .juz-mark::before, .juz-mark::after { content: ""; flex: 1; height: 1px; background: color-mix(in srgb, var(--gold) 50%, transparent); }
 .aya { padding: 8px 14px; border-bottom: 1px dashed var(--border); cursor: pointer; border-radius: 10px; transition: background .2s; outline: none; scroll-margin-top: 90px; }
@@ -290,7 +290,7 @@ html[dir="rtl"] .flip, html[dir="ltr"] .dir { transform: scaleX(-1); }
 .aya.bm { border-inline-start: 4px solid var(--accent); background: color-mix(in srgb, var(--accent) 8%, transparent); }
 .aya.play, .basmala.play { background: color-mix(in srgb, var(--primary) 9%, transparent); box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--primary) 45%, transparent); border-radius: 10px; }
 .aya.flash { background: color-mix(in srgb, var(--accent) 22%, transparent); }
-.aya-text { font-family: var(--qfont), var(--font-text); font-size: calc(1.75rem * var(--scale)); line-height: 2.25; text-align: justify; text-align-last: start; display: block; user-select: text; }
+.aya-text { font-family: var(--qfont), var(--font-text); font-size: calc(1.75rem * var(--scale) * var(--qz, 1)); line-height: 2.25; text-align: justify; text-align-last: start; display: block; user-select: text; }
 .aya-tools { display: flex; align-items: center; gap: 2px; margin: 0 8px 6px; padding: 4px 12px 4px 6px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; box-shadow: var(--shadow); animation: up .15s ease-out; }
 .aya-tools .spacer { flex: 1; }
 .aya-tools .aya-ref { font-size: .8rem; color: var(--muted); }
@@ -427,8 +427,8 @@ a.info { color: inherit; }
 .empty h2 { color: var(--text); }
 
 /* ===== صفحات المصحف المطبوع ===== */
-.mpage-wrap { display: flex; justify-content: center; }
-.mpage { position: relative; width: 100%; max-width: 560px; container-type: inline-size; background: var(--paper); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 4.5cqw 4cqw; touch-action: pan-y; user-select: none; }
+.mpage-wrap { display: flex; overflow-x: auto; scrollbar-width: thin; } /* a page enlarged past the screen pans sideways */
+.mpage { position: relative; flex: none; margin-inline: auto; width: 100%; max-width: 560px; container-type: inline-size; background: var(--paper); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 4.5cqw 4cqw; touch-action: pan-x pan-y; user-select: none; }
 .mpage .mline { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; height: 9.6cqw; font-family: var(--qcf), serif; font-size: calc(5.9cqw * var(--fit, 1)); line-height: 1; color: var(--text); }
 .mpage .mline.center { justify-content: center; gap: 1.2cqw; }
 .mpage.opening .mline { height: 11cqw; }
@@ -633,12 +633,13 @@ body.mm-on.has-player { padding-top: var(--sat); padding-bottom: calc(62px + var
 body.mm-on .bottom-nav { display: none; }
 body.mm-on .topbar { transform: translateY(-100%); transition: transform .22s ease; }
 body.mm-on.mm-ui .topbar { transform: none; }
-body.mm-on .view { padding: 0 10px; }
-/* The page as large as the screen allows: by width on phones, by height on wide or short screens. */
-.mm { --mmw: min(100%, 560px, calc((100dvh - var(--sat) - var(--sab) - 84px) / 1.56)); min-height: calc(100dvh - var(--sat) - var(--sab)); display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 6px 0; }
-.mm .mpage { width: var(--mmw); }
-body.has-player .mm { --mmw: min(100%, 560px, calc((100dvh - var(--sat) - var(--sab) - 146px) / 1.56)); min-height: calc(100dvh - var(--sat) - var(--sab) - 62px); } /* room for the player */
-.mm-margin { display: flex; justify-content: space-between; gap: 12px; width: var(--mmw); margin: 0 auto; padding: 0 8px; font-size: .78rem; font-weight: 600; color: var(--muted); }
+body.mm-on .view { padding: 0 10px; max-width: 1700px; }
+/* The page as large as the screen allows: by width on phones, by height on wide or short screens. The reader may
+   enlarge it (--mz, from the size tool, Ctrl + wheel or a pinch): the page then grows past the screen and scrolls or pans. */
+.mm { --mz: 1; --mmw: calc(var(--mz) * min(100%, 560px, (100dvh - var(--sat) - var(--sab) - 84px) / 1.56)); min-height: calc(100dvh - var(--sat) - var(--sab)); display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 6px 0; }
+.mm .mpage { width: var(--mmw); max-width: none; }
+body.has-player .mm { --mmw: calc(var(--mz) * min(100%, 560px, (100dvh - var(--sat) - var(--sab) - 146px) / 1.56)); min-height: calc(100dvh - var(--sat) - var(--sab) - 62px); } /* room for the player */
+.mm-margin { display: flex; justify-content: space-between; gap: 12px; width: min(100%, var(--mmw)); margin: 0 auto; padding: 0 8px; font-size: .78rem; font-weight: 600; color: var(--muted); }
 .mm-margin span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mm-margin.foot { justify-content: center; }
 .mbar { position: fixed; inset-inline: 0; bottom: 0; z-index: 22; max-width: 760px; margin: 0 auto; padding: 4px 10px calc(8px + var(--sab)); background: var(--surface); border: 1px solid var(--border); border-bottom: 0; border-radius: 18px 18px 0 0; box-shadow: 0 -6px 24px rgba(0,0,0,.12); transform: translateY(105%); transition: transform .22s ease; }
@@ -648,7 +649,7 @@ body.mm-on.has-player .mbar { bottom: calc(62px + var(--sab)); padding-bottom: 8
 .mbar .mslider .icon-btn { width: 40px; height: 40px; flex: none; color: var(--primary); }
 .mbar .mslider .icon-btn:disabled { opacity: .3; }
 .mm-where { display: block; text-align: center; font-size: .78rem; color: var(--muted); margin: -4px 0 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mtools { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; }
+.mtools { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
 .mtools button { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 2px; border-radius: 12px; color: var(--text); font-size: .74rem; font-weight: 600; min-width: 0; }
 .mtools button:active, .mtools button:hover { background: var(--surface-2); }
 .mtools svg { width: 22px; height: 22px; color: var(--primary); }
@@ -864,7 +865,19 @@ a.tj-ex:active { transform: scale(.98); }
 .tj-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; }
 .tj-nav .btn { height: auto; min-height: 44px; padding-block: 8px; text-align: center; line-height: 1.4; }
 .tj-nav .btn svg { flex: none; }
-.mtools.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.mtools.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+/* Size of the Quran text: the sheet of the printed pages, and the pill in the reader's bar. */
+.zoom-row { display: flex; align-items: center; gap: 8px; padding: 10px 0 4px; }
+.zoom-row input { flex: 1; min-width: 0; accent-color: var(--primary); height: 28px; }
+.zoom-row .icon-btn { flex: none; color: var(--primary); background: var(--surface-2); }
+.zoom-row output { flex: none; min-width: 3.6em; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
+.zoom-foot { display: flex; justify-content: center; margin-top: 10px; }
+.zoom-hint { margin: 12px 4px 0; color: var(--muted); font-size: .82rem; line-height: 1.7; text-align: center; }
+.pill.zoom { padding-inline: 2px; gap: 0; }
+.pill.zoom button { width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; color: var(--primary); }
+.pill.zoom button:active, .pill.zoom button:hover { background: color-mix(in srgb, var(--primary) 14%, transparent); }
+.pill.zoom button svg { width: 16px; height: 16px; }
+.pill.zoom b { min-width: 3.4em; text-align: center; font-variant-numeric: tabular-nums; }
 /* ---------- الباحث الفقهي (#/faqih) ---------- */
 .fq-form { display: grid; gap: 10px; margin: 12px 0 10px; }
 .fq-form .btn svg { width: 20px; height: 20px; }
