@@ -887,3 +887,49 @@ a.tj-ex:active { transform: scale(.98); }
 .fq-scholars { margin: 10px 4px 0; color: var(--muted); font-size: .85rem; }
 .fq-scholars a { color: var(--primary); font-weight: 700; }
 .empty .fq-scholars { margin-top: 14px; }
+
+/* ===== التقويم الهجري ===== */
+.hub-date { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; color: #fff; font-size: .9rem; opacity: .95; }
+.hub-date svg { width: 18px; height: 18px; flex: none; opacity: .9; }
+.hub-date span { font-weight: 700; }
+.hub-date small { opacity: .8; font-size: .8rem; }
+.hj-hero small { display: block; opacity: .85; font-size: .8rem; }
+.hj-hero h2 { font-size: 1.45rem; line-height: 1.45; margin: 4px 0 2px; }
+.hj-badge { display: inline-block; border: 1px solid rgba(255,255,255,.45); border-radius: 99px; padding: 0 8px; font-size: .72rem; margin-inline-start: 6px; }
+.hj-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.hj-chip { display: inline-flex; align-items: center; gap: 6px; background: rgba(255,255,255,.16); border: 1px solid rgba(255,255,255,.26); border-radius: 99px; padding: 4px 12px; font-size: .82rem; font-weight: 600; }
+.hj-chip svg { width: 14px; height: 14px; color: var(--accent); }
+.hj-nav { display: flex; align-items: center; gap: 6px; margin-top: 12px; }
+.hj-nav .icon-btn { color: var(--primary); background: var(--surface); border: 1px solid var(--border); flex: none; }
+.hj-title { flex: 1; min-width: 0; text-align: center; color: inherit; background: none; padding: 4px; }
+.hj-title b { display: block; font-size: 1.05rem; }
+.hj-title span { display: block; color: var(--muted); font-size: .82rem; }
+.hj-grid { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; margin-top: 8px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px 6px; }
+.hj-wd { text-align: center; font-size: .72rem; color: var(--muted); font-weight: 700; padding: 4px 0 6px; }
+.hj-wd.fri { color: var(--primary); }
+.hj-cell { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; min-height: 52px; border-radius: 12px; color: inherit; background: none; padding: 4px 0; }
+.hj-cell.out { visibility: hidden; }
+.hj-cell b { font-size: 1.05rem; line-height: 1.2; font-variant-numeric: tabular-nums; }
+.hj-cell small { font-size: .66rem; color: var(--muted); line-height: 1.2; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.hj-cell.fri b { color: var(--primary); }
+.hj-cell.ev { background: color-mix(in srgb, var(--accent) 14%, var(--surface)); }
+.hj-cell.ev i { position: absolute; top: 5px; inset-inline-end: 6px; width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+.hj-cell.major { background: color-mix(in srgb, var(--accent) 28%, var(--surface)); }
+.hj-cell.today { box-shadow: inset 0 0 0 2px var(--primary); font-weight: 700; }
+.hj-cell.today b { color: var(--primary); }
+.hj-cell.on { background: var(--primary); color: var(--on-primary); }
+.hj-cell.on b, .hj-cell.on small, .hj-cell.on.fri b { color: inherit; }
+.hj-cell.on i { background: var(--on-primary); }
+.hj-cell:active { transform: scale(.94); }
+.hj-dayc { margin-top: 10px; }
+.hj-tag { font-size: .8rem; color: var(--primary); font-weight: 700; white-space: nowrap; }
+.hj-left { font-size: .82rem; color: var(--primary); font-weight: 700; white-space: nowrap; }
+.hj-conv .hj-date { max-width: none; flex: 1; min-width: 10rem; font: inherit; color: inherit; }
+.hj-hsel { flex-wrap: wrap; }
+.hj-hsel .lbl { flex-basis: 100%; }
+.hj-hsel .select { max-width: none; flex: 1; min-width: 5rem; font: inherit; color: inherit; }
+.hj-hsel #hj-m { flex: 2; }
+.hj-hsel .hj-year { flex: 0 1 6rem; }
+.hj-out .lbl b { display: block; }
+.hj-out .lbl small { display: block; color: var(--muted); font-weight: 400; font-size: .8rem; }
+.hj-out .btn[hidden] { display: none; }
