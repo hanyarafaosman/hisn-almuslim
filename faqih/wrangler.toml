@@ -1,0 +1,50 @@
+# الباحث الفقهي: the question server, a Cloudflare Worker (faqih/README.md). Run wrangler from this folder.
+# It needs the Workers Paid plan: the index of passages (Vectorize) is far larger than the free plan holds.
+name = "hisn-faqih"
+main = "src/index.js"
+compatibility_date = "2026-09-15"
+workers_dev = true
+preview_urls = false
+
+# The embedding model (questions) and the model that writes the answer (PROVIDER workers-ai).
+[ai]
+binding = "AI"
+
+# The passages of the books with their vectors: scripts/build-faqih.mjs fills it (npx wrangler vectorize create … in the README).
+[[vectorize]]
+binding = "VECTORIZE"
+index_name = "faqih-v1"
+
+# The daily count of questions and a log of answers (status and dropped quotations only, never the question).
+[[d1_databases]]
+binding = "DB"
+database_name = "hisn-faqih"
+database_id = "00000000-0000-0000-0000-000000000000" # printed by `npx wrangler d1 create hisn-faqih`
+migrations_dir = "migrations"
+
+# Questions per minute from one address.
+[[unsafe.bindings]]
+name = "LIMITER"
+type = "ratelimit"
+namespace_id = "1001"
+simple = { limit = 10, period = 60 }
+
+[vars]
+# Pages allowed to call the server from a browser (comma-separated).
+ORIGINS = "https://hanyarafaosman.github.io"
+# Who writes the answer: "workers-ai" (MODEL is a Workers AI text model, nothing else to set up) or "anthropic"
+# (MODEL is a Claude model such as claude-sonnet-5-5; the key is a secret: npx wrangler secret put ANTHROPIC_API_KEY).
+PROVIDER = "workers-ai"
+MODEL = "@cf/qwen/qwen3-30b-a3b-fp8"
+EMBED_MODEL = "@cf/baai/bge-m3"
+# Passages sent to the model, and the similarity below which the question is answered «لم أجد» without the model
+# (set from the scores printed by node scripts/build-faqih.mjs --eval).
+TOP_K = "12"
+MIN_SCORE = "0.45"
+# Questions answered per day, all users together; above it the server answers 503 until midnight UTC.
+DAILY_LIMIT = "500"
+# The published list of books: a passage whose book was rebuilt since the index was made is left out.
+KUTUB_INDEX = "https://hanyarafaosman.github.io/hisn-almuslim/kutub/index.json"
+
+[observability]
+enabled = true
