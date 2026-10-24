@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.25.0";
-import { mirrorOf } from "./mirror.js?v=1.25.0";
+import * as off from "./offline.js?v=1.26.0";
+import { mirrorOf } from "./mirror.js?v=1.26.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -56,8 +56,33 @@ const KUFI_AYAT = 6236; // QuranEnc numbering follows the Kufan count (Hafs, Shu
 
 export function setupQuran(ctx) {
   const { view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, setHeader, setNav, LS, copyText, share, SITE, adhkarAudio } = ctx;
-  const state = Object.assign({ riwayah: "hafs", last: null, reciters: {}, tab: "surahs" }, LS.get("quran", {}));
+  const state = Object.assign({ riwayah: "hafs", last: null, reciters: {}, tab: "surahs", mz: 1, qz: 1 }, LS.get("quran", {}));
   const save = () => LS.set("quran", state);
+  // The size of the Quran text, chosen by the reader and kept: the printed page (state.mz: 1 fits the screen, up to 3
+  // times that) and the verses of the reader (state.qz, 0.7 to 2.5). Set from the bars, with Ctrl + wheel or Ctrl +, −
+  // and 0 on a computer, and by pinching with two fingers on a touch screen (the printed page blocks the browser's zoom).
+  const ZOOM = { mz: [1, 3], qz: [0.7, 2.5] };
+  const clampZoom = (k, v) => { const [lo, hi] = ZOOM[k]; return Math.min(hi, Math.max(lo, Math.round((+v || 1) * 20) / 20)); };
+  state.mz = clampZoom("mz", state.mz); state.qz = clampZoom("qz", state.qz);
+  const pct = z => new Intl.NumberFormat(getLang(), { style: "percent", maximumFractionDigits: 0 }).format(z);
+  function zoomGestures(el, k, apply, onPinch = () => {}) {
+    const set = v => { const z = clampZoom(k, v); if (z !== state[k]) { state[k] = z; apply(z); } return z; };
+    el.addEventListener("wheel", e => { if (!e.ctrlKey && !e.metaKey) return; e.preventDefault(); set(state[k] + (e.deltaY < 0 ? 0.1 : -0.1)); save(); }, { passive: false });
+    let d0 = 0, z0 = 1;
+    const dist = e => Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+    el.addEventListener("touchstart", e => { if (e.touches.length === 2) { d0 = dist(e); z0 = state[k]; onPinch(); } }, { passive: true });
+    el.addEventListener("touchmove", e => { if (e.touches.length !== 2 || !d0) return; e.preventDefault(); set(z0 * dist(e) / d0); }, { passive: false });
+    el.addEventListener("touchend", () => { if (d0) { d0 = 0; save(); } });
+    return set;
+  }
+  let zoomKeys = null; // the open page or reader: { k, apply }
+  document.addEventListener("keydown", e => {
+    if (!zoomKeys || !(e.ctrlKey || e.metaKey) || e.altKey || !/^[-+=0]$/.test(e.key) || e.target?.closest?.("input, textarea, select")) return;
+    e.preventDefault(); const { k, apply } = zoomKeys;
+    const z = e.key === "0" ? 1 : clampZoom(k, state[k] + (e.key === "-" ? -0.1 : 0.1));
+    if (z !== state[k]) { state[k] = z; save(); apply(z); }
+  });
+  window.addEventListener("hashchange", () => { zoomKeys = null; });
   // Bookmarks: any number of verses, newest first. Versions before 1.10 kept a single one (state.bookmark).
   if (!Array.isArray(state.marks)) {
     const b = state.bookmark; state.marks = b ? [{ r: b.r, s: b.s, a: b.a, t: Date.now() }] : []; delete state.bookmark; save();
@@ -672,10 +697,11 @@ export function setupQuran(ctx) {
         <button class="pill" id="q-riw" aria-label="${esc(t("quran.changeRiwayah"))}">${icon("layers")} ${esc(t("quran.riwayahOf", { name: rShort(meta) }))}</button><span class="pill ghost">${esc(t("count.ayat", { n: ayat.length }))}</span>${meta.id === "hafs"
           ? `<button class="pill ghost" id="q-page" aria-label="${esc(t("mushaf.openPage"))}">${icon("quran")} ${esc(t("quran.page", { n: ayat[0][1] }))}</button>` : `<span class="pill ghost">${esc(t("quran.page", { n: ayat[0][1] }))}</span>`}
         <button class="pill ghost" id="q-theme" aria-label="${esc(t(isDark() ? "mushaf.toDayAria" : "mushaf.toNightAria"))}">${icon(isDark() ? "sun" : "moon")} ${esc(t(isDark() ? "mushaf.toDay" : "mushaf.toNight"))}</button>
+        <span class="pill ghost zoom" role="group" aria-label="${esc(t("settings.fontSize"))}"><button data-qz="-1" aria-label="${esc(t("settings.smaller"))}">${icon("minus")}</button><b id="q-zoom">${esc(pct(state.qz))}</b><button data-qz="1" aria-label="${esc(t("settings.larger"))}">${icon("plus")}</button></span>
         <button class="link" id="q-rec">${icon("headphones")} <span dir="auto">${esc(rec ? rec.name : t("quran.chooseReciter"))}</span></button>
       </div>
       <div id="tr-note"></div>
-      <article class="mushaf" lang="ar" dir="rtl" style="--qfont:'kfgqpc-${meta.id}'">
+      <article class="mushaf" lang="ar" dir="rtl" style="--qfont:'kfgqpc-${meta.id}'; --qz:${state.qz}">
         <header class="surah-head"><span>سورة ${esc(arName)}</span></header>
         ${showBasmala ? `<div class="basmala">${esc(meta.basmala)}</div>` : ""}
         ${parts.join("")}
@@ -695,6 +721,10 @@ export function setupQuran(ctx) {
     $("#q-rec").onclick = () => pickReciter(meta, playWith);
     // Night or day reading, from here as from Settings.
     $("#q-theme").onclick = () => { const d = ctx.toggleTheme(); const b = $("#q-theme"); b.innerHTML = `${icon(d ? "sun" : "moon")} ${esc(t(d ? "mushaf.toDay" : "mushaf.toNight"))}`; b.setAttribute("aria-label", t(d ? "mushaf.toDayAria" : "mushaf.toNightAria")); };
+    // The size of the verses: the pill, Ctrl + wheel or keys, a pinch.
+    const art = $(".mushaf"); const applyQz = z => { art.style.setProperty("--qz", z); const b = $("#q-zoom"); if (b) b.textContent = pct(z); };
+    const setQz = zoomGestures(art, "qz", applyQz); zoomKeys = { k: "qz", apply: applyQz };
+    view.querySelectorAll("[data-qz]").forEach(b => b.onclick = () => { setQz(state.qz + 0.1 * Number(b.dataset.qz)); save(); });
     $("#q-tr").onclick = () => pickTranslation(() => renderReader(meta.id, s, params));
     $("#q-riw").onclick = () => {
       const body = sheet(t("quran.chooseRiwayah"), `<div class="list flat">${INDEX.riwayat.map(r => `<button class="row" data-r="${r.id}"><div class="lbl">${esc(rName(r))}<span class="sub">${esc(t("count.ayat", { n: r.ayat }))}</span></div>${r.id === meta.id ? icon("check") : ""}</button>`).join("")}</div>`);
@@ -910,16 +940,17 @@ export function setupQuran(ctx) {
           <button class="icon-btn" id="m-next" aria-label="${esc(t("mushaf.next"))}"${n >= 604 ? " disabled" : ""}>${icon("back", "flip")}</button>
         </div>
         <output class="mm-where" id="m-range-out" for="m-range">${esc(where())}</output>
-        <div class="mtools${ed === "tajweed" ? " five" : ""}">
+        <div class="mtools${ed === "tajweed" ? " six" : ""}">
           <button data-tool="listen" id="m-listen">${icon("play")}<span>${esc(t("common.listen"))}</span></button>
           <button data-tool="reciter" aria-label="${esc(t("quran.chooseReciter"))}">${icon("headphones")}<span id="m-rec" dir="auto">${esc(recName())}</span></button>
           <button data-tool="theme" id="m-theme" aria-label="${esc(themeAria())}">${themeBtn()}</button>
           ${ed === "tajweed" ? `<button data-tool="colours" aria-label="${esc(t("tajweed.keyAria"))}">${icon("palette")}<span>${esc(t("tajweed.colours"))}</span></button>` : ""}
+          <button data-tool="zoom" aria-label="${esc(t("settings.fontSize"))}">${icon("zoom")}<span>${esc(t("mushaf.zoom"))}</span></button>
           <button data-tool="print" aria-label="${esc(t("mushaf.chooseEdition"))}">${icon("layers")}<span>${esc(t("mushaf.print"))}</span></button>
         </div>
       </div>`;
     $("#m-prev").onclick = () => goPage(ed, n - 1); $("#m-next").onclick = () => goPage(ed, n + 1);
-    const page = $("#mpage");
+    const page = $("#mpage"), mm = $("#mm"); mm.style.setProperty("--mz", state.mz);
     const paintMarks = () => { const on = new Set(marksHere().map(m => m.s + ":" + m.a)); runs.forEach(([s, a], i) => page.querySelectorAll(`span[data-v="${i}"]`).forEach(x => x.classList.toggle("bm", on.has(s + ":" + a)))); };
     const refreshBm = () => { $("#m-bm-wrap").innerHTML = bmBtn(); $("#m-bm").onclick = toggleBm; paintMarks(); };
     // The page bookmark is a bookmark on its first verse; removing it removes every bookmark on the page.
@@ -978,9 +1009,10 @@ export function setupQuran(ctx) {
     } catch { if (!stale(hash)) $("#mpage-msg").innerHTML = `<div class="empty">${icon("download")}<div>${esc(t("mushaf.fontNeedsNet"))}</div></div>`; }
     [n + 1, n - 1].filter(p => p >= 1 && p <= 604).forEach(p => loadPageFont(ed, p).catch(() => {}));
 
-    // Arabic book: the next page is on the left, so swiping toward the right turns forward.
-    let x0 = null;
-    page.addEventListener("touchstart", e => { x0 = e.touches[0].clientX; }, { passive: true });
+    // Arabic book: the next page is on the left, so swiping toward the right turns forward. A page enlarged past the
+    // screen is panned by that gesture instead; it is turned from the bar or with the arrow keys.
+    let x0 = null; const wrap = page.parentElement;
+    page.addEventListener("touchstart", e => { x0 = e.touches.length === 1 && wrap.scrollWidth <= wrap.clientWidth + 1 ? e.touches[0].clientX : null; }, { passive: true });
     page.addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 60) { setUi(false); goPage(ed, dx > 0 ? n + 1 : n - 1); } });
 
     // Page slider: shows the page and its surah while dragging, opens the page on release.
@@ -997,6 +1029,7 @@ export function setupQuran(ctx) {
       const tool = e.target.closest("[data-tool]")?.dataset.tool; if (!tool) return;
       keepUi();
       if (tool === "print") return openPrint();
+      if (tool === "zoom") return openZoom();
       if (tool === "colours") return ctx.tajweed().keySheet();
       if (tool === "theme") { ctx.toggleTheme(); if (ed === "tajweed") tajweedPalette(); const b = $("#m-theme"); b.innerHTML = themeBtn(); b.setAttribute("aria-label", themeAria()); return; }
       const now = player.now(), v = recited(now);
@@ -1009,6 +1042,21 @@ export function setupQuran(ctx) {
         if (now && v?.rid === "hafs" && onPage(v)) return document.getElementById("pl-toggle").click(); // resume this page
         playFrom(hafs, ...info.first);
       }
+    };
+
+    // The size of the page: a slider (1 = the page fits the screen), Ctrl + wheel or keys, a pinch with two fingers.
+    const applyMz = z => mm.style.setProperty("--mz", z);
+    let sel = -1, pressT = null, pressAt = null, pressedAt = 0, held = false;
+    const setMz = zoomGestures(mm, "mz", applyMz, () => { x0 = null; clearTimeout(pressT); pressAt = null; }); // a pinch is neither a swipe nor a long press
+    zoomKeys = { k: "mz", apply: applyMz };
+    const openZoom = () => {
+      const body = sheet(t("settings.fontSize"), `<div class="zoom-row"><button class="icon-btn" data-z="-1" aria-label="${esc(t("settings.smaller"))}">${icon("minus")}</button><input type="range" id="z-range" min="${ZOOM.mz[0]}" max="${ZOOM.mz[1]}" step="0.05" value="${state.mz}" aria-label="${esc(t("settings.fontSize"))}"><button class="icon-btn" data-z="1" aria-label="${esc(t("settings.larger"))}">${icon("plus")}</button><output id="z-out" for="z-range">${esc(pct(state.mz))}</output></div>
+        <div class="zoom-foot"><button class="btn ghost small" id="z-reset">${icon("reset")} ${esc(t("mushaf.zoomReset"))}</button></div>
+        <p class="zoom-hint">${esc(t("mushaf.zoomHint"))}</p>`);
+      const range = $("#z-range", body), out = $("#z-out", body);
+      const set = v => { setMz(v); range.value = state.mz; out.textContent = pct(state.mz); save(); };
+      range.oninput = () => set(Number(range.value));
+      body.onclick = e => { const b = e.target.closest("[data-z]"); if (b) set(state.mz + 0.1 * Number(b.dataset.z)); else if (e.target.closest("#z-reset")) set(1); };
     };
 
     // Print and colours: the three prints, and the name of Allah in colour.
@@ -1029,7 +1077,6 @@ export function setupQuran(ctx) {
     // tools (tafsir, bookmark, copy, share, listen, verse by verse).
     if (!mmVisit) { mmVisit = true; setUi(true); uiTimer = setTimeout(() => setUi(false), 4000); }
     $("#mbar").onpointerdown = keepUi; document.querySelector(".topbar").onpointerdown = keepUi;
-    let sel = -1, pressT = null, pressAt = null, pressedAt = 0, held = false;
     if (pageClick) document.removeEventListener("click", pageClick); // the page may be drawn again at the same address
     const onDoc = pageClick = e => {
       if (stale(hash)) { if (pageClick === onDoc) pageClick = null; return document.removeEventListener("click", onDoc); }

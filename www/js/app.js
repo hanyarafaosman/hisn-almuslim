@@ -1,17 +1,17 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.25.0";
-import { setupHadith } from "./hadith.js?v=1.25.0";
-import { setupTafsir } from "./tafsir.js?v=1.25.0";
-import { setupAsma } from "./asma.js?v=1.25.0";
-import { setupKutub } from "./kutub.js?v=1.25.0";
-import { setupPrayer } from "./prayer.js?v=1.25.0";
-import { setupVideos } from "./videos.js?v=1.25.0";
-import { setupInstall } from "./install.js?v=1.25.0";
-import { setupTajweed } from "./tajweed.js?v=1.25.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.25.0";
-import { mirrorOf } from "./mirror.js?v=1.25.0";
+import { setupQuran } from "./quran.js?v=1.26.0";
+import { setupHadith } from "./hadith.js?v=1.26.0";
+import { setupTafsir } from "./tafsir.js?v=1.26.0";
+import { setupAsma } from "./asma.js?v=1.26.0";
+import { setupKutub } from "./kutub.js?v=1.26.0";
+import { setupPrayer } from "./prayer.js?v=1.26.0";
+import { setupVideos } from "./videos.js?v=1.26.0";
+import { setupInstall } from "./install.js?v=1.26.0";
+import { setupTajweed } from "./tajweed.js?v=1.26.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.26.0";
+import { mirrorOf } from "./mirror.js?v=1.26.0";
 
-const VERSION = "1.25.0";
+const VERSION = "1.26.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
