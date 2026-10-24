@@ -141,6 +141,17 @@ async function recitations() {
     }
     const { radios } = await getJSON(`${API}/radios?language=ar`);
     if (!Array.isArray(radios) || !radios.filter(r => r.url).length) error(G, "reciter radios list is empty");
+    // The Tajweed examples (#/tajweed) play verses of Shaykh al-Husary's recitation by its timings (HUSARY in js/quran.js).
+    const HUSARY = "https://cdn.mp3quran.net/audio/mahmoud-husary/r1/";
+    const reads = await getJSON(`${API}/ayat_timing/reads`);
+    const read = (Array.isArray(reads) ? reads : []).find(r => r.folder_url === HUSARY);
+    if (!read) error(G, `ayat_timing/reads no longer lists al-Husary's folder ${HUSARY} (Tajweed examples)`);
+    else {
+      const rows = await getJSON(`${API}/ayat_timing?surah=1&read=${read.id}`);
+      if (!Array.isArray(rows) || !rows.some(r => r.ayah === 7 && typeof r.start_time === "number")) error(G, `ayat_timing for al-Husary (read ${read.id}) lacks surah 1 verse 7 (Tajweed examples)`);
+      const res = await request(`${HUSARY}001.mp3`, { method: "HEAD" });
+      if (!res.ok) error(G, `al-Husary's recording ${HUSARY}001.mp3 gave HTTP ${res.status} (Tajweed examples)`);
+    }
     if (!errors.some(e => e.startsWith(G))) pass(G, `${rewayat.length} rewayat, ${reciters} recitations, ${radios.length} reciter radios`);
   } catch (e) { error(G, e.message); }
 }

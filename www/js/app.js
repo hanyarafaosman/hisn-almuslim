@@ -191,7 +191,7 @@ const TF = setupTafsir({
 });
 // ---------- the rules of Tajweed, with examples and the colour key of the Tajweed Mushaf ----------
 const TJ = setupTajweed({
-  view, $, esc, icon, t, num, sep, getLang, LS, Q, sheet: (...a) => Q.sheet(...a),
+  view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, sheet: (...a) => Q.sheet(...a),
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
 // ---------- the Beautiful Names of Allah ----------

@@ -9,6 +9,8 @@ import { mirrorOf } from "./mirror.js?v=1.30.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
+// Shaykh al-Husary's murattal recitation (Hafs), read 118 of mp3quran's ayat_timing: the voice of the Tajweed examples.
+const HUSARY = "https://cdn.mp3quran.net/audio/mahmoud-husary/r1/";
 const ch = (...cps) => String.fromCodePoint(...cps);
 const range = (a, b) => ch(a) + "-" + ch(b);
 const AYA_NUM = new RegExp("[\\s" + ch(0xA0) + "]*[" + range(0x660, 0x669) + "]+[\\s" + ch(0xA0) + "]*$");
@@ -1444,5 +1446,19 @@ export function setupQuran(ctx) {
       return loadPageFont("tajweed", n);
     },
     async surahNames() { await loadIndex(); return n => surahName(n); },
+    // For the Tajweed rules page: the recitation of Shaykh Mahmoud Khalil al-Husary (Hafs, murattal) on mp3quran.net,
+    // whose verse timings the player already uses. file(s): the surah's recording; times(s, a): where verse a starts
+    // and ends in it, in seconds (end null for the last verse), or null when the timings are missing or do not fit.
+    husary: {
+      file: s => surahUrl(HUSARY, s),
+      async times(s, a) {
+        await loadIndex(); const starts = await surahStarts(HUSARY, s); if (!starts) return null;
+        // In Al-Fatihah the timings number the basmala 0 and the verses after it 1–6, one less than the Mushaf.
+        const shift = s === 1 && starts.length - 1 === riw("hafs").surahs[0][1] - 1 ? 1 : 0;
+        if (!shift && !fits(starts, riw("hafs"), s)) return null;
+        const i = a - shift; if (typeof starts[i] !== "number") return null;
+        return { start: starts[i], end: typeof starts[i + 1] === "number" ? starts[i + 1] : null };
+      },
+    },
   };
 }

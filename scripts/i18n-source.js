@@ -108,6 +108,7 @@ const S = {
   "tajweed.rules": ["شرح الأحكام", "The rules explained"],
   "tajweed.fromBook": ["من «{book}»", "From «{book}»"],
   "tajweed.inEnglish": ["الشرح في هذه الصفحة باللغة الإنجليزية.", "The explanations on this page are in English."],
+  "tajweed.audioNote": ["تلاوة الأمثلة بصوت الشيخ محمود خليل الحصري برواية حفص عن عاصم، من موقع mp3quran.net.", "The examples are recited by Shaykh Maḥmūd Khalīl al-Ḥuṣarī in the narration of Ḥafṣ from ʿĀṣim, from mp3quran.net."],
 
   "asma.title": ["أسماء الله الحسنى", "The Names of Allah"],
   "asma.bookName": ["شرح أسماء الله الحسنى في ضوء الكتاب والسنة", "Explanation of the Beautiful Names of Allah in the light of the Quran and Sunnah"],
