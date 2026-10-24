@@ -5,7 +5,7 @@
 // are exactly those of the Mushaf. The colour key comes from the same fonts (palette 0 by day, 1 at night).
 
 export function setupTajweed(ctx) {
-  const { view, $, esc, icon, t, num, sep, getLang, LS, setHeader, setNav, Q, sheet } = ctx;
+  const { view, $, esc, icon, t, num, sep, getLang, LS, setHeader, setNav, Q, sheet, toast } = ctx;
   const stale = hash => location.hash !== hash;
   const isAr = () => getLang() === "ar";
   const L = x => x[isAr() ? 0 : 1]; // texts are [Arabic, English]; other languages read the English
@@ -47,10 +47,59 @@ export function setupTajweed(ctx) {
   }
   let names = n => String(n);
   const ref = x => { const [s, a] = x.k.split(":").map(Number); return `${names(s)} ${num(a)}`; };
-  // An example opens its verse in the Mushaf; inside a row that is itself a link (the key) it is a plain span.
-  const exHtml = (x, note = true, link = true) => `<${link ? "a" : "span"} class="tj-ex" data-p="${x.p}"${link ? ` href="#/mushaf/tajweed/${x.p}?v=${x.k}" aria-label="${esc(`${x.t} (${ref(x)})`)}"` : ""}>
-      <span class="tj-w" aria-hidden="true"><span class="tj-g" data-p="${x.p}" lang="ar" dir="rtl">${x.g.map(w => `<span>${esc(w)}</span>`).join("")}</span><span class="tj-t" lang="ar" dir="rtl">${esc(x.t)}</span></span>
-      ${note && x.n ? `<span class="tj-note">${esc(L(x.n))}</span>` : ""}<span class="tj-ref">${esc(ref(x))}</span></${link ? "a" : "span"}>`;
+  // An example opens its verse in the Mushaf and plays it; inside a row that is itself a link (the key) it is a plain span.
+  const exHtml = (x, note = true, link = true) => {
+    const body = `<span class="tj-w" aria-hidden="true"><span class="tj-g" data-p="${x.p}" lang="ar" dir="rtl">${x.g.map(w => `<span>${esc(w)}</span>`).join("")}</span><span class="tj-t" lang="ar" dir="rtl">${esc(x.t)}</span></span>
+      ${note && x.n ? `<span class="tj-note">${esc(L(x.n))}</span>` : ""}<span class="tj-ref">${esc(ref(x))}</span>`;
+    if (!link) return `<span class="tj-ex" data-p="${x.p}">${body}</span>`;
+    return `<div class="tj-ex" data-p="${x.p}"><a class="tj-ex-a" href="#/mushaf/tajweed/${x.p}?v=${x.k}" aria-label="${esc(`${x.t} (${ref(x)})`)}">${body}</a>
+      <button class="tj-play" type="button" data-k="${x.k}" aria-label="${esc(t("common.listen"))}">${icon("play")}<span>${esc(t("common.listen"))}</span></button></div>`;
+  };
+
+  // ---------- listening: the verse of an example, in Shaykh al-Husary's recitation (mp3quran.net) ----------
+  // One audio element for the page. The verse is a stretch of its surah's recording, between its start time and the
+  // next verse's (the timings the player uses). Playback begins inside the tap, as phones require, but silent; once
+  // the timing is known and the file can seek, it jumps to the verse and the sound comes on.
+  const au = new Audio(); au.preload = "none";
+  let cur = null, tok = 0, stopAt = null, timer = 0;
+  const setBtn = (b, on, loading = false) => {
+    b.classList.toggle("on", on); b.classList.toggle("loading", loading);
+    b.innerHTML = `${icon(on ? "pause" : "play")}<span>${esc(t(on ? "common.stop" : "common.listen"))}</span>`; b.setAttribute("aria-label", t(on ? "common.stop" : "common.listen"));
+  };
+  const stopClip = () => { if (!au.paused) au.pause(); };
+  const reset = () => { clearTimeout(timer); if (cur) { setBtn(cur, false); cur = null; } };
+  // Stops at the end of the verse: a timer set for the moment it ends (timeupdate alone would run into the next verse).
+  function arm() {
+    clearTimeout(timer); if (stopAt == null || au.paused) return;
+    const left = stopAt - au.currentTime;
+    if (left <= 0.03) { au.pause(); return; }
+    timer = setTimeout(arm, left * 1000 / (au.playbackRate || 1));
+  }
+  au.addEventListener("playing", arm); au.addEventListener("seeked", arm);
+  au.addEventListener("timeupdate", () => { if (stopAt != null && au.currentTime >= stopAt) au.pause(); });
+  au.addEventListener("pause", () => { if (au.paused) reset(); }); // not the pause queued before the next clip started
+  au.addEventListener("ended", reset);
+  au.addEventListener("error", () => { if (!cur || !au.getAttribute("src")) return; reset(); toast(t("listen.loadFailed")); });
+  // The app's other players stop this one, and it stops them.
+  for (const id of ["audio", "qaudio"]) document.getElementById(id)?.addEventListener("play", stopClip);
+  async function playClip(b) {
+    if (cur === b) { stopClip(); return; }
+    stopClip(); document.getElementById("audio")?.pause(); document.getElementById("qaudio")?.pause();
+    const [s, a] = b.dataset.k.split(":").map(Number);
+    const mine = ++tok; cur = b; stopAt = null; setBtn(b, false, true);
+    const fail = key => { if (mine !== tok) return; au.pause(); au.removeAttribute("src"); reset(); toast(t(key)); };
+    const ready = new Promise(r => au.addEventListener("loadedmetadata", r, { once: true }));
+    au.muted = true; au.src = Q.husary.file(s);
+    au.play().catch(() => fail("listen.playFailed"));
+    let times = null; try { times = await Q.husary.times(s, a); } catch { /* no timings */ }
+    if (mine !== tok) return;
+    if (!times) { fail("listen.loadFailed"); return; }
+    await Promise.race([ready, new Promise(r => setTimeout(r, 15000))]);
+    if (mine !== tok) return;
+    if (!(au.readyState > 0)) { fail("listen.loadFailed"); return; }
+    au.currentTime = times.start; stopAt = times.end; au.muted = false; setBtn(b, true); arm();
+  }
+  const wirePlays = root => root.querySelectorAll(".tj-play").forEach(b => { b.onclick = () => playClip(b); });
 
   const poem = m => {
     const b = DATA.books[m.b];
@@ -64,7 +113,7 @@ export function setupTajweed(ctx) {
 
   // ---------- the rules: the colour key and the chapters ----------
   async function renderIndex() {
-    setNav("quran"); setHeader(t("tajweed.title"), { back: true }); const hash = location.hash;
+    setNav("quran"); setHeader(t("tajweed.title"), { back: true }); const hash = location.hash; stopClip();
     view.innerHTML = loading();
     try { await load(); names = await Q.surahNames(); } catch (e) { if (!stale(hash)) failed(e, renderIndex); return; }
     if (stale(hash)) return;
@@ -85,7 +134,7 @@ export function setupTajweed(ctx) {
   }
 
   async function renderChapter(id) {
-    setNav("quran"); const hash = location.hash;
+    setNav("quran"); const hash = location.hash; stopClip();
     setHeader(t("tajweed.title"), { back: true }); view.innerHTML = loading();
     try { await load(); names = await Q.surahNames(); } catch (e) { if (!stale(hash)) failed(e, () => renderChapter(id)); return; }
     if (stale(hash)) return;
@@ -106,8 +155,9 @@ export function setupTajweed(ctx) {
         ${prev ? `<a class="btn ghost" href="#/tajweed/${prev.id}">${icon("back", "dir")} ${esc(L(prev.t))}</a>` : "<span></span>"}
         ${next ? `<a class="btn ghost" href="#/tajweed/${next.id}">${esc(L(next.t))} ${icon("back", "flip")}</a>` : `<a class="btn ghost" href="#/tajweed">${esc(t("tajweed.title"))}</a>`}
       </div>
-      <p class="source-note">${esc(L(DATA.source))}</p>`;
-    drawExamples(view);
+      <p class="source-note">${esc(L(DATA.source))}</p>
+      <p class="source-note">${esc(t("tajweed.audioNote"))}</p>`;
+    drawExamples(view); wirePlays(view);
   }
 
   return {

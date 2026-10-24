@@ -839,7 +839,13 @@ details.info { display: block; }
 .tj-sec ul { margin: 0 0 .5em; padding-inline-start: 1.2em; }
 .tj-exs { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 8px; margin-top: 10px; }
 .tj-ex { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 10px 8px 8px; border-radius: 14px; background: var(--paper); border: 1px solid var(--border); text-align: center; color: inherit; min-width: 0; }
-a.tj-ex:active { transform: scale(.98); }
+.tj-ex-a { display: flex; flex-direction: column; align-items: center; gap: 2px; color: inherit; min-width: 0; max-width: 100%; }
+.tj-ex-a:active { transform: scale(.98); }
+.tj-play { display: inline-flex; align-items: center; gap: 4px; margin-top: 6px; padding: 3px 10px 3px 8px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--primary); font: inherit; font-size: .76rem; font-weight: 700; line-height: 1.4; cursor: pointer; }
+.tj-play svg { width: 14px; height: 14px; }
+.tj-play.on { background: var(--primary); border-color: var(--primary); color: var(--on-primary); }
+.tj-play.loading { opacity: .6; }
+.tj-play.loading svg { animation: fade .6s ease-in-out infinite alternate; }
 .tj-w { display: flex; align-items: center; justify-content: center; min-height: 2.8rem; max-width: 100%; }
 .tj-g { display: none; gap: .3em; font-size: calc(2rem * var(--scale)); line-height: 1.3; color: var(--text); white-space: nowrap; }
 .tj-ex.ready .tj-g { display: inline-flex; }

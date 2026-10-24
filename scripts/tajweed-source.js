@@ -31,8 +31,8 @@ const COLORS = [
 const INTRO = [
   ["التجويد: تلاوة القرآن كما أُنزل، بإعطاء كل حرف حقّه من مخرجه وصفاته، ومستحقّه من الأحكام التي تنشأ عن مجاورته لغيره، كالإظهار والإدغام والمدّ.",
     "Tajwīd is reciting the Quran as it was revealed: giving every letter its due, its point of articulation and its qualities, and what it is owed by the rules that arise from the letters around it, such as clear pronunciation, merging and prolongation."],
-  ["وهذه خلاصة أحكام التلاوة برواية حفص عن عاصم من طريق الشاطبية، وهي الرواية التي طُبع بها مصحف المدينة. والأمثلة كلها من صفحات مصحف التجويد الملوّن نفسه، فاضغط على المثال لتراه في موضعه من المصحف.",
-    "This is a summary of the rules of recitation in the narration of Ḥafṣ from ʿĀṣim by way of al-Shāṭibiyyah, the narration of the Madinah Mushaf. Every example comes from the pages of the colour-coded Tajweed Mushaf itself: tap one to see it in its place."],
+  ["وهذه خلاصة أحكام التلاوة برواية حفص عن عاصم من طريق الشاطبية، وهي الرواية التي طُبع بها مصحف المدينة. والأمثلة كلها من صفحات مصحف التجويد الملوّن نفسه، فاضغط على المثال لتراه في موضعه من المصحف، أو على «استماع» لتسمع آيته بصوت الشيخ محمود خليل الحصري.",
+    "This is a summary of the rules of recitation in the narration of Ḥafṣ from ʿĀṣim by way of al-Shāṭibiyyah, the narration of the Madinah Mushaf. Every example comes from the pages of the colour-coded Tajweed Mushaf itself: tap one to see it in its place, or “Listen” to hear its verse recited by Shaykh Maḥmūd Khalīl al-Ḥuṣarī."],
 ];
 const INTRO_MATN = [["jazariyya", 27, 33]];
 const KEY_NOTE = ["ألوان مصحف التجويد كما تظهر في التطبيق، مأخوذة من خطوط المصحف نفسها. وبعض الأحكام لا لون لها فيه، كالإظهار ومدّ البدل والترقيق، وهي مشروحة في أبوابها.",
