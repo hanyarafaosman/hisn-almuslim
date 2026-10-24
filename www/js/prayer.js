@@ -1,6 +1,7 @@
 /* ===== مواقيت الصلاة والتنبيهات والأذان ===== */
 // The times are calculated on the device (js/prayer-calc.js) for a place the user picks: their GPS position (named by
-// OpenStreetMap Nominatim) or a city from Open-Meteo's geocoding search (GeoNames data, with each city's time zone).
+// OpenStreetMap Nominatim), a city from Open-Meteo's geocoding search (GeoNames data, with each city's time zone), or
+// coordinates, time zone and country typed by hand (no location permission and no connection needed).
 // Alerts: a reminder some minutes before each prayer, then at its time a notification and the adhan: a recording from
 // adhan/index.json (Wikimedia Commons and archive.org, scripts/build-adhan.js) or an audio file the user chose (kept in
 // ADHAN_CACHE).
@@ -8,7 +9,8 @@
 // in the background. When the app is closed, the server in push/ sends the same alerts by Web Push (syncPush below,
 // the push handler in sw.js); the page explains both to the user. The alerts are on unless the user turns them off:
 // on a phone, a window asks for the place and the notifications permission a moment after the app first starts.
-import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.25.0";
+import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.26.0";
+import { regionName, collator } from "./i18n.js?v=1.26.0";
 
 export const ADHAN_CACHE = "hisn-adhan-v1"; // the same name is in sw.js
 
@@ -360,8 +362,8 @@ export function setupPrayer(ctx) {
     return ((await r.json()).results || []).map(c => ({ lat: round(c.latitude), lng: round(c.longitude), name: c.name, region: [c.admin1 !== c.name ? c.admin1 : "", c.country].filter(Boolean).join(sep()), cc: c.country_code || "", tz: c.timezone || "" }));
   }
   function setLoc(loc) { state.loc = loc; save(); keepVoices(); }
-  function gps(done, btn) {
-    if (!navigator.geolocation) { toast(t("prayer.gpsFailed")); return; }
+  function gps(done, btn, onFail) {
+    if (!navigator.geolocation) { toast(t("prayer.gpsFailed")); onFail?.(); return; }
     btn?.classList.add("busy"); toast(t("prayer.locating"));
     navigator.geolocation.getCurrentPosition(async pos => {
       const lat = round(pos.coords.latitude), lng = round(pos.coords.longitude);
@@ -375,17 +377,68 @@ export function setupPrayer(ctx) {
         loc.region = a.country || ""; if (a.country_code) loc.cc = a.country_code.toUpperCase();
       } catch { /* keep "my location" */ }
       btn?.classList.remove("busy"); setLoc(loc); done();
-    }, () => { btn?.classList.remove("busy"); toast(t("prayer.gpsFailed")); }, { timeout: 20000, maximumAge: 30 * 60000 });
+    }, () => { btn?.classList.remove("busy"); toast(t("prayer.gpsFailed")); onFail?.(); }, { timeout: 20000, maximumAge: 30 * 60000 });
   }
-  // The place: GPS or a city search. The tap that picks it also asks for the notifications permission, since the
-  // alerts are on (welcome: the window that also turns them back on).
+  // ---------- the place typed by hand ----------
+  // Countries offered in the manual form (the method and Asr follow the country, see prayer-calc.js); anywhere else: "other".
+  const COUNTRIES = ["SA", "EG", "AE", "KW", "QA", "BH", "OM", "YE", "JO", "PS", "SY", "LB", "IQ", "SD", "SS", "LY", "TN", "DZ", "MA", "MR", "SO", "DJ", "KM",
+    "TR", "IR", "PK", "IN", "BD", "AF", "ID", "MY", "SG", "BN", "NG", "SN", "ML", "NE", "TD", "ET", "ER", "KE", "TZ", "UG", "ZA", "GB", "FR", "DE", "NL", "BE",
+    "ES", "IT", "SE", "NO", "DK", "AT", "CH", "US", "CA", "AU", "RU", "CN", "JP", "UZ", "KZ", "KG", "TJ", "TM", "AZ", "BA", "AL", "XK", "MK"];
+  const zoneOk = z => { try { new Intl.DateTimeFormat("en-US", { timeZone: z }); return true; } catch { return false; } };
+  // "UTC+03:00" of a time zone now (empty where the browser cannot say).
+  const zoneOffset = z => { try { return (new Intl.DateTimeFormat("en-US", { timeZone: z, timeZoneName: "longOffset" }).formatToParts(new Date()).find(p => p.type === "timeZoneName")?.value || "").replace(/^GMT$/, "UTC+00:00").replace(/^GMT/, "UTC"); } catch { return ""; } };
+  // A typed number: Arabic-Indic digits and the Arabic decimal sign are fine, so are a degree sign and N/S/E/W.
+  const numOf = s => { s = String(s || "").replace(/[٠-٩]/g, d => "٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g, d => "۰۱۲۳۴۵۶۷۸۹".indexOf(d)).replace(/٫/g, ".").replace(/[°º\s]/g, "");
+    const neg = /[SW]$/i.test(s) || /^-/.test(s); const v = parseFloat(s.replace(/[^0-9.]/g, "")); return Number.isFinite(v) ? (neg ? -Math.abs(v) : v) : NaN; };
+  function manualForm(box, done, tap) {
+    const zones = (() => { try { return Intl.supportedValuesOf("timeZone"); } catch { return []; } })();
+    const cur = state.loc?.tz || deviceZone(); if (zones.length && !zones.includes(cur)) zones.push(cur);
+    const col = collator(); const countries = COUNTRIES.map(cc => ({ cc, name: regionName(cc) })).sort((a, b) => col.compare(a.name, b.name));
+    const cc0 = state.loc?.cc || countryOfZone(cur);
+    box.innerHTML = `<form class="pk-form" id="pk-form" novalidate>
+      <p class="riwayah-note">${T("prayer.manualHint")}</p>
+      <label>${T("prayer.placeName")}<input id="pk-name" type="text" autocomplete="off" value="${state.loc?.manual ? esc(state.loc.name) : ""}" dir="auto"></label>
+      <div class="pk-two">
+        <label>${T("prayer.lat")}<input id="pk-lat" type="text" inputmode="decimal" autocomplete="off" placeholder="30.044" dir="ltr" value="${state.loc ? state.loc.lat : ""}"></label>
+        <label>${T("prayer.lng")}<input id="pk-lng" type="text" inputmode="decimal" autocomplete="off" placeholder="31.236" dir="ltr" value="${state.loc ? state.loc.lng : ""}"></label>
+      </div>
+      <p class="riwayah-note">${T("prayer.coordsHint")}</p>
+      <label>${T("prayer.timeZone")}${zones.length ? `<select id="pk-tz">${zones.map(z => `<option value="${esc(z)}" ${z === cur ? "selected" : ""}>${esc(z.replace(/_/g, " "))}${zoneOffset(z) ? ` (${zoneOffset(z)})` : ""}</option>`).join("")}</select>`
+        : `<input id="pk-tz" type="text" autocomplete="off" dir="ltr" value="${esc(cur)}" placeholder="Africa/Cairo">`}</label>
+      <label>${T("prayer.country")}<select id="pk-cc"><option value="">${T("prayer.otherCountry")}</option>${countries.map(c => `<option value="${c.cc}" ${c.cc === cc0 ? "selected" : ""}>${esc(c.name)}</option>`).join("")}</select></label>
+      <button class="btn block" type="submit">${icon("check")} ${T("prayer.showTimes")}</button>
+    </form>`;
+    const f = id => $("#" + id, box);
+    const lat = f("pk-lat"), lng = f("pk-lng"), tz = f("pk-tz"), cc = f("pk-cc"); let ccTouched = false;
+    // "30.044, 31.236" pasted as one piece fills both fields.
+    lat.addEventListener("input", () => { const m = lat.value.replace(/،/g, ",").match(/^\s*([^,\s]+)[,\s]+([^,\s]+)\s*$/); if (m) { lat.value = m[1]; lng.value = m[2]; lng.focus(); } });
+    cc.onchange = () => { ccTouched = true; };
+    tz.onchange = () => { if (!ccTouched) { const c = countryOfZone(tz.value); if (c) cc.value = c; } };
+    f("pk-form").onsubmit = e => {
+      e.preventDefault();
+      const la = numOf(lat.value), lo = numOf(lng.value), z = tz.value.trim();
+      if (!(Math.abs(la) <= 90 && Math.abs(lo) <= 180)) { toast(t("prayer.manualInvalid")); (Math.abs(la) <= 90 ? lng : lat).focus(); return; }
+      if (!zoneOk(z)) { toast(t("prayer.zoneInvalid")); tz.focus(); return; }
+      const name = f("pk-name").value.trim() || t("prayer.manualPlace");
+      tap(); setLoc({ lat: round(la), lng: round(lo), name, region: cc.value ? regionName(cc.value) : "", cc: cc.value, tz: z, manual: true }); done();
+    };
+    lat.focus();
+  }
+  // The place: GPS, a city search, or coordinates typed by hand (the form opens on a tap, or when GPS fails). The tap
+  // that picks it also asks for the notifications permission, since the alerts are on (welcome: the window that also
+  // turns them back on).
   function picker(box, done, welcome = false) {
     box.innerHTML = `<button class="btn block" id="pk-gps" type="button">${icon("pin")} ${T("prayer.useGps")}</button>
       <p class="riwayah-note">${T("prayer.gpsHint")}</p>
       <div class="searchbox small">${icon("search")}<input id="pk-q" type="search" placeholder="${T("prayer.searchCity")}" autocomplete="off" enterkeyhint="search"></div>
-      <div id="pk-res"></div>`;
+      <div id="pk-res"></div>
+      <button class="btn ghost block" id="pk-man" type="button" aria-expanded="false">${icon("plus")} ${T("prayer.manual")}</button>
+      <div id="pk-manual"></div>`;
     const tap = () => { if (welcome) { state.alerts = true; state.off = false; } if (state.alerts) askNotif(); };
-    const gb = $("#pk-gps", box); gb.onclick = () => { tap(); gps(done, gb); };
+    const mb = $("#pk-man", box), mbox = $("#pk-manual", box);
+    const openManual = () => { if (mbox.childElementCount) return; mb.setAttribute("aria-expanded", "true"); manualForm(mbox, done, tap); mbox.scrollIntoView({ behavior: "smooth", block: "nearest" }); };
+    mb.onclick = () => { if (mbox.childElementCount) { mbox.innerHTML = ""; mb.setAttribute("aria-expanded", "false"); } else openManual(); };
+    const gb = $("#pk-gps", box); gb.onclick = () => { tap(); gps(done, gb, openManual); };
     const res = $("#pk-res", box); let seq = 0, wait = null, found = [];
     res.onclick = e => { const b = e.target.closest("[data-i]"); if (b) { tap(); setLoc(found[Number(b.dataset.i)]); done(); } };
     $("#pk-q", box).oninput = e => {
