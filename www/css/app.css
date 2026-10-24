@@ -428,12 +428,12 @@ a.info { color: inherit; }
 
 /* ===== صفحات المصحف المطبوع ===== */
 .mpage-wrap { display: flex; overflow-x: auto; scrollbar-width: thin; } /* a page enlarged past the screen pans sideways */
-.mpage { position: relative; flex: none; margin-inline: auto; width: 100%; max-width: 560px; container-type: inline-size; background: var(--paper); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 4.5cqw 4cqw; touch-action: pan-x pan-y; user-select: none; }
-.mpage .mline { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; height: 9.6cqw; font-family: var(--qcf), serif; font-size: calc(5.9cqw * var(--fit, 1)); line-height: 1; color: var(--text); }
+.mpage { position: relative; flex: none; margin-inline: auto; width: 100%; max-width: 560px; container-type: inline-size; background: var(--paper); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: calc(4.5cqw * var(--lh, 1)) 4cqw; touch-action: pan-x pan-y; user-select: none; }
+.mpage .mline { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; height: calc(9.6cqw * var(--lh, 1)); font-family: var(--qcf), serif; font-size: calc(5.9cqw * var(--fit, 1)); line-height: 1; color: var(--text); }
 .mpage .mline.center { justify-content: center; gap: 1.2cqw; }
-.mpage.opening .mline { height: 11cqw; }
+.mpage.opening .mline { height: calc(11cqw * var(--lh, 1)); }
 .mpage:not(.ready) .mline:not(.mhead):not(.mbasm) { visibility: hidden; }
-.mpage .mhead { justify-content: center; border: 2px solid var(--gold); border-radius: 2.4cqw; background: color-mix(in srgb, var(--gold) 10%, transparent); height: 8cqw; margin: .8cqw 0; }
+.mpage .mhead { justify-content: center; border: 2px solid var(--gold); border-radius: 2.4cqw; background: color-mix(in srgb, var(--gold) 10%, transparent); height: 8cqw; margin: calc(.8cqw + 4.8cqw * (var(--lh, 1) - 1)) 0; } /* --lh: the lines spread out to cover a tall screen (fitPage); a heading keeps its box and takes the room in its margins */
 .mpage .mhead span { font-family: var(--font-text); font-weight: 700; font-size: 4.6cqw; color: var(--primary-2); }
 .mpage .mbasm { justify-content: center; font-family: var(--qfont), var(--font-text); font-size: 5.6cqw; }
 .mpage-msg { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 70%, transparent); border-radius: 14px; }
@@ -634,11 +634,12 @@ body.mm-on .bottom-nav { display: none; }
 body.mm-on .topbar { transform: translateY(-100%); transition: transform .22s ease; }
 body.mm-on.mm-ui .topbar { transform: none; }
 body.mm-on .view { padding: 0 10px; max-width: 1700px; }
-/* The page as large as the screen allows: by width on phones, by height on wide or short screens. The reader may
+/* The page as large as the screen allows: by width on phones, by height on wide or short screens (--mfit, measured by
+   fitPage in quran.js from the page's real height and the room left by the margins; the CSS estimate is used until then). The reader may
    enlarge it (--mz, from the size tool, Ctrl + wheel or a pinch): the page then grows past the screen and scrolls or pans. */
-.mm { --mz: 1; --mmw: calc(var(--mz) * min(100%, 560px, (100dvh - var(--sat) - var(--sab) - 84px) / 1.56)); min-height: calc(100dvh - var(--sat) - var(--sab)); display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 6px 0; }
+.mm { --mz: 1; --mmw: calc(var(--mz) * var(--mfit, min(100%, (100dvh - var(--sat) - var(--sab) - 84px) / 1.56))); min-height: calc(100dvh - var(--sat) - var(--sab)); display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 6px 0; }
 .mm .mpage { width: var(--mmw); max-width: none; }
-body.has-player .mm { --mmw: calc(var(--mz) * min(100%, 560px, (100dvh - var(--sat) - var(--sab) - 146px) / 1.56)); min-height: calc(100dvh - var(--sat) - var(--sab) - 62px); } /* room for the player */
+body.has-player .mm { --mmw: calc(var(--mz) * var(--mfit, min(100%, (100dvh - var(--sat) - var(--sab) - 146px) / 1.56))); min-height: calc(100dvh - var(--sat) - var(--sab) - 62px); } /* room for the player */
 .mm-margin { display: flex; justify-content: space-between; gap: 12px; width: min(100%, var(--mmw)); margin: 0 auto; padding: 0 8px; font-size: .78rem; font-weight: 600; color: var(--muted); }
 .mm-margin span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mm-margin.foot { justify-content: center; }

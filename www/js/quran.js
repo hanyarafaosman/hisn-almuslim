@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.29.0";
-import { mirrorOf } from "./mirror.js?v=1.29.0";
+import * as off from "./offline.js?v=1.30.0";
+import { mirrorOf } from "./mirror.js?v=1.30.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -883,7 +883,8 @@ export function setupQuran(ctx) {
   // The bars of the printed pages: the app top bar and the tools below the page (body.mm-ui, see renderPages).
   let mmVisit = false, uiTimer = null;
   function setUi(on) { clearTimeout(uiTimer); document.body.classList.toggle("mm-ui", on); }
-  function keepUi() { clearTimeout(uiTimer); }
+  function holdUi() { clearTimeout(uiTimer); } // while a bar is being used (a slider dragged)
+  function keepUi() { clearTimeout(uiTimer); uiTimer = setTimeout(() => setUi(false), 3500); } // the bars leave by themselves after the last use
   window.addEventListener("hashchange", () => { if (!location.hash.startsWith("#/mushaf/")) { mmVisit = false; setUi(false); } });
 
   let pageClick = null;
@@ -951,6 +952,29 @@ export function setupQuran(ctx) {
       </div>`;
     $("#m-prev").onclick = () => goPage(ed, n - 1); $("#m-next").onclick = () => goPage(ed, n + 1);
     const page = $("#mpage"), mm = $("#mm"); mm.style.setProperty("--mz", state.mz);
+    // At 100% the page is as large as the screen allows without scrolling: its width is measured from the page's own
+    // height-to-width ratio (fixed by its lines) and the room the box leaves after the margins above and below it.
+    // Measured again when the window or the player changes.
+    const fitPage = () => {
+      mm.style.setProperty("--lh", 1);
+      const cs = getComputedStyle(mm); const box = parseFloat(cs.minHeight) || innerHeight;
+      const others = [...mm.children].filter(x => x !== page.parentElement).reduce((h, x) => h + x.offsetHeight, 0);
+      const room = box - others - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - parseFloat(cs.rowGap) * (mm.children.length - 1);
+      // The ratio drifts by a few pixels with the width (borders, rounded line heights): measure again at the new size.
+      let w = 0;
+      for (let i = 0; i < 3; i++) {
+        const r = page.offsetHeight / page.offsetWidth; if (!(r > 0) || !(room > 0)) return;
+        w = Math.max(240, Math.min(mm.clientWidth, Math.floor(room / r))); mm.style.setProperty("--mfit", w + "px");
+        if (page.offsetHeight / state.mz <= room + 0.5) break;
+      }
+      // On a tall screen (a phone held upright) the page is as wide as the screen and shorter than it: its lines spread
+      // out so that it covers the screen, up to 1.7 times their printed spacing (the 2px border does not scale).
+      const h = page.offsetHeight / state.mz, spare = room - h;
+      if (w >= mm.clientWidth && spare > 2) mm.style.setProperty("--lh", Math.min(1.7, 1 + spare / (h - 2)).toFixed(3));
+    };
+    fitPage();
+    const onResize = () => { if (stale(hash) || !document.body.contains(mm)) return removeEventListener("resize", onResize); fitPage(); };
+    addEventListener("resize", onResize);
     const paintMarks = () => { const on = new Set(marksHere().map(m => m.s + ":" + m.a)); runs.forEach(([s, a], i) => page.querySelectorAll(`span[data-v="${i}"]`).forEach(x => x.classList.toggle("bm", on.has(s + ":" + a)))); };
     const refreshBm = () => { $("#m-bm-wrap").innerHTML = bmBtn(); $("#m-bm").onclick = toggleBm; paintMarks(); };
     // The page bookmark is a bookmark on its first verse; removing it removes every bookmark on the page.
@@ -1023,7 +1047,7 @@ export function setupQuran(ctx) {
     // The tools below the page: listen from this page (or pause), the reciter, night or day reading, the print.
     const listenBtn = $("#m-listen");
     const showListen = now => { const on = !!now && !now.paused; listenBtn.innerHTML = `${icon(on ? "pause" : "play")}<span>${esc(t(on ? "common.pause" : "common.listen"))}</span>`; };
-    const unlisten = player.listen(now => { if (stale(hash) || !document.body.contains(listenBtn)) return unlisten(); showListen(now); });
+    const unlisten = player.listen(now => { if (stale(hash) || !document.body.contains(listenBtn)) return unlisten(); showListen(now); fitPage(); }); // the player takes room from the page
     showListen(player.now());
     $("#mbar .mtools").onclick = e => {
       const tool = e.target.closest("[data-tool]")?.dataset.tool; if (!tool) return;
@@ -1072,11 +1096,11 @@ export function setupQuran(ctx) {
       };
     };
 
-    // The bars: shown when the Mushaf is opened from elsewhere (and hidden again after a few seconds), shown or hidden by
-    // a tap on the page, hidden when a page is turned by swiping. A long press (or a right click) on a verse opens its
-    // tools (tafsir, bookmark, copy, share, listen, verse by verse).
-    if (!mmVisit) { mmVisit = true; setUi(true); uiTimer = setTimeout(() => setUi(false), 4000); }
-    $("#mbar").onpointerdown = keepUi; document.querySelector(".topbar").onpointerdown = keepUi;
+    // The bars: shown when the Mushaf is opened from elsewhere, shown or hidden by a tap on the page, hidden when a page
+    // is turned by swiping, and gone by themselves a few seconds after they were last used, so the page has the whole
+    // screen. A long press (or a right click) on a verse opens its tools (tafsir, bookmark, copy, share, listen, verse by verse).
+    if (!mmVisit) { mmVisit = true; setUi(true); keepUi(); }
+    for (const bar of [$("#mbar"), document.querySelector(".topbar")]) { bar.onpointerdown = holdUi; bar.onpointerup = keepUi; bar.onkeyup = keepUi; }
     if (pageClick) document.removeEventListener("click", pageClick); // the page may be drawn again at the same address
     const onDoc = pageClick = e => {
       if (stale(hash)) { if (pageClick === onDoc) pageClick = null; return document.removeEventListener("click", onDoc); }
