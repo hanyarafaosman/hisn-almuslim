@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.28.0";
-import { mirrorOf } from "./mirror.js?v=1.28.0";
+import * as off from "./offline.js?v=1.29.0";
+import { mirrorOf } from "./mirror.js?v=1.29.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -951,6 +951,23 @@ export function setupQuran(ctx) {
       </div>`;
     $("#m-prev").onclick = () => goPage(ed, n - 1); $("#m-next").onclick = () => goPage(ed, n + 1);
     const page = $("#mpage"), mm = $("#mm"); mm.style.setProperty("--mz", state.mz);
+    // At 100% the page is as large as the screen allows without scrolling: its width is measured from the page's own
+    // height-to-width ratio (fixed by its lines) and the room the box leaves after the margins above and below it.
+    // Measured again when the window or the player changes.
+    const fitPage = () => {
+      const cs = getComputedStyle(mm); const box = parseFloat(cs.minHeight) || innerHeight;
+      const others = [...mm.children].filter(x => x !== page.parentElement).reduce((h, x) => h + x.offsetHeight, 0);
+      const room = box - others - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom) - parseFloat(cs.rowGap) * (mm.children.length - 1);
+      // The ratio drifts by a few pixels with the width (borders, rounded line heights): measure again at the new size.
+      for (let i = 0; i < 3; i++) {
+        const r = page.offsetHeight / page.offsetWidth; if (!(r > 0) || !(room > 0)) return;
+        mm.style.setProperty("--mfit", Math.max(240, Math.min(mm.clientWidth, Math.floor(room / r))) + "px");
+        if (page.offsetHeight / state.mz <= room + 0.5) break;
+      }
+    };
+    fitPage();
+    const onResize = () => { if (stale(hash) || !document.body.contains(mm)) return removeEventListener("resize", onResize); fitPage(); };
+    addEventListener("resize", onResize);
     const paintMarks = () => { const on = new Set(marksHere().map(m => m.s + ":" + m.a)); runs.forEach(([s, a], i) => page.querySelectorAll(`span[data-v="${i}"]`).forEach(x => x.classList.toggle("bm", on.has(s + ":" + a)))); };
     const refreshBm = () => { $("#m-bm-wrap").innerHTML = bmBtn(); $("#m-bm").onclick = toggleBm; paintMarks(); };
     // The page bookmark is a bookmark on its first verse; removing it removes every bookmark on the page.
@@ -1023,7 +1040,7 @@ export function setupQuran(ctx) {
     // The tools below the page: listen from this page (or pause), the reciter, night or day reading, the print.
     const listenBtn = $("#m-listen");
     const showListen = now => { const on = !!now && !now.paused; listenBtn.innerHTML = `${icon(on ? "pause" : "play")}<span>${esc(t(on ? "common.pause" : "common.listen"))}</span>`; };
-    const unlisten = player.listen(now => { if (stale(hash) || !document.body.contains(listenBtn)) return unlisten(); showListen(now); });
+    const unlisten = player.listen(now => { if (stale(hash) || !document.body.contains(listenBtn)) return unlisten(); showListen(now); fitPage(); }); // the player takes room from the page
     showListen(player.now());
     $("#mbar .mtools").onclick = e => {
       const tool = e.target.closest("[data-tool]")?.dataset.tool; if (!tool) return;
