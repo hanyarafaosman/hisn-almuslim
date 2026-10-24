@@ -1,5 +1,5 @@
 {
- "source": "Wikimedia Commons, archive.org",
+ "source": "Wikimedia Commons, archive.org, islamweb.net",
  "voices": [
   {
    "id": "madinah",
@@ -58,12 +58,12 @@
   {
    "id": "basit",
    "group": "egypt",
-   "file": "adhan/basit.5d522b31d9.aac",
-   "bytes": 2469860,
-   "seconds": 205.8,
-   "short": 20.5,
-   "by": "archive.org",
-   "url": "https://archive.org/details/enregistrement_abdelbasset"
+   "file": "adhan/basit.d5b465e9d9.aac",
+   "bytes": 2404658,
+   "seconds": 200.37,
+   "short": 26.5,
+   "by": "islamweb.net",
+   "url": "https://www.islamweb.net/ar/"
   },
   {
    "id": "refaat",

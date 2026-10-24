@@ -246,7 +246,7 @@ const S = {
   "prayer.customChange": ["اضغط لاختيار ملف آخر", "Tap to choose another file"],
   "prayer.customSaved": ["حُفِظ ملف الأذان على جهازك", "The adhan file was saved on your device"],
   "prayer.fileTooBig": ["الملف أكبر من {n} ميغابايت", "The file is larger than {n} MB"],
-  "prayer.voicesSource": ["مصادر التسجيلات (أصوات المشايخ والحرمين من archive.org، وحقوقها لأصحابها):", "Sources of the recordings (the voices of the sheikhs and of the Two Holy Mosques are from archive.org; their rights belong to their holders):"],
+  "prayer.voicesSource": ["مصادر التسجيلات (أصوات المشايخ والحرمين من archive.org وislamweb.net، وحقوقها لأصحابها):", "Sources of the recordings (the voices of the sheikhs and of the Two Holy Mosques are from archive.org and islamweb.net; their rights belong to their holders):"],
   "prayer.length": ["مدة الأذان", "Adhan length"],
   "prayer.lengthCustom": ["مع ملفك: أول {n} ثانية", "With your file: the first {n} seconds"],
   "prayer.full": ["كاملًا", "Full"],
@@ -462,7 +462,7 @@ const S = {
   "about.kutubText": ["كتب العقيدة والحديث والفقه وأصوله والسيرة والسلوك كاملة كما طُبعت، عن نسخ {link} الموافقة للمطبوع، مع اسم المحقق والناشر لكل كتاب.", "Books of creed, hadith, fiqh and its principles, the Prophet's life and the spiritual path, complete and as printed, from the {link} copies that follow the printed editions; each book names its editor and publisher."],
   "about.prayerTitle": ["مواقيت الصلاة", "Prayer times"],
   "about.prayerText": ["تُحسب على الجهاز بطرق الجهات المعتمدة في كل بلد. البحث عن المدن من {geo}، وأسماء الأماكن من {osm}، وتنبيهات التطبيق المغلق يرسلها خادم التطبيق على {cf}.", "Calculated on the device with the methods of each country's authorities. City search by {geo}; place names from {osm}; alerts while the app is closed are sent by the app's server on {cf}."],
-  "about.adhanText": ["تسجيلات الأذان من ويكيميديا كومنز برخص حرة، وأصوات المشايخ والحرمين من أرشيف الإنترنت (archive.org)، وحقوق هذه لأصحابها وتُحذف إن طلبوا ذلك. اقتُطع من كل تسجيل الأذان وحده وأُعيد ترميزه:", "Adhan recordings from Wikimedia Commons under free licences, and from the Internet Archive (archive.org) for the voices of the sheikhs and of the Two Holy Mosques, whose rights belong to their holders and which are removed at their request. Each was cut to the adhan alone and re-encoded:"],
+  "about.adhanText": ["تسجيلات الأذان من ويكيميديا كومنز برخص حرة، وأصوات المشايخ والحرمين من أرشيف الإنترنت (archive.org) والشبكة الإسلامية (islamweb.net)، وحقوق هذه لأصحابها وتُحذف إن طلبوا ذلك. اقتُطع من كل تسجيل الأذان وحده وأُعيد ترميزه:", "Adhan recordings from Wikimedia Commons under free licences, and from the Internet Archive (archive.org) and IslamWeb (islamweb.net) for the voices of the sheikhs and of the Two Holy Mosques, whose rights belong to their holders and which are removed at their request. Each was cut to the adhan alone and re-encoded:"],
   "about.version": ["الإصدار {v}", "Version {v}"],
   "kfgqpc.name": ["مجمع الملك فهد لطباعة المصحف الشريف", "King Fahd Glorious Quran Printing Complex"],
 
