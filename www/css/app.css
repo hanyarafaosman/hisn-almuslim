@@ -428,12 +428,12 @@ a.info { color: inherit; }
 
 /* ===== صفحات المصحف المطبوع ===== */
 .mpage-wrap { display: flex; overflow-x: auto; scrollbar-width: thin; } /* a page enlarged past the screen pans sideways */
-.mpage { position: relative; flex: none; margin-inline: auto; width: 100%; max-width: 560px; container-type: inline-size; background: var(--paper); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: 4.5cqw 4cqw; touch-action: pan-x pan-y; user-select: none; }
-.mpage .mline { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; height: 9.6cqw; font-family: var(--qcf), serif; font-size: calc(5.9cqw * var(--fit, 1)); line-height: 1; color: var(--text); }
+.mpage { position: relative; flex: none; margin-inline: auto; width: 100%; max-width: 560px; container-type: inline-size; background: var(--paper); border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); padding: calc(4.5cqw * var(--lh, 1)) 4cqw; touch-action: pan-x pan-y; user-select: none; }
+.mpage .mline { display: flex; justify-content: space-between; align-items: center; white-space: nowrap; height: calc(9.6cqw * var(--lh, 1)); font-family: var(--qcf), serif; font-size: calc(5.9cqw * var(--fit, 1)); line-height: 1; color: var(--text); }
 .mpage .mline.center { justify-content: center; gap: 1.2cqw; }
-.mpage.opening .mline { height: 11cqw; }
+.mpage.opening .mline { height: calc(11cqw * var(--lh, 1)); }
 .mpage:not(.ready) .mline:not(.mhead):not(.mbasm) { visibility: hidden; }
-.mpage .mhead { justify-content: center; border: 2px solid var(--gold); border-radius: 2.4cqw; background: color-mix(in srgb, var(--gold) 10%, transparent); height: 8cqw; margin: .8cqw 0; }
+.mpage .mhead { justify-content: center; border: 2px solid var(--gold); border-radius: 2.4cqw; background: color-mix(in srgb, var(--gold) 10%, transparent); height: 8cqw; margin: calc(.8cqw + 4.8cqw * (var(--lh, 1) - 1)) 0; } /* --lh: the lines spread out to cover a tall screen (fitPage); a heading keeps its box and takes the room in its margins */
 .mpage .mhead span { font-family: var(--font-text); font-weight: 700; font-size: 4.6cqw; color: var(--primary-2); }
 .mpage .mbasm { justify-content: center; font-family: var(--qfont), var(--font-text); font-size: 5.6cqw; }
 .mpage-msg { position: absolute; inset: 0; display: grid; place-items: center; background: color-mix(in srgb, var(--paper) 70%, transparent); border-radius: 14px; }
