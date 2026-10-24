@@ -865,3 +865,12 @@ a.tj-ex:active { transform: scale(.98); }
 .tj-nav .btn { height: auto; min-height: 44px; padding-block: 8px; text-align: center; line-height: 1.4; }
 .tj-nav .btn svg { flex: none; }
 .mtools.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+/* ---------- الباحث الفقهي (#/faqih) ---------- */
+.fq-form { display: grid; gap: 10px; margin: 12px 0 10px; }
+.fq-form .btn svg { width: 20px; height: 20px; }
+.fq-examples { margin-bottom: 8px; }
+.fq-examples .chip { font-family: var(--font-text); font-weight: 400; font-size: .95rem; }
+.fq-q { font-family: var(--font-text); font-weight: 400; font-size: 1.05rem; line-height: 1.7; }
+.fq-scholars { margin: 10px 4px 0; color: var(--muted); font-size: .85rem; }
+.fq-scholars a { color: var(--primary); font-weight: 700; }
+.empty .fq-scholars { margin-top: 14px; }
