@@ -1,16 +1,18 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.24.0";
-import { setupHadith } from "./hadith.js?v=1.24.0";
-import { setupTafsir } from "./tafsir.js?v=1.24.0";
-import { setupAsma } from "./asma.js?v=1.24.0";
-import { setupKutub } from "./kutub.js?v=1.24.0";
-import { setupPrayer } from "./prayer.js?v=1.24.0";
-import { setupVideos } from "./videos.js?v=1.24.0";
-import { setupInstall } from "./install.js?v=1.24.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.24.0";
-import { mirrorOf } from "./mirror.js?v=1.24.0";
+import { setupQuran } from "./quran.js?v=1.27.0";
+import { setupHadith } from "./hadith.js?v=1.27.0";
+import { setupTafsir } from "./tafsir.js?v=1.27.0";
+import { setupAsma } from "./asma.js?v=1.27.0";
+import { setupKutub } from "./kutub.js?v=1.27.0";
+import { setupFaqih } from "./faqih.js?v=1.27.0";
+import { setupPrayer } from "./prayer.js?v=1.27.0";
+import { setupVideos } from "./videos.js?v=1.27.0";
+import { setupInstall } from "./install.js?v=1.27.0";
+import { setupTajweed } from "./tajweed.js?v=1.27.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.27.0";
+import { mirrorOf } from "./mirror.js?v=1.27.0";
 
-const VERSION = "1.24.0";
+const VERSION = "1.27.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -172,7 +174,7 @@ const catUrl = (cat, item) => `${SITE}adhkar/${cat.id === 27 ? currentPeriod() :
 const Q = setupQuran({
   view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, LS, copyText, share, SITE,
   adhkarAudio: () => ({ items: DB.categories.flatMap(c => c.items.map(i => i.audio)).filter(Boolean), chapters: DB.categories.map(c => c.audio).filter(Boolean) }),
-  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hadith: () => H, tafsir: () => TF,
+  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hadith: () => H, tafsir: () => TF, tajweed: () => TJ,
   // Night/day reading from the Quran pages: switches the app theme (as in Settings) and says whether it is now dark.
   toggleTheme() { settings.theme = isDark() ? "light" : "dark"; saveSettings(); applyTheme(); return settings.theme === "dark"; },
 });
@@ -186,6 +188,11 @@ const TF = setupTafsir({
   view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel, Q,
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
+// ---------- the rules of Tajweed, with examples and the colour key of the Tajweed Mushaf ----------
+const TJ = setupTajweed({
+  view, $, esc, icon, t, num, sep, getLang, LS, Q, sheet: (...a) => Q.sheet(...a),
+  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
+});
 // ---------- the Beautiful Names of Allah ----------
 const AS = setupAsma({
   view, $, esc, icon, t, num, sep, getLang, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel,
@@ -196,6 +203,8 @@ const KT = setupKutub({
   view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel, Q,
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
+// ---------- fiqh research: what the books of the library say about a question, with verified quotations ----------
+const FQ = setupFaqih({ view, $, esc, icon, toast, t, num, sep, getLang, LS, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n) });
 // ---------- prayer times, reminders and the adhan ----------
 const PR = setupPrayer({
   view, $, esc, icon, toast, t, num, sep, getLang, LS, share, SITE, sheet: (...a) => Q.sheet(...a), closeSheet: () => Q.closeSheet(),
@@ -268,8 +277,10 @@ function route() {
     case "adhkar": return renderHome(params.get("q") || "");
     case "hadith": return H.render(parts.slice(1), params);
     case "tafsir": return TF.render(parts.slice(1), params);
+    case "tajweed": return TJ.render(parts.slice(1));
     case "asma": return AS.render(parts.slice(1));
     case "kutub": return KT.render(parts.slice(1), params);
+    case "faqih": return FQ.render(parts.slice(1), params);
     case "prayer": return PR.render(parts.slice(1), params);
     case "more": return renderMore();
     // Unknown address (for example a link to a newer version's page): show Home but keep the address,
@@ -303,12 +314,15 @@ function adhkarSearch(query, limit = 60) {
 
 // ---------- Home: a hub for every part of the app ----------
 const HUB_TILES = [
+  { href: "#/prayer", icon: "prayer", label: () => t("prayer.title") },
   { href: "#/adhkar", icon: "sun", label: () => t("nav.adhkar") },
   { href: "#/quran", icon: "quran", label: () => t("nav.quran") },
   { href: "#/hadith", icon: "books", label: () => t("hadith.books") },
   { href: "#/tafsir", icon: "tafsir", label: () => t("tafsir.books") },
+  { href: "#/tajweed", icon: "palette", label: () => t("tajweed.title") },
   { href: "#/asma", icon: "asma", label: () => t("asma.title") },
   { href: "#/kutub", icon: "kutub", label: () => t("kutub.title") },
+  { href: "#/faqih", icon: "fiqh", label: () => t("faqih.title") },
   { href: "#/listen", icon: "headphones", label: () => t("listen.recitations") },
   { href: "#/radio", icon: "radio", label: () => t("listen.radios") },
   { href: "#/videos", icon: "video", label: () => t("videos.title") },
@@ -365,7 +379,7 @@ function renderHub(q = "") {
 function renderMore() {
   setNav("more"); setHeader(t("nav.more"));
   const rows = [
-    ["#/prayer", "prayer", t("prayer.title")], ["#/tafsir", "tafsir", t("tafsir.books")], ["#/asma", "asma", t("asma.title")], ["#/kutub", "kutub", t("kutub.title")],
+    ["#/prayer", "prayer", t("prayer.title")], ["#/tafsir", "tafsir", t("tafsir.books")], ["#/tajweed", "palette", t("tajweed.title")], ["#/asma", "asma", t("asma.title")], ["#/kutub", "kutub", t("kutub.title")], ["#/faqih", "fiqh", t("faqih.title")],
     ["#/listen", "headphones", t("listen.recitations")], ["#/radio", "radio", t("listen.radios")], ["#/videos", "video", t("videos.title")], ["#/tasbih", "beads", t("nav.tasbih")],
     ["#/fav", "star", t("common.favorites")], ["#/extras", "book", t("extra.section")], ["#/offline", "download", t("offline.title")], ["#/settings", "settings", t("nav.settings")],
   ];
@@ -689,6 +703,8 @@ function renderSettings() {
         <b>${T("about.trTitle")}</b><br>${th("about.trText", {}, { link: link("https://quranenc.com", "QuranEnc.com") }, esc)}
       </div><div class="about">
         <b>${T("about.tafsirTitle")}</b><br>${th("about.tafsirText", {}, { qe: link("https://quranenc.com", "QuranEnc.com"), qul: link("https://qul.tarteel.ai", "QUL") }, esc)}
+      </div><div class="about">
+        <b>${T("about.tajweedTitle")}</b><br>${th("about.tajweedText", {}, { link: link("https://app.turath.io", "turath.io") }, esc)}
       </div><div class="about">
         <b>${T("about.asmaTitle")}</b><br>${th("about.asmaText", {}, { link: link("https://app.turath.io/book/96493", "turath.io") }, esc)}
       </div><div class="about">

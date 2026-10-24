@@ -762,6 +762,14 @@ details.info { display: block; }
 .pr-how p { margin: 8px 0 0; color: var(--muted); }
 .pr-setup { padding: 14px; }
 .pr-setup > * + * { margin-top: 10px; }
+/* The place typed by hand (prayer.js manualForm) */
+.pk-form { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.pk-form label { display: block; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.pk-form input, .pk-form select { display: block; width: 100%; max-width: none; height: 42px; margin-top: 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); padding-inline: 10px; font: inherit; color: inherit; outline: none; }
+.pk-form input:focus, .pk-form select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent); }
+.pk-form .pk-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pk-form .riwayah-note { margin: 0; }
+.pk-form .btn { margin-top: 2px; }
 .pr-welcome > * + *, #pr-w-pick > * + * { margin-top: 10px; }
 .pr-welcome > p:first-child { margin: 0; line-height: 1.7; }
 .pr-w-on { display: flex; align-items: center; gap: 8px; margin-bottom: 0; color: var(--primary); font-weight: 700; }
@@ -811,3 +819,58 @@ details.info { display: block; }
 .install .in-steps li { display: flex; align-items: flex-start; gap: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 12px 14px; line-height: 1.7; }
 .install .in-steps .n { width: 28px; height: 28px; border-radius: 50%; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; font-weight: 700; flex: none; }
 .install .in-ic { width: 22px; height: 22px; vertical-align: -5px; color: #0a84ff; margin-inline: 2px; }
+
+/* ===== أحكام التجويد ===== */
+.tj-sw { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--l); box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 18%, transparent); flex: none; }
+:root[data-theme="dark"] .tj-sw { background: var(--d); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tj-sw { background: var(--d); } }
+.tj-sws { display: flex; gap: 4px; margin-top: 5px; }
+.tj-text, .tj-sec { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 16px; }
+.tj-text p, .tj-sec p, .tj-sec li { font-family: var(--font-text); font-size: calc(1.1rem * var(--scale)); line-height: 1.95; margin: 0 0 .5em; }
+.tj-text p:last-child, .tj-sec > :last-child { margin-bottom: 0; }
+.tj-text .q, .tj-sec .q { color: var(--primary-2); font-weight: 700; }
+:root[data-theme="dark"] .tj-text .q, :root[data-theme="dark"] .tj-sec .q, :root[data-theme="dark"] .tj-title, :root[data-theme="dark"] .tj-sec h3 { color: var(--primary); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .tj-text .q, :root:not([data-theme="light"]) .tj-sec .q, :root:not([data-theme="light"]) .tj-title, :root:not([data-theme="light"]) .tj-sec h3 { color: var(--primary); } }
+.tj-title { font-family: var(--font-text); font-size: 1.35rem; line-height: 1.6; color: var(--primary-2); margin: 2px 4px 10px; }
+.tj-sec { margin-top: 12px; }
+.tj-sec h3 { display: flex; align-items: center; gap: 5px; margin: 0 0 6px; font-size: 1.05rem; line-height: 1.5; color: var(--primary-2); }
+.tj-sec h3 span { margin-inline-start: 4px; }
+.tj-sec ul { margin: 0 0 .5em; padding-inline-start: 1.2em; }
+.tj-exs { display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr)); gap: 8px; margin-top: 10px; }
+.tj-ex { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; padding: 10px 8px 8px; border-radius: 14px; background: var(--paper); border: 1px solid var(--border); text-align: center; color: inherit; min-width: 0; }
+a.tj-ex:active { transform: scale(.98); }
+.tj-w { display: flex; align-items: center; justify-content: center; min-height: 2.8rem; max-width: 100%; }
+.tj-g { display: none; gap: .3em; font-size: calc(2rem * var(--scale)); line-height: 1.3; color: var(--text); white-space: nowrap; }
+.tj-ex.ready .tj-g { display: inline-flex; }
+.tj-ex.ready .tj-t { display: none; }
+.tj-t { font-family: var(--font-text); font-size: calc(1.45rem * var(--scale)); line-height: 1.7; }
+.tj-note { font-size: .8rem; font-weight: 600; line-height: 1.5; }
+.tj-ref { color: var(--muted); font-size: .74rem; }
+.tj-keys .tj-key { display: flex; align-items: center; gap: 12px; padding: 10px 14px; border-bottom: 1px solid var(--border); color: inherit; }
+.tj-keys .tj-key:last-child { border-bottom: 0; }
+.tj-keys .tj-key .tj-sw { width: 22px; height: 22px; }
+.tj-keys .tj-ex { flex: none; width: 92px; padding: 6px 4px 4px; }
+.tj-keys .tj-g { font-size: calc(1.65rem * var(--scale)); }
+.tj-keys .tj-t { font-size: 1.2rem; }
+.tj-matn { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); margin-top: 12px; overflow: hidden; }
+.tj-matn summary { cursor: pointer; padding: 12px 16px; font-weight: 700; color: var(--primary); display: flex; align-items: center; gap: 8px; }
+.tj-matn summary svg { width: 20px; height: 20px; flex: none; }
+.tj-poem { padding: 0 14px 4px; font-family: var(--font-text); font-size: calc(1.08rem * var(--scale)); line-height: 2; }
+.tj-poem .bt { display: grid; grid-template-columns: 2.2em 1fr 1fr; gap: 0 12px; padding: 3px 0; border-top: 1px dashed var(--border); }
+.tj-poem .bt span:nth-child(3) { text-align: end; }
+.tj-poem .n { color: var(--muted); font-family: var(--font-ui); font-size: .72em; align-self: center; }
+@media (max-width: 560px) { .tj-poem .bt { grid-template-columns: 2.2em 1fr; } .tj-poem .bt span:nth-child(3) { grid-column: 2; } }
+.tj-matn .source-note { margin: 2px 0 12px; }
+.tj-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; }
+.tj-nav .btn { height: auto; min-height: 44px; padding-block: 8px; text-align: center; line-height: 1.4; }
+.tj-nav .btn svg { flex: none; }
+.mtools.five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+/* ---------- الباحث الفقهي (#/faqih) ---------- */
+.fq-form { display: grid; gap: 10px; margin: 12px 0 10px; }
+.fq-form .btn svg { width: 20px; height: 20px; }
+.fq-examples { margin-bottom: 8px; }
+.fq-examples .chip { font-family: var(--font-text); font-weight: 400; font-size: .95rem; }
+.fq-q { font-family: var(--font-text); font-weight: 400; font-size: 1.05rem; line-height: 1.7; }
+.fq-scholars { margin: 10px 4px 0; color: var(--muted); font-size: .85rem; }
+.fq-scholars a { color: var(--primary); font-weight: 700; }
+.empty .fq-scholars { margin-top: 14px; }

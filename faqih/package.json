@@ -1,0 +1,22 @@
+{
+  "name": "hisn-faqih",
+  "private": true,
+  "description": "حصن ونور: الباحث الفقهي, questions answered from the books of www/kutub with verified quotations (Cloudflare Worker + Vectorize + Workers AI)",
+  "type": "module",
+  "scripts": {
+    "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON test.js",
+    "dev": "wrangler dev",
+    "db:local": "wrangler d1 migrations apply hisn-faqih --local",
+    "db:remote": "wrangler d1 migrations apply hisn-faqih --remote",
+    "index:create": "wrangler vectorize create faqih-v1 --dimensions=1024 --metric=cosine && wrangler vectorize create-metadata-index faqih-v1 --property-name=b --type=string",
+    "deploy": "wrangler deploy",
+    "logs": "wrangler tail"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.52.0"
+  },
+  "devDependencies": {
+    "wrangler": "4.146.0"
+  },
+  "license": "MIT"
+}

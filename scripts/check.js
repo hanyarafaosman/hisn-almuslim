@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "data/lessons.json", "data/videos.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/faqih.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -68,6 +68,34 @@ const pagesJson = readJson("mushaf/madinah.json"), ayatJson = readJson("mushaf/a
   if (jl.count !== 2704 || jl.pages.length !== 604) fail(`mushaf/jalala.json: ${jl.count} words on ${jl.pages.length} pages`);
   jl.pages.forEach((idx, i) => { const glyphs = pagesJson.pages[i].filter(x => x.w1).reduce((n, x) => n + x.w1.split(" ").length, 0); if (idx.some((g, j) => !(g >= 0 && g < glyphs) || (j && g <= idx[j - 1]))) fail(`mushaf/jalala.json page ${i + 1}: glyph index outside the page or out of order`); });
   if (!/{n}/.test(tj.fonts?.v4?.url || "") || !(tj.fonts.v4.bytes > 0)) fail("mushaf/tajweed.json: v4 font url with {n} and size required");
+}
+
+// The Tajweed rules page (data/tajweed.json, scripts/build-tajweed.js): every example's glyphs follow each other on its
+// printed page, every colour in the text is one of the key, every poem quote has its verses, every text is [Arabic, English].
+const tjr = readJson("data/tajweed.json");
+{
+  const pair = (x, where) => { if (!Array.isArray(x) || x.length !== 2 || x.some(v => typeof v !== "string" || !v.trim())) fail(`data/tajweed.json ${where}: text must be [Arabic, English]`); };
+  const codes = new Set(tjr.colors.map(c => c.c));
+  const checkEx = (x, where) => {
+    const tokens = (pagesJson.pages[x.p - 1] || []).filter(l => l.w2).flatMap(l => l.w2.split(" ")), g = x.g.flatMap(c => c.split(" "));
+    if (!/^\d+:\d+$/.test(x.k) || !x.t || !tokens.some((_, i) => g.every((c, j) => tokens[i + j] === c))) fail(`data/tajweed.json ${where} ${x.k}: glyphs not on page ${x.p}`);
+    if (x.n) pair(x.n, `${where} ${x.k}`);
+  };
+  const checkMatn = (m, where) => { if (!tjr.books[m.b] || m.v.length !== m.to - m.from + 1 || m.v.some(v => v.length !== 2)) fail(`data/tajweed.json ${where}: verses ${m.b} ${m.from}–${m.to} incomplete`); };
+  if (tjr.colors.length !== 8 || tjr.colors.some(c => !/^#[0-9a-f]{6}$/.test(c.light) || !/^#[0-9a-f]{6}$/.test(c.dark) || !tjr.chapters.some(ch => ch.id === c.rule))) fail("data/tajweed.json: the key needs 8 colours, each with its day and night colour and chapter");
+  tjr.colors.forEach(c => { pair(c.t, "colour " + c.c); pair(c.sub, "colour " + c.c); checkEx(c.ex, "colour " + c.c); });
+  [...tjr.intro, tjr.keyNote, tjr.source].forEach((x, i) => pair(x, "intro " + i));
+  tjr.introMatn.forEach(m => checkMatn(m, "intro"));
+  if (new Set(tjr.chapters.map(c => c.id)).size !== tjr.chapters.length) fail("data/tajweed.json: duplicate chapter ids");
+  for (const ch of tjr.chapters) {
+    pair(ch.t, ch.id); (ch.intro || []).forEach(x => pair(x, ch.id));
+    ch.s.forEach((s, i) => {
+      pair(s.h, `${ch.id} §${i + 1}`); [...(s.p || []), ...(s.list || [])].forEach(x => pair(x, `${ch.id} §${i + 1}`));
+      if ([...(s.c || "")].some(c => !codes.has(c))) fail(`data/tajweed.json ${ch.id} §${i + 1}: unknown colour`);
+      (s.ex || []).forEach(x => checkEx(x, `${ch.id} §${i + 1}`));
+    });
+    ch.matn.forEach(m => checkMatn(m, ch.id));
+  }
 }
 
 // Interface fonts are shipped with the app: css/fonts.css, www/fonts/ and the FONTS precache list in sw.js must agree
@@ -172,7 +200,7 @@ const walk = d => fs.readdirSync(path.join(root, "kutub", d)).flatMap(f => fs.st
 for (const f of walk("")) if (f !== "index.json" && !ktFiles.has(f)) fail("kutub: file not in the index " + f);
 if (new Set(kt.books.map(b => b.id)).size !== kt.books.length) fail("kutub: duplicate book ids");
 for (const b of kt.books) {
-  if (!b.ar || !b.en || !b.by || !b.byEn || !(b.died > 0) || !b.about || !b.aboutEn || !b.edition || !/^https:\/\/app\.turath\.io\/book\/\d+$/.test(b.url)) fail("kutub: incomplete book " + b.id);
+  if (!b.ar || !b.en || !b.by || !b.byEn || !(b.died >= 0) || !b.about || !b.aboutEn || !b.edition || !/^https:\/\/app\.turath\.io\/book\/\d+$/.test(b.url)) fail("kutub: incomplete book " + b.id);
   if (!kt.groups.includes(b.group) || !enStrings["kutub." + b.group] || !kt.authors[b.author] || (b.madhhab && !enStrings["kutub." + b.madhhab])) fail(`kutub: ${b.id} has a bad shelf, author or school`);
   const file = path.join(root, "kutub", b.file || "");
   if (!fs.existsSync(file) || !b.chunks?.length) { fail("kutub: missing " + b.file); continue; }
@@ -254,6 +282,27 @@ for (const b of kt.books) {
   }
 }
 
+// The fiqh research server (faqih/): it checks quotations with the same normalisation the index was cut with
+// (scripts/faqih-chunk.mjs, imported, never copied), the app names the server the way check-sources.js reads it,
+// and the tests of the passages (scripts/faqih-test.mjs) and of the server (faqih/test.js, needs node:sqlite) pass.
+{
+  const faqihDir = path.join(root, "..", "faqih");
+  for (const f of ["src/verify.js", "src/prompt.js"]) if (!fs.readFileSync(path.join(faqihDir, f), "utf8").includes('from "../../scripts/faqih-chunk.mjs"')) fail(`faqih/${f} must import scripts/faqih-chunk.mjs`);
+  const copies = fs.readdirSync(path.join(faqihDir, "src")).filter(f => /chunk|normali/i.test(f));
+  if (copies.length) fail("faqih/src must not hold a copy of the passage code: " + copies.join(", "));
+  const url = (/const FAQIH = \{ url: "([^"]*)" \}/.exec(fs.readFileSync(path.join(root, "js/faqih.js"), "utf8")) || [])[1];
+  if (url === undefined) fail("FAQIH in js/faqih.js not found");
+  else if (url && !/^https:\/\/[\w.-]+$/.test(url)) fail("FAQIH.url in js/faqih.js: an https address without a trailing slash");
+  const t1 = spawnSync(process.execPath, [path.join(__dirname, "faqih-test.mjs")], { encoding: "utf8" });
+  if (t1.status !== 0) fail("scripts/faqih-test.mjs: " + (t1.stderr + t1.stdout).split("\n").filter(l => l.startsWith("✗")).join("; "));
+  let sqlite = true; try { require("node:sqlite"); } catch { sqlite = false; }
+  if (!sqlite) console.log("⚠ faqih/test.js skipped: it needs node:sqlite (Node 22.13 or later)");
+  else {
+    const r = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", path.join(faqihDir, "test.js")], { encoding: "utf8", cwd: faqihDir });
+    if (r.status !== 0) fail("faqih/test.js: " + (r.stderr + r.stdout).split("\n").filter(l => l.startsWith("✗")).join("; "));
+  }
+}
+
 // Interface languages: every language listed in js/i18n.js has a strings file that passes check-i18n.js
 // LANGS entries look like ["fr", "Français"]; other arrays in the file do not end right after the second string.
 const langs = [...new Set([...fs.readFileSync(path.join(root, "js/i18n.js"), "utf8").matchAll(/\["([a-z]{2,3})", "[^"]+"\]/g)].map(m => m[1]))];
@@ -262,13 +311,14 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/videos.js", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
-  "../push/src/index.js", "../push/src/webpush.js", "../push/src/schedule.js", "../push/keys.js", "../push/test.js"]) {
+for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/videos.js", "js/tajweed.js", "../scripts/build-tajweed.js", "../scripts/tajweed-source.js", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
+  "../push/src/index.js", "../push/src/webpush.js", "../push/src/schedule.js", "../push/keys.js", "../push/test.js",
+  "js/faqih.js", "../scripts/faqih-chunk.mjs", "../scripts/faqih-test.mjs", "../scripts/build-faqih.mjs", "../faqih/src/index.js", "../faqih/src/prompt.js", "../faqih/src/verify.js", "../faqih/src/llm.js", "../faqih/test.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }
 
 console.log(ok
-  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${tx.books.length} tafsir books, ${asma.names.length} names of Allah, ${kt.books.length} creed and fiqh books, ${readJson("adhan/index.json").voices.length} adhan recordings, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios, ${(radios.topics || []).length} subject radios, ${lessons.series.length} audio series, ${videos.series.length} video series / ${episodes} episodes, ${videos.live.length} live channels)`
+  ? `✓ all checks passed (${db.categories.length} adhkar chapters, ${langs.length} UI languages, ${qi.riwayat.length} riwayat / ${ayat} ayat, ${hx.books.length} hadith books / ${hadithCount} hadith, ${tx.books.length} tafsir books, ${asma.names.length} names of Allah, ${tjr.chapters.length} Tajweed chapters / ${tjr.chapters.reduce((n, c) => n + c.s.reduce((m, s) => m + (s.ex || []).length, 0), 0)} examples, ${kt.books.length} creed and fiqh books, ${readJson("adhan/index.json").voices.length} adhan recordings, ${radios.live.length} live radios, ${(radios.sunnah || []).length} hadith radios, ${(radios.topics || []).length} subject radios, ${lessons.series.length} audio series, ${videos.series.length} video series / ${episodes} episodes, ${videos.live.length} live channels)`
   : "checks failed");
 process.exit(ok ? 0 : 1);

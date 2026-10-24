@@ -229,6 +229,22 @@ async function alertsServer() {
   } catch (e) { error(G, e.message); }
 }
 
+// The fiqh research server (faqih/): without it #/faqih answers nothing.
+async function faqihServer() {
+  const G = "Fiqh research server (faqih/)";
+  const url = (/const FAQIH = \{ url: "([^"]*)"/.exec(fs.readFileSync(path.join(WWW, "js/faqih.js"), "utf8")) || [])[1];
+  if (!url) { warn(G, "not set up yet (FAQIH.url in www/js/faqih.js is empty)"); return; }
+  try {
+    const r = await request(url + "/health");
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    if (!corsOk(r)) throw new Error("no CORS header for " + ORIGIN);
+    const j = await r.json();
+    if (!j.ok) error(G, "the server does not answer ok");
+    else if (j.limit && j.n >= j.limit) warn(G, `${url} answers, but the daily limit of ${j.limit} questions is reached`);
+    else pass(G, `${url} answers, ${j.n} question(s) today`);
+  } catch (e) { error(G, e.message); }
+}
+
 async function radioList(G, list) {
   const bad = [];
   for (const r of list) { let res = await probe(r); if (!res.ok) res = await probe(r); if (!res.ok) bad.push(`${r.name} (${res.info})`); }
@@ -265,7 +281,7 @@ async function videoSeries() {
 }
 
 (async () => {
-  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah), radioList("Subject radios", topics), audioSeries(), videoSeries(), placeSearch(), alertsServer()]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah), radioList("Subject radios", topics), audioSeries(), videoSeries(), placeSearch(), alertsServer(), faqihServer()]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);
