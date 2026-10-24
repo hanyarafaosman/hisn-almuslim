@@ -1,18 +1,18 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.27.0";
-import { setupHadith } from "./hadith.js?v=1.27.0";
-import { setupTafsir } from "./tafsir.js?v=1.27.0";
-import { setupAsma } from "./asma.js?v=1.27.0";
-import { setupKutub } from "./kutub.js?v=1.27.0";
-import { setupFaqih } from "./faqih.js?v=1.27.0";
-import { setupPrayer } from "./prayer.js?v=1.27.0";
-import { setupVideos } from "./videos.js?v=1.27.0";
-import { setupInstall } from "./install.js?v=1.27.0";
-import { setupTajweed } from "./tajweed.js?v=1.27.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.27.0";
-import { mirrorOf } from "./mirror.js?v=1.27.0";
+import { setupQuran } from "./quran.js?v=1.28.0";
+import { setupHadith } from "./hadith.js?v=1.28.0";
+import { setupTafsir } from "./tafsir.js?v=1.28.0";
+import { setupAsma } from "./asma.js?v=1.28.0";
+import { setupKutub } from "./kutub.js?v=1.28.0";
+import { setupFaqih } from "./faqih.js?v=1.28.0";
+import { setupPrayer } from "./prayer.js?v=1.28.0";
+import { setupVideos } from "./videos.js?v=1.28.0";
+import { setupInstall } from "./install.js?v=1.28.0";
+import { setupTajweed } from "./tajweed.js?v=1.28.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.28.0";
+import { mirrorOf } from "./mirror.js?v=1.28.0";
 
-const VERSION = "1.27.0";
+const VERSION = "1.28.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -314,6 +314,7 @@ function adhkarSearch(query, limit = 60) {
 
 // ---------- Home: a hub for every part of the app ----------
 const HUB_TILES = [
+  { href: "#/prayer", icon: "prayer", label: () => t("prayer.title") },
   { href: "#/adhkar", icon: "sun", label: () => t("nav.adhkar") },
   { href: "#/quran", icon: "quran", label: () => t("nav.quran") },
   { href: "#/hadith", icon: "books", label: () => t("hadith.books") },

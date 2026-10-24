@@ -763,6 +763,14 @@ details.info { display: block; }
 .pr-how p { margin: 8px 0 0; color: var(--muted); }
 .pr-setup { padding: 14px; }
 .pr-setup > * + * { margin-top: 10px; }
+/* The place typed by hand (prayer.js manualForm) */
+.pk-form { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); }
+.pk-form label { display: block; font-size: .85rem; font-weight: 600; color: var(--muted); }
+.pk-form input, .pk-form select { display: block; width: 100%; max-width: none; height: 42px; margin-top: 4px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); padding-inline: 10px; font: inherit; color: inherit; outline: none; }
+.pk-form input:focus, .pk-form select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent); }
+.pk-form .pk-two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.pk-form .riwayah-note { margin: 0; }
+.pk-form .btn { margin-top: 2px; }
 .pr-welcome > * + *, #pr-w-pick > * + * { margin-top: 10px; }
 .pr-welcome > p:first-child { margin: 0; line-height: 1.7; }
 .pr-w-on { display: flex; align-items: center; gap: 8px; margin-bottom: 0; color: var(--primary); font-weight: 700; }
