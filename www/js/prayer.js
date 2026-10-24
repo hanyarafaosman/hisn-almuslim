@@ -9,8 +9,8 @@
 // in the background. When the app is closed, the server in push/ sends the same alerts by Web Push (syncPush below,
 // the push handler in sw.js); the page explains both to the user. The alerts are on unless the user turns them off:
 // on a phone, a window asks for the place and the notifications permission a moment after the app first starts.
-import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.29.0";
-import { regionName, collator } from "./i18n.js?v=1.29.0";
+import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.30.0";
+import { regionName, collator } from "./i18n.js?v=1.30.0";
 
 export const ADHAN_CACHE = "hisn-adhan-v1"; // the same name is in sw.js
 
@@ -712,6 +712,9 @@ export function setupPrayer(ctx) {
     // The notifications from the server are written in the app's language.
     langChanged: () => syncPush(),
     settingsLabel: () => state.loc ? placeName() : t("prayer.setLocation"),
+    // The Hijri day adjustment, shared with the Hijri calendar page (js/hijri.js): -2 … +2 days.
+    hijriAdj: () => state.hijriAdj,
+    setHijriAdj(v) { state.hijriAdj = Math.max(-2, Math.min(2, Number(v) || 0)); save(); },
     // For the about section: the recordings and their licences.
     credits: async () => { await voicesReady; return VOICES; },
     voiceName,
