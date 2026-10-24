@@ -75,6 +75,17 @@ function sun(jd) {
   return { decl: asin(sin(e) * sin(L)), eqt: q / 15 - ra - 24 * Math.round((q / 15 - ra) / 24) };
 }
 
+// Where the sun is at a moment (ms since the epoch) seen from a place: azimuth in degrees clockwise from north and
+// altitude above the horizon (negative at night). For the Qibla page (js/qibla.js).
+export function sunPosition(ms, lat, lng) {
+  const jd = ms / 864e5 + 2440587.5, { decl, eqt } = sun(jd);
+  const ut = fix(ms / 36e5, 24); // hours UT
+  const H = fix(15 * (ut + lng / 15 + eqt - 12) + 180, 360) - 180; // hour angle, degrees west of the meridian
+  const altitude = asin(sin(lat) * sin(decl) + cos(lat) * cos(decl) * cos(H));
+  const azimuth = fix(atan2(sin(H), cos(H) * sin(lat) - tan(decl) * cos(lat)) + 180, 360);
+  return { azimuth, altitude };
+}
+
 // Is this date (y, m, d) in Ramadan, by the Umm al-Qura calendar moved by hijriAdj days?
 export function inRamadan(y, m, d, hijriAdj = 0) {
   try { return new Intl.DateTimeFormat("en-u-ca-islamic-umalqura", { month: "numeric", timeZone: "UTC" }).format(new Date(Date.UTC(y, m - 1, d + hijriAdj, 12))) === "9"; }

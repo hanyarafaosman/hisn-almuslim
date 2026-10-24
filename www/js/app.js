@@ -1,19 +1,20 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.30.0";
-import { setupHadith } from "./hadith.js?v=1.30.0";
-import { setupTafsir } from "./tafsir.js?v=1.30.0";
-import { setupAsma } from "./asma.js?v=1.30.0";
-import { setupKutub } from "./kutub.js?v=1.30.0";
-import { setupFaqih } from "./faqih.js?v=1.30.0";
-import { setupPrayer } from "./prayer.js?v=1.30.0";
-import { setupVideos } from "./videos.js?v=1.30.0";
-import { setupInstall } from "./install.js?v=1.30.0";
-import { setupTajweed } from "./tajweed.js?v=1.30.0";
-import { setupHijri } from "./hijri.js?v=1.30.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.30.0";
-import { mirrorOf } from "./mirror.js?v=1.30.0";
+import { setupQuran } from "./quran.js?v=1.31.0";
+import { setupHadith } from "./hadith.js?v=1.31.0";
+import { setupTafsir } from "./tafsir.js?v=1.31.0";
+import { setupAsma } from "./asma.js?v=1.31.0";
+import { setupKutub } from "./kutub.js?v=1.31.0";
+import { setupFaqih } from "./faqih.js?v=1.31.0";
+import { setupPrayer } from "./prayer.js?v=1.31.0";
+import { setupVideos } from "./videos.js?v=1.31.0";
+import { setupInstall } from "./install.js?v=1.31.0";
+import { setupTajweed } from "./tajweed.js?v=1.31.0";
+import { setupHijri } from "./hijri.js?v=1.31.0";
+import { setupQibla } from "./qibla.js?v=1.31.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.31.0";
+import { mirrorOf } from "./mirror.js?v=1.31.0";
 
-const VERSION = "1.30.0";
+const VERSION = "1.31.0";
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -242,6 +243,8 @@ function pickLanguage() {
 
 // ---------- the Hijri calendar: today's date, the month grid, the converter and the seasons of worship ----------
 const HJ = setupHijri({ view, $, esc, icon, t, num, sep, getLang, share, SITE, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), prayer: PR });
+// ---------- the Qibla: its direction from the place of the prayer times, a compass, and the sun's help ----------
+const QB = setupQibla({ view, $, esc, icon, t, num, sep, getLang, toast, share, SITE, vibrate, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), prayer: PR });
 
 // ---------- router ----------
 function setHeader(title, { back = false, actions = "", onTitle = null } = {}) {
@@ -255,7 +258,7 @@ function setHeader(title, { back = false, actions = "", onTitle = null } = {}) {
 titleEl.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && titleEl.onclick) { e.preventDefault(); titleEl.onclick(); } });
 backBtn.addEventListener("click", () => { if (history.length > 1) history.back(); else location.hash = "#/"; });
 // Bottom bar: Home, Quran, Adhkar, Hadith, More. Pages reached from "More" highlight that tab.
-const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more", videos: "more", hijri: "more" };
+const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more", videos: "more", hijri: "more", qibla: "more" };
 function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll(".bottom-nav a").forEach(a => a.classList.toggle("on", a.dataset.nav === name)); }
 
 function route() {
@@ -287,6 +290,7 @@ function route() {
     case "faqih": return FQ.render(parts.slice(1), params);
     case "prayer": return PR.render(parts.slice(1), params);
     case "hijri": return HJ.render(parts.slice(1), params);
+    case "qibla": return QB.render();
     case "more": return renderMore();
     // Unknown address (for example a link to a newer version's page): show Home but keep the address,
     // so the page opens once the app updates instead of the link being lost.
@@ -320,6 +324,7 @@ function adhkarSearch(query, limit = 60) {
 // ---------- Home: a hub for every part of the app ----------
 const HUB_TILES = [
   { href: "#/prayer", icon: "prayer", label: () => t("prayer.title") },
+  { href: "#/qibla", icon: "kaaba", label: () => t("qibla.title") },
   { href: "#/hijri", icon: "calendar", label: () => t("hijri.title") },
   { href: "#/adhkar", icon: "sun", label: () => t("nav.adhkar") },
   { href: "#/quran", icon: "quran", label: () => t("nav.quran") },
@@ -386,7 +391,7 @@ function renderHub(q = "") {
 function renderMore() {
   setNav("more"); setHeader(t("nav.more"));
   const rows = [
-    ["#/prayer", "prayer", t("prayer.title")], ["#/hijri", "calendar", t("hijri.title")], ["#/tafsir", "tafsir", t("tafsir.books")], ["#/tajweed", "palette", t("tajweed.title")], ["#/asma", "asma", t("asma.title")], ["#/kutub", "kutub", t("kutub.title")], ["#/faqih", "fiqh", t("faqih.title")],
+    ["#/prayer", "prayer", t("prayer.title")], ["#/qibla", "kaaba", t("qibla.title")], ["#/hijri", "calendar", t("hijri.title")], ["#/tafsir", "tafsir", t("tafsir.books")], ["#/tajweed", "palette", t("tajweed.title")], ["#/asma", "asma", t("asma.title")], ["#/kutub", "kutub", t("kutub.title")], ["#/faqih", "fiqh", t("faqih.title")],
     ["#/listen", "headphones", t("listen.recitations")], ["#/radio", "radio", t("listen.radios")], ["#/videos", "video", t("videos.title")], ["#/tasbih", "beads", t("nav.tasbih")],
     ["#/fav", "star", t("common.favorites")], ["#/extras", "book", t("extra.section")], ["#/offline", "download", t("offline.title")], ["#/settings", "settings", t("nav.settings")],
   ];
@@ -721,6 +726,8 @@ function renderSettings() {
         <br>${T("about.adhanText")}<br><span id="adhan-credits"></span>
       </div><div class="about">
         <b>${T("about.hijriTitle")}</b><br>${T("about.hijriText")}
+      </div><div class="about">
+        <b>${T("about.qiblaTitle")}</b><br>${T("about.qiblaText")}
       </div><div class="about">
         <b>${T("about.audioTitle")}</b><br>${th("about.audioText", {}, { link: link("https://mp3quran.net", "mp3quran.net") }, esc)}
         <br><small>${T("about.version", { v: VERSION })}</small>

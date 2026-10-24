@@ -9,8 +9,8 @@
 // in the background. When the app is closed, the server in push/ sends the same alerts by Web Push (syncPush below,
 // the push handler in sw.js); the page explains both to the user. The alerts are on unless the user turns them off:
 // on a phone, a window asks for the place and the notifications permission a moment after the app first starts.
-import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.30.0";
-import { regionName, collator } from "./i18n.js?v=1.30.0";
+import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.31.0";
+import { regionName, collator } from "./i18n.js?v=1.31.0";
 
 export const ADHAN_CACHE = "hisn-adhan-v1"; // the same name is in sw.js
 
@@ -454,9 +454,10 @@ export function setupPrayer(ctx) {
       }, 350);
     };
   }
-  function pickPlace() {
+  // after: what another page (the Qibla) does once the place is chosen.
+  function pickPlace(after) {
     const body = ctx.sheet(t("prayer.location"), "", { tall: true });
-    picker(body, () => { ctx.closeSheet(); toast(t("prayer.placeSet", { name: state.loc.name })); redraw(); });
+    picker(body, () => { ctx.closeSheet(); toast(t("prayer.placeSet", { name: state.loc.name })); redraw(); if (typeof after === "function") after(); });
   }
 
   // ---------- on a phone: the times and their alerts set up in one tap ----------
@@ -715,6 +716,9 @@ export function setupPrayer(ctx) {
     // The Hijri day adjustment, shared with the Hijri calendar page (js/hijri.js): -2 … +2 days.
     hijriAdj: () => state.hijriAdj,
     setHijriAdj(v) { state.hijriAdj = Math.max(-2, Math.min(2, Number(v) || 0)); save(); },
+    // The place, and the window that chooses it, shared with the Qibla page (js/qibla.js).
+    loc: () => state.loc,
+    pickPlace,
     // For the about section: the recordings and their licences.
     credits: async () => { await voicesReady; return VOICES; },
     voiceName,
