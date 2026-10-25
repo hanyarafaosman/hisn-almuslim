@@ -191,6 +191,7 @@ add("", {
     { "@type": "WebSite", "@id": SITE + "#website", name: APP, alternateName: ["حصن المسلم", "Hisn al-Muslim", BOOK], url: SITE, inLanguage: "ar" },
     { "@type": "WebApplication", name: APP, url: SITE, applicationCategory: "LifestyleApplication", operatingSystem: "Android, iOS, Windows, macOS, Linux",
       browserRequirements: "Requires JavaScript", inLanguage: "ar", isAccessibleForFree: true, image: SITE + "icons/icon-512.png",
+      copyrightYear: 2026, copyrightHolder: { "@type": "Organization", name: APP, url: SITE }, author: { "@type": "Organization", name: APP, url: SITE },
       description: /<meta name="description" content="([^"]*)">/.exec(TEMPLATE)[1], offers: { "@type": "Offer", price: "0", priceCurrency: "USD" } },
   ] }),
   content: [

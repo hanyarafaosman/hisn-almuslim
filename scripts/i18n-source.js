@@ -600,6 +600,10 @@ const S = {
   "about.prayerText": ["تُحسب على الجهاز بطرق الجهات المعتمدة في كل بلد. البحث عن المدن من {geo}، وأسماء الأماكن من {osm}، وتنبيهات التطبيق المغلق يرسلها خادم التطبيق على {cf}.", "Calculated on the device with the methods of each country's authorities. City search by {geo}; place names from {osm}; alerts while the app is closed are sent by the app's server on {cf}."],
   "about.adhanText": ["تسجيلات الأذان من ويكيميديا كومنز برخص حرة، وأصوات المشايخ والحرمين من أرشيف الإنترنت (archive.org) والشبكة الإسلامية (islamweb.net)، وحقوق هذه لأصحابها وتُحذف إن طلبوا ذلك. اقتُطع من كل تسجيل الأذان وحده وأُعيد ترميزه:", "Adhan recordings from Wikimedia Commons under free licences, and from the Internet Archive (archive.org) and IslamWeb (islamweb.net) for the voices of the sheikhs and of the Two Holy Mosques, whose rights belong to their holders and which are removed at their request. Each was cut to the adhan alone and re-encoded:"],
   "about.version": ["الإصدار {v}", "Version {v}"],
+  "about.rightsTitle": ["الحقوق", "Rights"],
+  "about.copyright": ["© {years} {name}. جميع الحقوق محفوظة في تصميم التطبيق وبرمجته واسمه.", "© {years} {name}. All rights reserved in the app's design, code and name."],
+  "about.rightsText": ["نصوص القرآن الكريم والأذكار وكتب السنة والتفاسير والصوتيات حقوقها لأصحابها ومصادرها المذكورة أعلاه، وتُعرض كما هي. التطبيق مجاني، ولا يجوز نسخه أو إعادة نشره أو بيعه باسم آخر دون إذن كتابي.", "The Quran, adhkar, hadith and tafsir texts and the audio belong to their owners and to the sources named above, and are shown as they are. The app is free; copying, republishing or selling it under another name without written permission is not allowed."],
+  "common.copyright": ["© {years} {name}. جميع الحقوق محفوظة.", "© {years} {name}. All rights reserved."],
   "kfgqpc.name": ["مجمع الملك فهد لطباعة المصحف الشريف", "King Fahd Glorious Quran Printing Complex"],
 
   "lang.choose": ["اختر اللغة", "Choose language"],
