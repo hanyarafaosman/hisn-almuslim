@@ -368,6 +368,7 @@
  "qibla.heading": "Telefonun yönü",
  "qibla.noCompass": "Bu cihazda pusula yok. Çizimdeki kuzey işaretini gerçek kuzeye çevir, ok kıbleyi gösterir; ya da aşağıdaki gibi güneşi kullan.",
  "qibla.compassDenied": "Pusula erişimine izin verilmedi. Tarayıcı ayarlarından siteye «Hareket ve Yön» izni ver, sonra tekrar dene.",
+ "qibla.insecure": "Pusula yalnızca güvenli bağlantı (https) üzerinden çalışır. Uygulamayı yayımlanmış adresinden veya yüklü uygulamadan açın ya da aşağıdaki gibi güneşten yararlanın.",
  "qibla.calibrate": "Pusula yanlış görünüyorsa telefonu metal ve mıknatıslardan uzakta havada birkaç kez 8 çizer gibi hareket ettir.",
  "qibla.bySun": "Güneşle kıble",
  "qibla.sunHint": "Pusulasız: bugün bu saatlerde güneş tam kıble yönündedir ya da dik duran bir çubuğun gölgesi kıbleyi gösterir.",

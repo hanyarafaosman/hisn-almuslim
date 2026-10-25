@@ -368,6 +368,7 @@
  "qibla.heading": "Telefonun istiqaməti",
  "qibla.noCompass": "Bu cihazda kompas yoxdur. Şəkildəki şimal işarəsini həqiqi şimala yönəldin, ox qibləni göstərəcək; ya da aşağıdakı kimi Günəşdən istifadə edin.",
  "qibla.compassDenied": "Kompasa giriş icazəsi verilmədi. Brauzer ayarlarında saytın «Hərəkət və istiqamət» məlumatından istifadəsinə icazə verin və yenidən cəhd edin.",
+ "qibla.insecure": "Kompas yalnız təhlükəsiz bağlantı (https) üzərindən işləyir. Tətbiqi dərc olunmuş ünvanından və ya quraşdırılmış tətbiqdən açın, ya da aşağıdakı kimi günəşdən istifadə edin.",
  "qibla.calibrate": "Kompas qeyri-dəqiq görünürsə, telefonu metaldan və maqnitlərdən uzaqda havada bir neçə dəfə səkkiz rəqəmi şəklində hərəkət etdirin.",
  "qibla.bySun": "Günəşlə qiblə",
  "qibla.sunHint": "Kompassız: bu vaxtlarda bu gün Günəş tam qiblə istiqamətində olur, yaxud şaquli çubuğun kölgəsi qibləni göstərir.",

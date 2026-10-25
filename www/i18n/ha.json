@@ -368,6 +368,7 @@
  "qibla.heading": "Alkiblar waya",
  "qibla.noCompass": "Wannan na'ura ba ta da kamfas. Nuna alamar arewa ta zanen zuwa arewa ta gaskiya, kibiya za ta nuna maka Ƙibla, ko kuma ka yi amfani da rana kamar yadda yake a ƙasa.",
  "qibla.compassDenied": "Ba a ba da izinin shiga kamfas ba. Ba shafin izinin amfani da “Motsi da Alkibla” a saitunan burauza, sannan ka sake gwadawa.",
+ "qibla.insecure": "Kamfas yana aiki ne kawai ta haɗin tsaro (https). Buɗe manhajar daga adireshinta da aka wallafa ko daga manhajar da aka girka, ko ka yi amfani da rana kamar a ƙasa.",
  "qibla.calibrate": "Idan kamfas ɗin ya yi kamar bai dace ba, motsa wayar a sama kamar siffar lamba 8 sau da yawa, nesa da ƙarfe da maganaɗisu.",
  "qibla.bySun": "Ƙibla da rana",
  "qibla.sunHint": "Ba tare da kamfas ba: a waɗannan lokuta yau rana tana daidai da alkiblar Ƙibla, ko kuma inuwar sanda tsaye tana nuna ta.",

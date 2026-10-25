@@ -368,6 +368,7 @@
  "qibla.heading": "Drejtimi i telefonit",
  "qibla.noCompass": "Kjo pajisje nuk ka busull. Drejto shenjën e veriut në vizatim nga veriu i vërtetë dhe shigjeta tregon kiblen, ose përdor diellin si më poshtë.",
  "qibla.compassDenied": "Qasja te busulla nuk u lejua. Lejo faqen të përdorë «Lëvizjen dhe orientimin» te cilësimet e shfletuesit, pastaj provo përsëri.",
+ "qibla.insecure": "Busulla punon vetëm me lidhje të sigurt (https). Hapeni aplikacionin në adresën e tij të publikuar ose nga aplikacioni i instaluar, ose përdorni diellin si më poshtë.",
  "qibla.calibrate": "Nëse busulla duket e pasaktë, lëvize telefonin në ajër në formë numri 8 disa herë, larg metaleve dhe magnetëve.",
  "qibla.bySun": "Kibla sipas diellit",
  "qibla.sunHint": "Pa busull: në këto orë sot dielli qëndron saktësisht në drejtim të kibles, ose hija e një shtylle vertikale tregon nga ajo.",

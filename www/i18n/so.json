@@ -368,6 +368,7 @@
  "qibla.heading": "Jihada telefoonka",
  "qibla.noCompass": "Qalabkani kombas ma laha. Calaamadda waqooyiga ee sawirka ku jiheey waqooyiga dhabta ah, fallaadhuna waxay tusi doontaa Qiblada, ama isticmaal qorraxda sida hoose.",
  "qibla.compassDenied": "Helitaanka kombaska lama oggolaan. Goobta ogolow «Dhaqdhaqaaqa & Jihaynta» dejinta browserka, kadibna isku day mar kale.",
+ "qibla.insecure": "Kombaska wuxuu ku shaqeeyaa oo keliya xiriir ammaan ah (https). Ka fur abka cinwaankiisa la daabacay ama abka la rakibay, ama isticmaal qorraxda sida hoos ku qoran.",
  "qibla.calibrate": "Haddii kombasku khalad ey u muuqdo, telefoonka hawada ku wareeji qaab 8 ah dhawr jeer, ka fogeey bir iyo magnet.",
  "qibla.bySun": "Qiblada oo qorraxda lagu helo",
  "qibla.sunHint": "Kombas la'aan: waqtiyadan maanta qorraxdu waxay tahay jihada Qiblada saxda ah, ama hoosta tiir taagan ayaa u tilmaamaysa.",

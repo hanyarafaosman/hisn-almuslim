@@ -382,6 +382,7 @@ const S = {
   "qibla.heading": ["اتجاه الهاتف", "Phone heading"],
   "qibla.noCompass": ["لا تتوفر بوصلة في هذا الجهاز. وجّه حرف الشمال في الرسم إلى الشمال الحقيقي ليدلّك السهم على القبلة، أو استعن بالشمس كما في الأسفل.", "This device has no compass. Point the north mark of the drawing at true north and the arrow shows the Qibla, or use the sun as below."],
   "qibla.compassDenied": ["لم يُسمح بقراءة البوصلة. اسمح للموقع بالوصول إلى «الحركة والاتجاه» من إعدادات المتصفح ثم أعد المحاولة.", "Compass access was not allowed. Allow the site to use “Motion & Orientation” in the browser settings, then try again."],
+  "qibla.insecure": ["البوصلة لا تعمل إلا عبر اتصال آمن (https). افتح التطبيق من عنوانه المنشور أو من التطبيق المثبّت، أو استعن بالشمس كما في الأسفل.", "The compass works only over a secure connection (https). Open the app at its published address or from the installed app, or use the sun as below."],
   "qibla.calibrate": ["إن بدت البوصلة غير دقيقة فحرّك الهاتف في الهواء على شكل الرقم 8 عدة مرات، وأبعده عن المعادن والمغناطيس.", "If the compass seems off, move the phone through the air in a figure of eight a few times, away from metal and magnets."],
   "qibla.bySun": ["القبلة بالشمس", "The Qibla by the sun"],
   "qibla.sunHint": ["دون بوصلة: في هذه الأوقات اليوم تكون الشمس في اتجاه القبلة تمامًا، أو يشير ظل عمود قائم إليها.", "Without a compass: at these times today the sun stands exactly in the direction of the Qibla, or the shadow of an upright pole points to it."],

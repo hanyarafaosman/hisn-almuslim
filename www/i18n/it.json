@@ -371,6 +371,7 @@
  "qibla.heading": "Direzione del telefono",
  "qibla.noCompass": "Questo dispositivo non ha una bussola. Punta il segno del nord del disegno verso il nord geografico e la freccia indicherà la Qibla, oppure usa il sole come spiegato sotto.",
  "qibla.compassDenied": "L'accesso alla bussola non è stato consentito. Consenti al sito di usare «Movimento e orientamento» nelle impostazioni del browser, poi riprova.",
+ "qibla.insecure": "La bussola funziona solo con una connessione sicura (https). Apri l’app al suo indirizzo pubblicato o dall’app installata, oppure usa il sole come indicato sotto.",
  "qibla.calibrate": "Se la bussola sembra imprecisa, muovi il telefono nell'aria disegnando un otto alcune volte, lontano da metalli e magneti.",
  "qibla.bySun": "La Qibla con il sole",
  "qibla.sunHint": "Senza bussola: oggi, in questi orari, il sole si trova esattamente nella direzione della Qibla, oppure l'ombra di un'asta verticale la indica.",

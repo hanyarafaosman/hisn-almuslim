@@ -368,6 +368,7 @@
  "qibla.heading": "Telefon yo'nalishi",
  "qibla.noCompass": "Bu qurilmada kompas yo'q. Rasmdagi shimol belgisini haqiqiy shimolga qaratsangiz, strelka qiblani ko'rsatadi, yoki quyidagicha quyoshdan foydalaning.",
  "qibla.compassDenied": "Kompasdan foydalanishga ruxsat berilmadi. Brauzer sozlamalarida saytga «Harakat va yo'nalish» uchun ruxsat bering, so'ng qayta urinib ko'ring.",
+ "qibla.insecure": "Kompas faqat xavfsiz ulanish (https) orqali ishlaydi. Ilovani eʼlon qilingan manzilidan yoki oʻrnatilgan ilovadan oching, yoki quyida koʻrsatilganidek quyoshdan foydalaning.",
  "qibla.calibrate": "Kompas noto'g'ri ko'rsatsa, telefonni metall va magnitlardan uzoqda havoda bir necha marta 8 raqami shaklida harakatlantiring.",
  "qibla.bySun": "Quyosh orqali qibla",
  "qibla.sunHint": "Kompassiz: bugun shu vaqtlarda quyosh aynan qibla tomonida bo'ladi yoki tik turgan ustunning soyasi qiblani ko'rsatadi.",

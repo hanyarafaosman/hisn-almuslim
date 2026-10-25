@@ -371,6 +371,7 @@
  "qibla.heading": "Orientation du téléphone",
  "qibla.noCompass": "Cet appareil n'a pas de boussole. Orientez le repère nord du dessin vers le nord géographique et la flèche indiquera la Qibla, ou aidez-vous du soleil comme ci-dessous.",
  "qibla.compassDenied": "L'accès à la boussole n'a pas été autorisé. Autorisez le site à utiliser « Mouvement et orientation » dans les réglages du navigateur, puis réessayez.",
+ "qibla.insecure": "La boussole ne fonctionne que sur une connexion sécurisée (https). Ouvrez l’application à son adresse publiée ou depuis l’application installée, ou servez-vous du soleil comme ci-dessous.",
  "qibla.calibrate": "Si la boussole semble imprécise, faites décrire un huit à votre téléphone dans l'air plusieurs fois, loin des métaux et des aimants.",
  "qibla.bySun": "La Qibla par le soleil",
  "qibla.sunHint": "Sans boussole : à ces heures aujourd'hui, le soleil se trouve exactement dans la direction de la Qibla, ou l'ombre d'un piquet vertical la désigne.",

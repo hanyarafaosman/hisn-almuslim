@@ -368,6 +368,7 @@
  "qibla.heading": "Mwelekeo wa simu",
  "qibla.noCompass": "Kifaa hiki hakina dira. Elekeza alama ya kaskazini kwenye mchoro upande wa kaskazini halisi na mshale utaonyesha Qibla, au tumia jua kama ilivyo hapa chini.",
  "qibla.compassDenied": "Ruhusa ya kutumia dira haikutolewa. Ruhusu tovuti kutumia «Mwendo na Mwelekeo» kwenye mipangilio ya kivinjari, kisha jaribu tena.",
+ "qibla.insecure": "Dira hufanya kazi kwa muunganisho salama (https) pekee. Fungua programu kwenye anwani yake iliyochapishwa au kutoka kwenye programu iliyosakinishwa, au tumia jua kama ilivyo hapa chini.",
  "qibla.calibrate": "Dira ikionekana si sahihi, sogeza simu hewani kwa umbo la namba 8 mara kadhaa, mbali na vyuma na sumaku.",
  "qibla.bySun": "Qibla kwa jua",
  "qibla.sunHint": "Bila dira: nyakati hizi leo jua liko moja kwa moja upande wa Qibla, au kivuli cha nguzo iliyosimama kinaelekea huko.",

@@ -371,6 +371,7 @@
  "qibla.heading": "Smjer telefona",
  "qibla.noCompass": "Ovaj uređaj nema kompas. Okreni oznaku sjevera na crtežu prema pravom sjeveru i strelica će pokazati kiblu, ili se posluži suncem kako je opisano ispod.",
  "qibla.compassDenied": "Pristup kompasu nije dozvoljen. Dozvoli stranici korištenje „Kretanja i orijentacije“ u postavkama preglednika, pa pokušaj ponovo.",
+ "qibla.insecure": "Kompas radi samo preko sigurne veze (https). Otvorite aplikaciju na njenoj objavljenoj adresi ili iz instalirane aplikacije, ili se poslužite suncem kao ispod.",
  "qibla.calibrate": "Ako kompas djeluje netačno, nekoliko puta pomjeri telefon kroz zrak u obliku osmice, podalje od metala i magneta.",
  "qibla.bySun": "Kibla pomoću sunca",
  "qibla.sunHint": "Bez kompasa: u ovim vremenima danas sunce stoji tačno u smjeru kible, ili sjena uspravnog štapa pokazuje prema njoj.",

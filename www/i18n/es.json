@@ -371,6 +371,7 @@
  "qibla.heading": "Orientación del teléfono",
  "qibla.noCompass": "Este dispositivo no tiene brújula. Apunta la marca del norte del dibujo al norte verdadero y la flecha mostrará la Quibla, o usa el sol como se explica abajo.",
  "qibla.compassDenied": "No se permitió el acceso a la brújula. Permite que el sitio use «Movimiento y orientación» en los ajustes del navegador y vuelve a intentarlo.",
+ "qibla.insecure": "La brújula solo funciona con una conexión segura (https). Abre la aplicación en su dirección publicada o desde la aplicación instalada, o usa el sol como se indica abajo.",
  "qibla.calibrate": "Si la brújula parece imprecisa, mueve el teléfono en el aire dibujando un ocho varias veces, lejos de metales e imanes.",
  "qibla.bySun": "La Quibla según el sol",
  "qibla.sunHint": "Sin brújula: a estas horas de hoy el sol está exactamente en la dirección de la Quibla, o la sombra de un poste vertical apunta hacia ella.",

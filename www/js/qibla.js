@@ -82,8 +82,12 @@ export function setupQibla(ctx) {
   let heading = null; // where the phone points, degrees clockwise from north, smoothed
   let rot = 0; // the dial's rotation, continuous (no jump from 359° to 0°)
   let gotEvent = false, aligned = false, waitTimer = 0, asked = false; // asked: the user tapped the button and was allowed
-  const hasSensor = () => "DeviceOrientationEvent" in window;
-  const needsAsk = () => hasSensor() && typeof DeviceOrientationEvent.requestPermission === "function"; // iOS 13+: only from a tap
+  // Browsers give the orientation only on https (and localhost); over plain http nothing ever comes.
+  const hasSensor = () => "DeviceOrientationEvent" in window && window.isSecureContext;
+  // iOS 13+ hands out the readings only after the user allows it, and only when asked from a tap. Chromium has the
+  // same requestPermission() call yet needs no asking (and may answer "denied" to it), so the button is iOS only.
+  const IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (/Macintosh/.test(navigator.userAgent) && navigator.maxTouchPoints > 1);
+  const needsAsk = () => hasSensor() && IOS && typeof DeviceOrientationEvent.requestPermission === "function";
   const screenAngle = () => (screen.orientation?.angle ?? window.orientation ?? 0) || 0;
   function onOrient(e) {
     let h = null;
@@ -184,7 +188,8 @@ export function setupQibla(ctx) {
       <div class="card qb-card">
         <div class="qb-compass" id="qb-compass">${dialSvg(bearing)}</div>
         <div class="qb-state" id="qb-state"><b>${T("qibla.turnTo")}</b></div>
-        ${hasSensor() ? (needsAsk() ? `<button class="btn block" id="qb-start" type="button">${icon("compass")} ${T("qibla.startCompass")}</button>` : "") : `<p class="qb-note" id="qb-nocompass">${T("qibla.noCompass")}</p>`}
+        ${hasSensor() ? (needsAsk() ? `<button class="btn block" id="qb-start" type="button">${icon("compass")} ${T("qibla.startCompass")}</button>` : "")
+          : `<p class="qb-note" id="qb-nocompass">${T("DeviceOrientationEvent" in window && !window.isSecureContext ? "qibla.insecure" : "qibla.noCompass")}</p>`}
         <p class="qb-note">${T("qibla.calibrate")}</p>
       </div>
       <h2 class="section-title">${T("qibla.bySun")}</h2>

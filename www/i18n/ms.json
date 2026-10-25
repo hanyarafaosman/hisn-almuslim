@@ -365,6 +365,7 @@
  "qibla.heading": "Arah telefon",
  "qibla.noCompass": "Peranti ini tiada kompas. Halakan tanda utara pada lukisan ke utara sebenar supaya anak panah menunjukkan kiblat, atau gunakan matahari seperti di bawah.",
  "qibla.compassDenied": "Akses kompas tidak dibenarkan. Benarkan laman ini menggunakan “Gerakan & Orientasi” dalam tetapan pelayar, kemudian cuba lagi.",
+ "qibla.insecure": "Kompas hanya berfungsi melalui sambungan selamat (https). Buka aplikasi di alamat rasminya atau daripada aplikasi yang dipasang, atau gunakan matahari seperti di bawah.",
  "qibla.calibrate": "Jika kompas kelihatan kurang tepat, gerakkan telefon di udara membentuk angka lapan beberapa kali, jauh daripada logam dan magnet.",
  "qibla.bySun": "Kiblat dengan matahari",
  "qibla.sunHint": "Tanpa kompas: pada waktu-waktu ini hari ini matahari berada tepat pada arah kiblat, atau bayang-bayang tiang tegak menuju ke arahnya.",

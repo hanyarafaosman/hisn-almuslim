@@ -368,6 +368,7 @@
  "qibla.heading": "Phone heading",
  "qibla.noCompass": "This device has no compass. Point the north mark of the drawing at true north and the arrow shows the Qibla, or use the sun as below.",
  "qibla.compassDenied": "Compass access was not allowed. Allow the site to use “Motion & Orientation” in the browser settings, then try again.",
+ "qibla.insecure": "The compass works only over a secure connection (https). Open the app at its published address or from the installed app, or use the sun as below.",
  "qibla.calibrate": "If the compass seems off, move the phone through the air in a figure of eight a few times, away from metal and magnets.",
  "qibla.bySun": "The Qibla by the sun",
  "qibla.sunHint": "Without a compass: at these times today the sun stands exactly in the direction of the Qibla, or the shadow of an upright pole points to it.",

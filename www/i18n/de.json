@@ -368,6 +368,7 @@
  "qibla.heading": "Ausrichtung des Handys",
  "qibla.noCompass": "Dieses Gerät hat keinen Kompass. Richte die Nordmarkierung der Zeichnung nach dem geografischen Norden aus, dann zeigt der Pfeil die Qibla – oder nutze die Sonne wie unten beschrieben.",
  "qibla.compassDenied": "Der Zugriff auf den Kompass wurde nicht erlaubt. Erlaube der Website in den Browsereinstellungen den Zugriff auf „Bewegung & Ausrichtung“ und versuche es erneut.",
+ "qibla.insecure": "Der Kompass funktioniert nur über eine sichere Verbindung (https). Öffnen Sie die App unter ihrer veröffentlichten Adresse oder aus der installierten App, oder nutzen Sie die Sonne wie unten.",
  "qibla.calibrate": "Wenn der Kompass ungenau scheint, bewege das Handy ein paarmal in der Luft in einer Acht – fern von Metall und Magneten.",
  "qibla.bySun": "Die Qibla mit der Sonne",
  "qibla.sunHint": "Ohne Kompass: Zu diesen Zeiten steht die Sonne heute genau in Richtung der Qibla, oder der Schatten eines senkrechten Stabes zeigt dorthin.",
