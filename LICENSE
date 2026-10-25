@@ -1,0 +1,64 @@
+حقوق الملكية والرخصة — حصن ونور
+================================
+
+© 2026 حصن ونور (hanyarafaosman). جميع الحقوق محفوظة.
+
+1. التطبيق
+   تصميم تطبيق «حصن ونور» وبرمجته (ما في مجلدات www/js وwww/css وscripts وpush وfaqih
+   وملفات الواجهة والأيقونات) وترتيب محتواه وواجهته واسمه بكل لغاته ملك لصاحب التطبيق.
+   التطبيق مجاني للاستخدام الشخصي من موقعه الرسمي ومن المتاجر التي ينشره فيها صاحبه:
+   https://hanyarafaosman.github.io/hisn-almuslim/
+   لا يجوز نسخ التطبيق أو شفرته أو تصميمه، أو إعادة نشره أو توزيعه أو بيعه، أو نشر
+   نسخة منه باسم آخر أو في متجر آخر، أو استخدام اسمه أو أيقونته، دون إذن كتابي مسبق
+   من صاحبه. المشاهدة والمساهمة في المستودع العام (البلاغات وطلبات التعديل) مرحَّب بها.
+
+2. المحتوى من مصادره
+   نصوص القرآن الكريم والأذكار وكتب السنة والعقيدة والفقه والتفاسير والترجمات، والخطوط،
+   والصوتيات (التلاوات والإذاعات والأذان والسلاسل والقنوات) ليست من تأليف صاحب التطبيق،
+   وحقوقها لأصحابها ومصادرها المذكورة في «عن التطبيق» داخل التطبيق وفي README.md، وتُعرض
+   كما هي دون تعديل وبرخصة كل مصدر أو بإذنه، وتُحذف إن طلب صاحب الحق ذلك.
+   لا تمنح هذه الوثيقة أي حق في ذلك المحتوى؛ ارجع إلى رخصة كل مصدر.
+
+3. المكتبات
+   مكتبات الطرف الثالث في www/js/vendor وما يثبّته npm برخص أصحابها المرفقة بها.
+
+4. التواصل
+   للاستئذان أو البلاغات: https://github.com/hanyarafaosman/hisn-almuslim/issues
+
+يُقدَّم التطبيق كما هو دون أي ضمان، صريح أو ضمني.
+
+----------------------------------------------------------------------
+
+Copyright and licence — Fortress and Light (حصن ونور)
+======================================================
+
+Copyright © 2026 Fortress and Light (hanyarafaosman). All rights reserved.
+
+1. The app
+   The design and source code of the Fortress and Light app (the contents of www/js,
+   www/css, scripts, push and faqih, the interface files and icons), the arrangement of
+   its content, its interface and its name in every language belong to the app's owner.
+   The app is free for personal use from its official site and from the stores where
+   its owner publishes it: https://hanyarafaosman.github.io/hisn-almuslim/
+   Copying the app, its code or its design, republishing, redistributing or selling it,
+   publishing a copy under another name or in another store, or using its name or icon,
+   is not allowed without the owner's prior written permission. Viewing the public
+   repository and contributing to it (issues and pull requests) is welcome.
+
+2. Content from its sources
+   The texts of the Quran, the adhkar, the hadith, creed, fiqh and tafsir books and the
+   translations, the fonts, and the audio (recitations, radios, adhan, series and
+   channels) were not written by the app's owner. Their rights belong to their owners
+   and to the sources named under "About" in the app and in README.md; they are shown
+   as they are, under each source's licence or with its permission, and are removed at
+   the rights holder's request. This document grants no rights in that content; see
+   each source's licence.
+
+3. Libraries
+   Third-party libraries in www/js/vendor and those installed by npm remain under their
+   own licences, which accompany them.
+
+4. Contact
+   Permissions and reports: https://github.com/hanyarafaosman/hisn-almuslim/issues
+
+The app is provided as is, without warranty of any kind, express or implied.

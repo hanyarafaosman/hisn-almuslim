@@ -1,20 +1,21 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.31.0";
-import { setupHadith } from "./hadith.js?v=1.31.0";
-import { setupTafsir } from "./tafsir.js?v=1.31.0";
-import { setupAsma } from "./asma.js?v=1.31.0";
-import { setupKutub } from "./kutub.js?v=1.31.0";
-import { setupFaqih } from "./faqih.js?v=1.31.0";
-import { setupPrayer } from "./prayer.js?v=1.31.0";
-import { setupVideos } from "./videos.js?v=1.31.0";
-import { setupInstall } from "./install.js?v=1.31.0";
-import { setupTajweed } from "./tajweed.js?v=1.31.0";
-import { setupHijri } from "./hijri.js?v=1.31.0";
-import { setupQibla } from "./qibla.js?v=1.31.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.31.0";
-import { mirrorOf } from "./mirror.js?v=1.31.0";
+import { setupQuran } from "./quran.js?v=1.32.0";
+import { setupHadith } from "./hadith.js?v=1.32.0";
+import { setupTafsir } from "./tafsir.js?v=1.32.0";
+import { setupAsma } from "./asma.js?v=1.32.0";
+import { setupKutub } from "./kutub.js?v=1.32.0";
+import { setupFaqih } from "./faqih.js?v=1.32.0";
+import { setupPrayer } from "./prayer.js?v=1.32.0";
+import { setupVideos } from "./videos.js?v=1.32.0";
+import { setupInstall } from "./install.js?v=1.32.0";
+import { setupTajweed } from "./tajweed.js?v=1.32.0";
+import { setupHijri } from "./hijri.js?v=1.32.0";
+import { setupQibla } from "./qibla.js?v=1.32.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.32.0";
+import { mirrorOf } from "./mirror.js?v=1.32.0";
 
-const VERSION = "1.31.0";
+const VERSION = "1.32.0";
+const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -363,7 +364,8 @@ function renderHub(q = "") {
     </section>
     ${IN.card()}
     <div class="searchbox">${icon("search")}<input id="q" type="search" placeholder="${T("hub.searchPlaceholder")}" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></div>
-    <div id="results"></div>`;
+    <div id="results"></div>
+    <footer class="foot"><a href="#/settings">${T("common.copyright", { years: COPYRIGHT_YEARS, name: t("app.name") })}</a></footer>`;
   IN.bind(view);
   if (reading) Q.resume().then(r => { const a = document.getElementById("hub-quran"); if (!a || !r) return; a.href = r.href; $("#hub-last").textContent = r.text; }).catch(() => {});
   const input = $("#q"), results = $("#results");
@@ -732,6 +734,8 @@ function renderSettings() {
         <b>${T("about.audioTitle")}</b><br>${th("about.audioText", {}, { link: link("https://mp3quran.net", "mp3quran.net") }, esc)}
         <br><small>${T("about.version", { v: VERSION })}</small>
         <br>${link(`${SITE}privacy.html`, t("about.privacy"))}
+      </div><div class="about rights">
+        <b>${T("about.rightsTitle")}</b><br>${T("about.copyright", { years: COPYRIGHT_YEARS, name: t("app.name") })}<br>${T("about.rightsText")}
       </div>
     </div>`;
   view.querySelectorAll("[data-sw]").forEach(b => b.onclick = () => {
