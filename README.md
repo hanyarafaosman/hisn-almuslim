@@ -190,6 +190,8 @@ npm run dev
 
 يظهر الإشعار في التطبيق في «الإعدادات ← عن التطبيق ← الحقوق» بكل اللغات، وفي تذييل الصفحة الرئيسية، وفي صفحة الخصوصية، وفي وسم copyright في index.html وبيانات JSON-LD للموقع.
 
+**التواصل** (للاستئذان والملاحظات): واتساب [+20 1028061135](https://wa.me/201028061135)، البريد [hanyarafaosman@gmail.com](mailto:hanyarafaosman@gmail.com)، [LinkedIn](https://www.linkedin.com/in/hany-emam/)، أو [صفحة البلاغات على GitHub](https://github.com/hanyarafaosman/hisn-almuslim/issues).
+
 ## النشر
 
 أي دفع إلى فرع `main` يُنشر تلقائيًا على GitHub Pages. ارفع رقم `VERSION` في `www/sw.js` مع كل تحديث للواجهة، وارفع `QURAN_CACHE` فقط عند تغيير بيانات المصحف (`quran/` أو `mushaf/`: هذه الملفات تُحفظ على الجهاز ولا تُجدَّد، فإعادة بناء `madinah.json` أو `ayat.json` تتطلب رفعه أو تغيير اسم الملف).

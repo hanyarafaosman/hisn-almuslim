@@ -606,6 +606,8 @@
  "about.copyright": "© {years} {name}. Tous droits réservés sur la conception, le code et le nom de l'application.",
  "about.rightsText": "Les textes du Coran, des invocations, des recueils de hadiths et des exégèses, ainsi que les enregistrements audio, appartiennent à leurs ayants droit et aux sources citées ci-dessus, et sont affichés tels quels. L'application est gratuite ; il est interdit de la copier, de la republier ou de la vendre sous un autre nom sans autorisation écrite.",
  "common.copyright": "© {years} {name}. Tous droits réservés.",
+ "about.contactTitle": "Contact",
+ "about.contactText": "Pour toute autorisation ou remarque : {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Complexe du Roi Fahd pour l’impression du Noble Coran",
  "lang.choose": "Choisir la langue",
  "quran.title": "Coran",

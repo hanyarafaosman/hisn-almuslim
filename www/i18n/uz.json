@@ -592,6 +592,8 @@
  "about.copyright": "© {years} {name}. Ilovaning dizayni, kodi va nomiga bo'lgan barcha huquqlar himoyalangan.",
  "about.rightsText": "Qur'on, zikrlar, hadis kitoblari va tafsirlar matnlari hamda audio yozuvlar o'z huquq egalariga va yuqorida keltirilgan manbalarga tegishli bo'lib, o'zgarishsiz ko'rsatiladi. Ilova bepul; yozma ruxsatsiz uni nusxalash, boshqa nom bilan qayta nashr etish yoki sotish taqiqlanadi.",
  "common.copyright": "© {years} {name}. Barcha huquqlar himoyalangan.",
+ "about.contactTitle": "Aloqa",
+ "about.contactText": "Ruxsat va fikr-mulohazalar uchun: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Qirol Fahd nomidagi Qurʼoni karim chop etish majmuasi",
  "lang.choose": "Tilni tanlang",
  "quran.title": "Qurʼon",

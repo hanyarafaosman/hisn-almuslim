@@ -606,6 +606,8 @@
  "about.copyright": "© {years} {name}. Tutti i diritti riservati sul design, sul codice e sul nome dell'app.",
  "about.rightsText": "I testi del Corano, delle invocazioni, delle raccolte di hadith e delle esegesi, così come gli audio, appartengono ai rispettivi titolari e alle fonti citate sopra, e sono mostrati così come sono. L'app è gratuita; non è consentito copiarla, ripubblicarla o venderla con un altro nome senza autorizzazione scritta.",
  "common.copyright": "© {years} {name}. Tutti i diritti riservati.",
+ "about.contactTitle": "Contatti",
+ "about.contactText": "Per autorizzazioni e segnalazioni: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Complesso di Re Fahd per la stampa del Nobile Corano",
  "lang.choose": "Scegli la lingua",
  "quran.title": "Corano",

@@ -592,6 +592,8 @@
  "about.copyright": "© {years} {name}. All rights reserved in the app's design, code and name.",
  "about.rightsText": "The Quran, adhkar, hadith and tafsir texts and the audio belong to their owners and to the sources named above, and are shown as they are. The app is free; copying, republishing or selling it under another name without written permission is not allowed.",
  "common.copyright": "© {years} {name}. All rights reserved.",
+ "about.contactTitle": "Contact",
+ "about.contactText": "For permissions and feedback: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "King Fahd Glorious Quran Printing Complex",
  "lang.choose": "Choose language",
  "quran.title": "Quran",

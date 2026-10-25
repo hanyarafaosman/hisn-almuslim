@@ -16,6 +16,7 @@ import { mirrorOf } from "./mirror.js?v=1.32.0";
 
 const VERSION = "1.32.0";
 const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
+const CONTACT = { whatsapp: "+20 1028061135", whatsappUrl: "https://wa.me/201028061135", email: "hanyarafaosman@gmail.com", linkedin: "https://www.linkedin.com/in/hany-emam/" };
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
 // Ready-made pages of the website (built by scripts/build-site.js) say which language their text is in and
@@ -736,6 +737,8 @@ function renderSettings() {
         <br>${link(`${SITE}privacy.html`, t("about.privacy"))}
       </div><div class="about rights">
         <b>${T("about.rightsTitle")}</b><br>${T("about.copyright", { years: COPYRIGHT_YEARS, name: t("app.name") })}<br>${T("about.rightsText")}
+      </div><div class="about">
+        <b>${T("about.contactTitle")}</b><br>${th("about.contactText", {}, { whatsapp: link(CONTACT.whatsappUrl, `WhatsApp ${CONTACT.whatsapp}`), email: link(`mailto:${CONTACT.email}`, CONTACT.email), linkedin: link(CONTACT.linkedin, "LinkedIn") }, esc)}
       </div>
     </div>`;
   view.querySelectorAll("[data-sw]").forEach(b => b.onclick = () => {

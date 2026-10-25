@@ -578,6 +578,8 @@
  "about.copyright": "© {years} {name}。アプリのデザイン、コード、名称に関するすべての権利を留保します。",
  "about.rightsText": "クルアーン、ズィクル、ハディース集、タフスィールの本文および音声は、その権利者と上記の出典に帰属し、そのまま表示されます。本アプリは無料です。書面による許可なく、複製、別名での再公開、販売を行うことはできません。",
  "common.copyright": "© {years} {name}。すべての権利を留保します。",
+ "about.contactTitle": "お問い合わせ",
+ "about.contactText": "許可やご意見は：{whatsapp}、{email}、{linkedin}。",
  "kfgqpc.name": "ファハド国王聖クルアーン印刷コンプレックス",
  "lang.choose": "言語を選択",
  "quran.title": "クルアーン",

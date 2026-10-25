@@ -606,6 +606,8 @@
  "about.copyright": "© {years} {name}. Sva prava na dizajn, kod i naziv aplikacije zadržana.",
  "about.rightsText": "Tekstovi Kur'ana, zikrova, hadiskih zbirki i tefsira, kao i audio snimci, pripadaju svojim nosiocima prava i gore navedenim izvorima, i prikazuju se onakvi kakvi jesu. Aplikacija je besplatna; nije dozvoljeno kopirati je, ponovo objavljivati pod drugim imenom ili prodavati bez pismene dozvole.",
  "common.copyright": "© {years} {name}. Sva prava zadržana.",
+ "about.contactTitle": "Kontakt",
+ "about.contactText": "Za dozvole i primjedbe: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Kompleks kralja Fahda za štampanje Časnog Kur'ana",
  "lang.choose": "Odaberi jezik",
  "quran.title": "Kur'an",

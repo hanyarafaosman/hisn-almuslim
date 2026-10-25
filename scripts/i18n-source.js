@@ -604,6 +604,8 @@ const S = {
   "about.copyright": ["© {years} {name}. جميع الحقوق محفوظة في تصميم التطبيق وبرمجته واسمه.", "© {years} {name}. All rights reserved in the app's design, code and name."],
   "about.rightsText": ["نصوص القرآن الكريم والأذكار وكتب السنة والتفاسير والصوتيات حقوقها لأصحابها ومصادرها المذكورة أعلاه، وتُعرض كما هي. التطبيق مجاني، ولا يجوز نسخه أو إعادة نشره أو بيعه باسم آخر دون إذن كتابي.", "The Quran, adhkar, hadith and tafsir texts and the audio belong to their owners and to the sources named above, and are shown as they are. The app is free; copying, republishing or selling it under another name without written permission is not allowed."],
   "common.copyright": ["© {years} {name}. جميع الحقوق محفوظة.", "© {years} {name}. All rights reserved."],
+  "about.contactTitle": ["التواصل", "Contact"],
+  "about.contactText": ["للاستئذان والملاحظات: {whatsapp}، {email}، {linkedin}.", "For permissions and feedback: {whatsapp}, {email}, {linkedin}."],
   "kfgqpc.name": ["مجمع الملك فهد لطباعة المصحف الشريف", "King Fahd Glorious Quran Printing Complex"],
 
   "lang.choose": ["اختر اللغة", "Choose language"],

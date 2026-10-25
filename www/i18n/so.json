@@ -592,6 +592,8 @@
  "about.copyright": "© {years} {name}. Dhammaan xuquuqda naqshadda, koodhka iyo magaca abka waa la ilaaliyay.",
  "about.rightsText": "Qoraallada Qur'aanka, adkaarta, kutubta xadiiska iyo tafsiirrada, iyo codadka, waxay leeyihiin mulkiilayaashooda iyo ilaha kor ku xusan, waxaana loo soo bandhigaa sidooda. Abka waa bilaash; lama oggola in la koobiyeeyo, magac kale lagu daabaco ama la iibiyo ogolaansho qoraal ah la'aanteed.",
  "common.copyright": "© {years} {name}. Dhammaan xuquuqda waa la ilaaliyay.",
+ "about.contactTitle": "Xiriir",
+ "about.contactText": "Ogolaansho iyo faallooyin: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Xarunta Boqor Fahad ee Daabacaadda Qur'aanka Kariimka",
  "lang.choose": "Dooro luqadda",
  "quran.title": "Qur'aanka",

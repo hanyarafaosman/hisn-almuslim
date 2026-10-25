@@ -592,6 +592,8 @@
  "about.copyright": "© {years} {name}. Uygulamanın tasarımı, kodu ve adı üzerindeki tüm hakları saklıdır.",
  "about.rightsText": "Kur'an, zikir, hadis kitapları ve tefsir metinleri ile ses kayıtları hak sahiplerine ve yukarıda adı geçen kaynaklara aittir ve olduğu gibi gösterilir. Uygulama ücretsizdir; yazılı izin olmadan kopyalanması, başka bir adla yeniden yayımlanması veya satılması yasaktır.",
  "common.copyright": "© {years} {name}. Tüm hakları saklıdır.",
+ "about.contactTitle": "İletişim",
+ "about.contactText": "İzin ve geri bildirim için: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Kral Fahd Kur'an-ı Kerim Basım Kompleksi",
  "lang.choose": "Dil seçin",
  "quran.title": "Kur'an",

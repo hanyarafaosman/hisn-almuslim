@@ -592,6 +592,8 @@
  "about.copyright": "© {years} {name}. Alle Rechte an Gestaltung, Code und Namen der App vorbehalten.",
  "about.rightsText": "Die Texte des Korans, der Bittgebete, der Hadith-Sammlungen und der Koranexegesen sowie die Audioaufnahmen gehören ihren Rechteinhabern und den oben genannten Quellen und werden unverändert angezeigt. Die App ist kostenlos; sie darf ohne schriftliche Erlaubnis nicht kopiert, unter anderem Namen neu veröffentlicht oder verkauft werden.",
  "common.copyright": "© {years} {name}. Alle Rechte vorbehalten.",
+ "about.contactTitle": "Kontakt",
+ "about.contactText": "Für Genehmigungen und Rückmeldungen: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "König-Fahd-Komplex zum Druck des edlen Korans",
  "lang.choose": "Sprache wählen",
  "quran.title": "Koran",

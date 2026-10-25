@@ -592,6 +592,8 @@
  "about.copyright": "© {years} {name}. Tətbiqin dizaynı, kodu və adı üzərində bütün hüquqlar qorunur.",
  "about.rightsText": "Quran, zikr, hədis kitabları və təfsir mətnləri, həmçinin səs yazıları hüquq sahiblərinə və yuxarıda adı çəkilən mənbələrə məxsusdur və olduğu kimi göstərilir. Tətbiq pulsuzdur; yazılı icazə olmadan onu kopyalamaq, başqa adla yenidən yayımlamaq və ya satmaq qadağandır.",
  "common.copyright": "© {years} {name}. Bütün hüquqlar qorunur.",
+ "about.contactTitle": "Əlaqə",
+ "about.contactText": "İcazə və rəy üçün: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Kral Fəhd Qurani-Kərim Çap Kompleksi",
  "lang.choose": "Dil seçin",
  "quran.title": "Quran",

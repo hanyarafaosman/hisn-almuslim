@@ -592,6 +592,8 @@
  "about.copyright": "© {years} {name}. Të gjitha të drejtat mbi dizajnin, kodin dhe emrin e aplikacionit janë të rezervuara.",
  "about.rightsText": "Tekstet e Kuranit, të dhikrit, të librave të hadithit dhe të tefsirëve, si dhe regjistrimet audio, u përkasin mbajtësve të të drejtave dhe burimeve të përmendura më lart, dhe shfaqen ashtu siç janë. Aplikacioni është falas; nuk lejohet kopjimi, ripublikimi me emër tjetër ose shitja e tij pa leje me shkrim.",
  "common.copyright": "© {years} {name}. Të gjitha të drejtat e rezervuara.",
+ "about.contactTitle": "Kontakt",
+ "about.contactText": "Për leje dhe vërejtje: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Kompleksi i Mbretit Fahd për Shtypjen e Kuranit Fisnik",
  "lang.choose": "Zgjidh gjuhën",
  "quran.title": "Kurani",

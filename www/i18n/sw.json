@@ -592,6 +592,8 @@
  "about.copyright": "© {years} {name}. Haki zote za muundo, msimbo na jina la programu zimehifadhiwa.",
  "about.rightsText": "Matini za Qur'ani, adhkari, vitabu vya hadithi na tafsiri, pamoja na sauti, ni mali ya wenye haki zake na vyanzo vilivyotajwa hapo juu, na zinaonyeshwa kama zilivyo. Programu ni bure; hairuhusiwi kuinakili, kuichapisha upya au kuiuza kwa jina lingine bila ruhusa ya maandishi.",
  "common.copyright": "© {years} {name}. Haki zote zimehifadhiwa.",
+ "about.contactTitle": "Mawasiliano",
+ "about.contactText": "Kwa ruhusa na maoni: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Kituo cha Mfalme Fahd cha Kuchapisha Qur'ani Tukufu",
  "lang.choose": "Chagua lugha",
  "quran.title": "Qur'ani",

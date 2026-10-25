@@ -578,6 +578,8 @@
  "about.copyright": "© {years} {name}. Seluruh hak atas desain, kode, dan nama aplikasi dilindungi.",
  "about.rightsText": "Teks Al-Qur'an, zikir, kitab hadis, dan tafsir, serta rekaman audio, adalah milik pemegang haknya dan sumber yang disebutkan di atas, dan ditampilkan apa adanya. Aplikasi ini gratis; dilarang menyalin, menerbitkan ulang, atau menjualnya dengan nama lain tanpa izin tertulis.",
  "common.copyright": "© {years} {name}. Seluruh hak dilindungi.",
+ "about.contactTitle": "Kontak",
+ "about.contactText": "Untuk izin dan masukan: {whatsapp}, {email}, {linkedin}.",
  "kfgqpc.name": "Kompleks Percetakan Al-Qur'an Raja Fahd",
  "lang.choose": "Pilih bahasa",
  "quran.title": "Al-Qur'an",

@@ -592,6 +592,8 @@
  "about.copyright": "© {years} {name}። የመተግበሪያው ንድፍ፣ ኮድ እና ስም መብቶች በሙሉ የተጠበቁ ናቸው።",
  "about.rightsText": "የቁርኣን፣ የዚክር፣ የሐዲስ መጻሕፍት እና የተፍሲር ጽሑፎች እንዲሁም የድምፅ ቅጂዎች የባለመብቶቻቸውና ከላይ የተጠቀሱት ምንጮች ናቸው፤ እንዳሉም ይታያሉ። መተግበሪያው ነፃ ነው፤ ያለ የጽሑፍ ፈቃድ መቅዳት፣ በሌላ ስም እንደገና ማተም ወይም መሸጥ አይፈቀድም።",
  "common.copyright": "© {years} {name}። መብቱ በሙሉ የተጠበቀ ነው።",
+ "about.contactTitle": "አድራሻ",
+ "about.contactText": "ለፈቃድ እና አስተያየት፦ {whatsapp}፣ {email}፣ {linkedin}።",
  "kfgqpc.name": "የንጉሥ ፋህድ የተከበረው ቁርኣን ማተሚያ ኮምፕሌክስ",
  "lang.choose": "ቋንቋ ይምረጡ",
  "quran.title": "ቁርኣን",

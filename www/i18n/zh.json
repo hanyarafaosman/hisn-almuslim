@@ -578,6 +578,8 @@
  "about.copyright": "© {years} {name}。保留应用的设计、代码和名称的所有权利。",
  "about.rightsText": "古兰经、记念词、圣训集和经注的文本以及音频归其权利人和上述来源所有，并按原样显示。本应用免费；未经书面许可，不得复制、以其他名称重新发布或出售。",
  "common.copyright": "© {years} {name}。保留所有权利。",
+ "about.contactTitle": "联系方式",
+ "about.contactText": "授权与反馈：{whatsapp}、{email}、{linkedin}。",
  "kfgqpc.name": "法赫德国王《古兰经》印制厂",
  "lang.choose": "选择语言",
  "quran.title": "古兰经",
