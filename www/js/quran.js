@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.33.0";
-import { mirrorOf } from "./mirror.js?v=1.33.0";
+import * as off from "./offline.js?v=1.33.1";
+import { mirrorOf } from "./mirror.js?v=1.33.1";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
