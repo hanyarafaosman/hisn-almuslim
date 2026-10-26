@@ -147,8 +147,13 @@ async function recitations() {
     const read = (Array.isArray(reads) ? reads : []).find(r => r.folder_url === HUSARY);
     if (!read) error(G, `ayat_timing/reads no longer lists al-Husary's folder ${HUSARY} (Tajweed examples)`);
     else {
+      // Al-Fatihah, as Q.husary.times() in js/quran.js reads it: the timings number the basmala 0 and the verses after
+      // it 1–6, one less than the Mushaf (the app shifts them by one); numbered 1–7 as the Mushaf would do as well.
+      // Either way every verse of the examples (1:1–1:7) must get a start time.
       const rows = await getJSON(`${API}/ayat_timing?surah=1&read=${read.id}`);
-      if (!Array.isArray(rows) || !rows.some(r => r.ayah === 7 && typeof r.start_time === "number")) error(G, `ayat_timing for al-Husary (read ${read.id}) lacks surah 1 verse 7 (Tajweed examples)`);
+      const starts = [0]; (Array.isArray(rows) ? rows : []).forEach(r => { if (r.ayah >= 1) starts[r.ayah] = r.start_time; });
+      const verses = starts.length - 1, gaps = [...starts].some(v => typeof v !== "number");
+      if (![6, 7].includes(verses) || gaps) error(G, `ayat_timing for al-Husary (read ${read.id}) numbers surah 1 as ${verses} verses${gaps ? " with gaps" : ""}, not 0–6 or 1–7 (Tajweed examples)`);
       const res = await request(`${HUSARY}001.mp3`, { method: "HEAD" });
       if (!res.ok) error(G, `al-Husary's recording ${HUSARY}001.mp3 gave HTTP ${res.status} (Tajweed examples)`);
     }

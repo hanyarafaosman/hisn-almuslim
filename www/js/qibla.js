@@ -6,7 +6,7 @@
 // the times today when the sun stands in the direction of the Qibla or shadows point to it, and the two days a year
 // when the sun is right over the Kaaba. No correction is made for magnetic declination: it is a few degrees in most
 // countries, within what a phone compass can tell anyway, and the page says so.
-import { sunPosition } from "./prayer-calc.js?v=1.32.0";
+import { sunPosition } from "./prayer-calc.js?v=1.32.1";
 
 export const KAABA = { lat: 21.422487, lng: 39.826206 };
 const D = Math.PI / 180;
