@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.32.0";
-import { mirrorOf } from "./mirror.js?v=1.32.0";
+import * as off from "./offline.js?v=1.33.0";
+import { mirrorOf } from "./mirror.js?v=1.33.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -849,16 +849,50 @@ export function setupQuran(ctx) {
   const editions = () => Object.keys(EDITIONS).filter(e => FONTS[EDITIONS[e].v]);
   const pageFontUrl = (ed, n) => FONTS[EDITIONS[ed].v].url.replace("{n}", n);
   const pageFontUrls = ed => Array.from({ length: 604 }, (_, i) => pageFontUrl(ed, i + 1));
-  const pageFonts = new Map();
+  const pageFonts = new Map(), pageFontReady = new Set(); // family → its loading; the families drawn already
   function loadPageFont(ed, n) {
     const fam = `qcf-${ed}-${n}`;
     if (!pageFonts.has(fam)) {
       // The backup copy is the second source: the browser falls back to it only if the first fails to load.
       const src = [pageFontUrl(ed, n), mirrorOf(pageFontUrl(ed, n))].filter(Boolean).map(u => `url(${u}) format("woff2")`).join(", ");
       const ff = new FontFace(fam, src, { display: "block" });
-      pageFonts.set(fam, ff.load().then(f => { document.fonts.add(f); return fam; }).catch(e => { pageFonts.delete(fam); throw e; }));
+      pageFonts.set(fam, ff.load().then(f => { document.fonts.add(f); pageFontReady.add(fam); return fam; }).catch(e => { pageFonts.delete(fam); throw e; }));
     }
     return pageFonts.get(fam);
+  }
+  // The pages about to be read are fetched ahead of the reader (the service worker keeps every page font, so a page
+  // read once opens at once ever after): the next five and the previous two, two at a time so that they never slow
+  // the open page down. Not while the whole print is being saved: that job fetches them in the same order (keepPages).
+  let warmSeq = 0;
+  function warmPages(ed, n) {
+    const seq = ++warmSeq;
+    if (off.currentJob()?.id === keepJobId(ed)) return;
+    const q = [n + 1, n + 2, n - 1, n + 3, n + 4, n + 5, n - 2].filter(p => p >= 1 && p <= 604);
+    const next = () => { if (seq !== warmSeq || !q.length) return; loadPageFont(ed, q.shift()).catch(() => {}).finally(next); };
+    next(); next();
+  }
+
+  // ---------- the whole print on the device ----------
+  // A print whose 604 page fonts are all saved opens without the internet. The reader is offered that on the page
+  // (once; again a week after "later") and from the print sheet. A print they chose to keep goes on being saved in
+  // the background whenever its pages are open and the device is online, from the page being read onwards, until
+  // every page is there; the Offline content page shows the same saving and can delete it.
+  const keepJobId = ed => "off:pages" + ed;
+  const pagesSaved = {}; // print → how many of its page fonts are on the device (counted when first needed)
+  async function countSaved(ed) { pagesSaved[ed] = off.isSupported() ? (await off.savedSet(off.STORES.PAGES, pageFontUrls(ed))).size : 0; return pagesSaved[ed]; }
+  const keepTried = {}; // print → when the background saving last ran (a device offline is tried again after 10 minutes)
+  async function keepPages(ed, n, byUser = false) {
+    if (!off.isSupported()) return;
+    if (!byUser && (!state.keepPages?.[ed] || !navigator.onLine || off.currentJob() || Date.now() - (keepTried[ed] || 0) < 600000)) return;
+    if (pagesSaved[ed] === undefined) await countSaved(ed);
+    if (pagesSaved[ed] >= 604) return;
+    keepTried[ed] = Date.now();
+    const urls = pageFontUrls(ed); // from the page being read to the end, then from the first page
+    const r = await off.download({ id: keepJobId(ed), urls: [...urls.slice(n - 1), ...urls.slice(0, n - 1)], store: off.STORES.PAGES, concurrency: 4 });
+    if (r.busy) { if (byUser) toast(t("offline.busy")); return; }
+    await countSaved(ed);
+    if (pagesSaved[ed] >= 604) toast(t("mushaf.keepDone"));
+    else if (byUser || r.noSpace) reportJob(r);
   }
   function pageInfo(n, A) {
     const [s, a] = pageFirst[n];
@@ -866,7 +900,25 @@ export function setupQuran(ctx) {
     return { first: [s, a], surahs, juz: juzOfMeta(riw("hafs"), s, a), q: A ? quarterOf(A, s, a) : -1 };
   }
   const pageHref = (ed, n, v = "") => `#/mushaf/${ed}/${n}` + (v ? `?v=${v}` : "");
-  const goPage = (ed, n) => { if (n >= 1 && n <= 604) location.replace(pageHref(ed, n)); };
+  // Turning a page: the page being left stays on screen until the next one's font is there (after a moment a thin bar
+  // shows the wait), so a turn never shows an empty page; a font that has not come within 4 s turns the page anyway,
+  // and the page says it needs the internet. Turns that follow each other quickly (swipes, arrow keys) add up: each
+  // counts from the page being turned to (turnBy).
+  let turnSeq = 0, turnTo = null; // the turn under way: { ed, n }
+  async function goPage(ed, n) {
+    if (!(n >= 1 && n <= 604)) return;
+    const seq = ++turnSeq, from = location.hash; turnTo = { ed, n };
+    if (!pageFontReady.has(`qcf-${ed}-${n}`)) {
+      const mm = document.getElementById("mm"); const timer = setTimeout(() => mm?.classList.add("turning"), 120);
+      await Promise.race([loadPageFont(ed, n).catch(() => {}), new Promise(r => setTimeout(r, 4000))]);
+      clearTimeout(timer);
+      if (seq !== turnSeq || location.hash !== from) return; // a later turn, or the reader left
+      mm?.classList.remove("turning");
+    }
+    turnTo = null; location.replace(pageHref(ed, n));
+  }
+  const turnBy = (ed, n, d) => goPage(ed, (turnTo?.ed === ed ? turnTo.n : n) + d);
+  window.addEventListener("hashchange", () => { turnTo = null; });
 
   // The Tajweed fonts (COLRv1) colour the letters themselves, so CSS colour has no effect on them. They carry three
   // palettes (0 light, 1 dark, 2 sepia); entry 0 of each is the colour of the letters, which the name of Allah overrides.
@@ -894,7 +946,8 @@ export function setupQuran(ctx) {
     setNav("quran"); const hash = location.hash;
     const byFollow = autoHref === hash; autoHref = ""; // turned to by following the recitation
     n = Math.min(604, Math.max(1, n | 0 || 1));
-    setHeader(t("mushaf.pages"), { back: true }); view.innerHTML = loading();
+    setHeader(t("mushaf.pages"), { back: true });
+    if (!PAGES || !INDEX) view.innerHTML = loading(); // once loaded, the page being left stays until the next one is drawn
     // The verse map (ayat.json) is optional: without it the page still shows, only verses cannot be selected.
     let A = null;
     try { [, , A] = await Promise.all([loadIndex(), loadPages(), loadAyat().catch(() => null)]); loadFont(riw("hafs")); } catch (e) { return failed(e, () => renderPages(ed, n, params)); }
@@ -934,9 +987,10 @@ export function setupQuran(ctx) {
       <div class="mm" id="mm">
         <div class="mm-margin" aria-hidden="true"><span>${esc(t("quran.surah", { name: surahTitle }))}</span><span>${esc(t("quran.juz", { n: info.juz }))}</span></div>
         <div class="mpage-wrap"><div class="mpage${n <= 2 ? " opening" : ""}${A ? " tappable" : ""}" id="mpage" lang="ar" dir="rtl" style="--qfont:'kfgqpc-hafs'">${lines}<div class="mpage-msg" id="mpage-msg">${loading("")}</div></div></div>
-        <div class="mm-margin foot"><span>${esc(num(n))}</span></div>
+        <div class="mm-margin foot"><span>${esc(num(n))}</span><span id="m-save" hidden></span></div>
       </div>
       <div class="mbar" id="mbar">
+        <div class="mm-keep" id="m-keep" hidden><div>${icon("download")}<span>${esc(t("mushaf.keepAsk", { size: off.fmtSize(FONTS[EDITIONS[ed].v].bytes, getLang()) }))}</span></div><div class="mm-keep-btns"><button class="btn small" id="m-keep-save">${esc(t("mushaf.keepSave"))}</button><button class="btn ghost small" id="m-keep-later">${esc(t("install.later"))}</button></div></div>
         <div class="mslider">
           <button class="icon-btn" id="m-prev" aria-label="${esc(t("mushaf.prev"))}"${n <= 1 ? " disabled" : ""}>${icon("back", "dir")}</button>
           <input type="range" id="m-range" min="1" max="604" step="1" value="${n}" aria-label="${esc(t("mushaf.slider"))}">
@@ -952,7 +1006,7 @@ export function setupQuran(ctx) {
           <button data-tool="print" aria-label="${esc(t("mushaf.chooseEdition"))}">${icon("layers")}<span>${esc(t("mushaf.print"))}</span></button>
         </div>
       </div>`;
-    $("#m-prev").onclick = () => goPage(ed, n - 1); $("#m-next").onclick = () => goPage(ed, n + 1);
+    $("#m-prev").onclick = () => turnBy(ed, n, -1); $("#m-next").onclick = () => turnBy(ed, n, 1);
     const page = $("#mpage"), mm = $("#mm"); mm.style.setProperty("--mz", state.mz);
     // At 100% the page is as large as the screen allows without scrolling: its width is measured from the page's own
     // height-to-width ratio (fixed by its lines) and the room the box leaves after the margins above and below it.
@@ -1033,13 +1087,33 @@ export function setupQuran(ctx) {
       }
       if (A && !state.hintMm) { state.hintMm = true; save(); setTimeout(() => { if (!stale(hash)) toast(t("mushaf.hint")); }, 900); }
     } catch { if (!stale(hash)) $("#mpage-msg").innerHTML = `<div class="empty">${icon("download")}<div>${esc(t("mushaf.fontNeedsNet"))}</div></div>`; }
-    [n + 1, n - 1].filter(p => p >= 1 && p <= 604).forEach(p => loadPageFont(ed, p).catch(() => {}));
+    warmPages(ed, n);
+
+    // The whole print on the device: the offer at the top of the tools bar (until "later" is tapped; the bars are
+    // shown when the Mushaf is opened and on every tap on the page) and, while the print is being saved, the count
+    // beside the page number below the page.
+    const keepBox = $("#m-keep"), keepOut = $("#m-save");
+    const showKeep = () => {
+      if (stale(hash) || !document.body.contains(keepBox)) return;
+      const j = off.currentJob(); const run = j?.id === keepJobId(ed);
+      keepOut.hidden = !run; if (run) keepOut.textContent = t("mushaf.keepSaving", { done: j.done, total: j.total });
+      keepBox.hidden = run || !off.isSupported() || !navigator.onLine || !!state.keepPages?.[ed] || !(pagesSaved[ed] < 604) || Date.now() - (state.keepAsked?.[ed] || 0) < 7 * 86400000;
+    };
+    const onKeep = e => { if (stale(hash) || !document.body.contains(keepBox)) return removeEventListener("offline-progress", onKeep); if (e.detail) showKeep(); else countSaved(ed).then(showKeep); };
+    addEventListener("offline-progress", onKeep);
+    (pagesSaved[ed] === undefined ? countSaved(ed) : Promise.resolve()).then(showKeep);
+    keepBox.onclick = e => {
+      const b = e.target.closest("button"); if (!b) return;
+      if (b.id === "m-keep-later") { (state.keepAsked ||= {})[ed] = Date.now(); save(); showKeep(); return; }
+      (state.keepPages ||= {})[ed] = true; save(); keepPages(ed, n, true); showKeep();
+    };
+    keepPages(ed, n); // goes on saving a print the reader chose to keep
 
     // Arabic book: the next page is on the left, so swiping toward the right turns forward. A page enlarged past the
     // screen is panned by that gesture instead; it is turned from the bar or with the arrow keys.
     let x0 = null; const wrap = page.parentElement;
     page.addEventListener("touchstart", e => { x0 = e.touches.length === 1 && wrap.scrollWidth <= wrap.clientWidth + 1 ? e.touches[0].clientX : null; }, { passive: true });
-    page.addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 60) { setUi(false); goPage(ed, dx > 0 ? n + 1 : n - 1); } });
+    page.addEventListener("touchend", e => { if (x0 === null) return; const dx = e.changedTouches[0].clientX - x0; x0 = null; if (Math.abs(dx) > 60) { setUi(false); turnBy(ed, n, dx > 0 ? 1 : -1); } });
 
     // Page slider: shows the page and its surah while dragging, opens the page on release.
     const range = $("#m-range"), out = $("#m-range-out");
@@ -1088,12 +1162,23 @@ export function setupQuran(ctx) {
     // Print and colours: the three prints, and the name of Allah in colour.
     const openPrint = () => {
       const size = e2 => t("offline.size", { size: off.fmtSize(FONTS[EDITIONS[e2].v].bytes, getLang()) });
+      // This print on the device: how much of it is saved, and the saving, or stopping it.
+      const keepRow = () => {
+        if (!off.isSupported()) return "";
+        const j = off.currentJob(); const run = j?.id === keepJobId(ed); const done = pagesSaved[ed] ?? 0;
+        const sub = run ? t("mushaf.keepSaving", { done: j.done, total: j.total }) : done >= 604 ? t("mushaf.keepDone") : `${t("offline.progress", { done, total: 604 })}${sep()}${size(ed)}`;
+        const act = run ? `<button class="btn ghost small" id="m-keep-cancel">${esc(t("offline.cancel"))}</button>` : done >= 604 ? icon("check") : `<button class="btn small" id="m-keep-go">${esc(t("offline.save"))}</button>`;
+        return `<div class="list flat"><div class="row"><div class="num">${icon("download")}</div><div class="lbl">${esc(t("mushaf.keepTitle"))}<span class="sub">${esc(sub)}</span></div>${act}</div></div>`;
+      };
       const body = sheet(t("mushaf.display"), `<div class="list flat">${editions().map(e2 => `<button class="row" data-ed="${e2}"><div class="lbl">${esc(t("mushaf.ed" + e2))}${e2 === "tajweed" ? `<span class="sub">${esc(t("mushaf.tajweedNote"))}</span>` : ""}<span class="sub">${esc(size(e2))}</span></div>${e2 === ed ? icon("check") : ""}</button>`).join("")}
         ${editions().includes("tajweed") ? `<a class="row" href="#/tajweed"><div class="num">${icon("palette")}</div><div class="lbl">${esc(t("tajweed.title"))}<span class="sub">${esc(t("tajweed.hint"))}</span></div>${icon("back", "chev")}</a>` : ""}</div>
         ${JALALA ? `<div class="list flat"><div class="row"><div class="lbl">${esc(t("mushaf.jalala"))}<span class="sub">${esc(t("mushaf.jalalaNote", { n: JALALA.count }))}</span></div><button class="switch ${state.jalala ? "on" : ""}" id="m-jl" role="switch" aria-checked="${!!state.jalala}" aria-label="${esc(t("mushaf.jalala"))}"></button></div></div>` : ""}
+        ${keepRow()}
         <p class="source-note">${esc(t("mushaf.source"))}</p>`);
       body.onclick = e => {
         if (e.target.closest("#m-jl")) { state.jalala = !state.jalala; save(); closeSheet(); renderPages(ed, n, params); return; }
+        if (e.target.closest("#m-keep-go")) { (state.keepPages ||= {})[ed] = true; save(); closeSheet(); keepPages(ed, n, true); showKeep(); return; }
+        if (e.target.closest("#m-keep-cancel")) { delete state.keepPages?.[ed]; save(); off.cancel(); closeSheet(); return; }
         const b = e.target.closest("[data-ed]"); if (!b) return; closeSheet(); goPage(b.dataset.ed, n);
       };
     };
@@ -1146,8 +1231,8 @@ export function setupQuran(ctx) {
   }
   document.addEventListener("keydown", e => {
     const m = /^#\/mushaf\/(\w+)\/(\d+)/.exec(location.hash); if (!m || e.target?.closest?.("input, textarea, select") || document.getElementById("sheet")) return;
-    if (e.key === "ArrowLeft") goPage(m[1], Number(m[2]) + 1);
-    if (e.key === "ArrowRight") goPage(m[1], Number(m[2]) - 1);
+    if (e.key === "ArrowLeft") turnBy(m[1], Number(m[2]), 1);
+    if (e.key === "ArrowRight") turnBy(m[1], Number(m[2]), -1);
   });
 
   // ---------- listening: riwayat → reciters → surahs ----------
@@ -1324,6 +1409,8 @@ export function setupQuran(ctx) {
       }
       const tg = targets[kind]; const [store, urls] = typeof tg === "function" ? tg(id) : (tg || []);
       if (!store) return;
+      // A print saved here is kept like one saved from its pages (keepPages); one deleted is no longer kept.
+      if (kind === "pages") { if (act === "del") delete state.keepPages?.[id]; else (state.keepPages ||= {})[id] = true; save(); delete pagesSaved[id]; }
       if (act === "del") { await off.remove(store, urls); toast(t("offline.deleted")); return renderOffline(); }
       reportJob(await off.download({ id: "off:" + kind + id, urls, store, concurrency: kind === "audio" ? 3 : 4 }));
     });

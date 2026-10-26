@@ -642,6 +642,17 @@ body.mm-on .view { padding: 0 10px; max-width: 1700px; }
    enlarge it (--mz, from the size tool, Ctrl + wheel or a pinch): the page then grows past the screen and scrolls or pans. */
 .mm { --mz: 1; --mmw: calc(var(--mz) * var(--mfit, min(100%, (100dvh - var(--sat) - var(--sab) - 84px) / 1.56))); min-height: calc(100dvh - var(--sat) - var(--sab)); display: flex; flex-direction: column; justify-content: center; gap: 4px; padding: 6px 0; }
 .mm .mpage { width: var(--mmw); max-width: none; }
+.mm { position: relative; }
+/* A page being turned to whose font is still on its way: a thin moving bar at the top (goPage in quran.js). */
+.mm.turning::before { content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--primary) 50%, transparent) no-repeat; background-size: 40% 100%; animation: mm-turn .9s linear infinite; z-index: 2; }
+@keyframes mm-turn { from { background-position: -70% 0; } to { background-position: 170% 0; } }
+/* The offer to save the whole print on the device, at the top of the tools bar; the saving's count joins the page number below the page. */
+.mm-keep { margin: 4px 0 8px; padding: 8px 10px; background: var(--surface-2); border-radius: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 12px; font-size: .8rem; line-height: 1.4; }
+.mm-keep > div:first-child { display: flex; align-items: center; gap: 8px; flex: 1 1 220px; }
+.mm-keep svg { width: 20px; height: 20px; flex: none; color: var(--primary); }
+.mm-keep-btns { display: flex; gap: 6px; margin-inline-start: auto; }
+.mm-margin.foot { gap: 16px; }
+.mm-margin.foot #m-save { color: var(--primary); }
 body.has-player .mm { --mmw: calc(var(--mz) * var(--mfit, min(100%, (100dvh - var(--sat) - var(--sab) - 146px) / 1.56))); min-height: calc(100dvh - var(--sat) - var(--sab) - 62px); } /* room for the player */
 .mm-margin { display: flex; justify-content: space-between; gap: 12px; width: min(100%, var(--mmw)); margin: 0 auto; padding: 0 8px; font-size: .78rem; font-weight: 600; color: var(--muted); }
 .mm-margin span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
