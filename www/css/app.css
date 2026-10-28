@@ -927,6 +927,8 @@ details.info { display: block; }
 .fq-scholars { margin: 10px 4px 0; color: var(--muted); font-size: .85rem; }
 .fq-scholars a { color: var(--primary); font-weight: 700; }
 .empty .fq-scholars { margin-top: 14px; }
+.spinner.sm { display: inline-block; width: 16px; height: 16px; margin: 6px 0 0; border-width: 2px; }
+#fq-more { margin-top: 10px; }
 
 /* ===== التقويم الهجري ===== */
 .hub-date { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; color: #fff; font-size: .9rem; opacity: .95; }

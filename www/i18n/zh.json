@@ -129,7 +129,7 @@
  "faqih.askScholar": "如需法特瓦：",
  "faqih.tooMany": "短时间内提问过多；请等待一分钟后再试。",
  "faqih.busy": "检索已达到每日提问上限；请明天再来。",
- "faqih.notReady": "检索目前不可用。",
+ "faqih.wordsNote": "以下是典籍中含有您问题用词的段落，最贴近的排在前面。打开段落即可在上下文中阅读作者的完整原文。",
  "kutub.title": "信仰与教法",
  "kutub.intro": "学问的基础文本与经典巨著：逊尼派（圣行与大众派）的信仰、圣训、各学派的教法，以及 Ibn Qudamah、Ibn Hazm、Ibn Taymiyyah 和 Ibn al-Qayyim 等伊玛目的著作。每部典籍均为全本，按印刷版照录。",
  "kutub.aqida": "信仰典籍",

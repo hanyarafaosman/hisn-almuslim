@@ -1,8 +1,8 @@
 /* Service worker: offline-first app shell for حصن ونور */
-const VERSION = "hisn-v1.34.0";
+const VERSION = "hisn-v1.35.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
-  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./js/faqih.js", "./js/prayer.js", "./js/prayer-calc.js", "./js/videos.js", "./js/install.js", "./js/tajweed.js", "./js/hijri.js", "./js/qibla.js", "./adhan/index.json", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./data/lessons.json", "./data/videos.json", "./data/tajweed.json", "./quran/index.json",
+  "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./js/faqih.js", "./js/fihris-words.js", "./js/prayer.js", "./js/prayer-calc.js", "./js/videos.js", "./js/install.js", "./js/tajweed.js", "./js/hijri.js", "./js/qibla.js", "./adhan/index.json", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./fihris/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./data/lessons.json", "./data/videos.json", "./data/tajweed.json", "./quran/index.json",
   "./i18n/ar.json", "./i18n/en.json",
   "./icons/icon-192.png", "./icons/icon-512.png", "./icons/maskable-512.png", "./icons/apple-touch-icon.png", "./icons/favicon-32.png", "./icons/favicon.svg"
 ];
@@ -34,13 +34,16 @@ const TAFSIR_CACHE = "hisn-tafsir-v1";
 // Every file read is kept across app updates. A corrected file gets a new name, and js/kutub.js deletes copies the
 // index no longer lists.
 const KUTUB_CACHE = "hisn-kutub-v1";
+// The word index of those books (fihris/docs.<hash>.json and fihris/w/<n>.<hash>.bin, scripts/build-fihris.mjs), read
+// by the fiqh search a file at a time. Kept like the books; js/faqih.js deletes copies the index no longer lists.
+const FIHRIS_CACHE = "hisn-fihris-v1";
 // Adhan recordings (adhan/<id>.<hash>.aac, kept across updates), the adhan file the user chose (adhan/custom), and what
 // js/prayer.js leaves for the prayer notifications below (PRAYER_INFO).
 const ADHAN_CACHE = "hisn-adhan-v1";
 const PRAYER_INFO = "prayer/push.json";
 // Backup copies of outside files (MIRROR in js/mirror.js). On GitHub Pages they share the app's origin.
 const MIRROR = new URL("https://hanyarafaosman.github.io/hisn-almuslim-assets/");
-const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS, HADITH_CACHE, TAFSIR_CACHE, KUTUB_CACHE, ADHAN_CACHE];
+const KEEP = [VERSION, FONT_CACHE, OFFLINE_AUDIO, QURAN_CACHE, TR_CACHE, MUSHAF_FONTS, HADITH_CACHE, TAFSIR_CACHE, KUTUB_CACHE, FIHRIS_CACHE, ADHAN_CACHE];
 
 self.addEventListener("install", e => {
   // cache: "reload" bypasses the browser HTTP cache (GitHub Pages sends max-age=600), so a new version never stores stale files.
@@ -70,7 +73,8 @@ self.addEventListener("fetch", e => {
       || /\/mushaf\/[a-z]+\.json$/.test(url.pathname);
     const uiFont = /\/fonts\/[a-z0-9-]+\.woff2$/.test(url.pathname);
     const book = /\/kutub\/[a-z0-9-]+(\/\d+)?\.[0-9a-f]{10}\.json$/.test(url.pathname);
-    e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : uiFont ? FONT_CACHE : book ? KUTUB_CACHE : VERSION));
+    const wordIndex = /\/fihris\/(docs|w\/\d+)\.[0-9a-f]{10}\.(json|bin)$/.test(url.pathname);
+    e.respondWith(cacheFirst(req, quranFile ? QURAN_CACHE : uiFont ? FONT_CACHE : book ? KUTUB_CACHE : wordIndex ? FIHRIS_CACHE : VERSION));
     return;
   }
   // Page fonts of the prints: QCF v1/v2 from the Quran.com CDN, the colour Tajweed print (QCF v4) from the Quran Foundation CDN.
