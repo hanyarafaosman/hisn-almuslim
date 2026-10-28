@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/faqih.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/qibla.js", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/faqih.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/qibla.js", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/fadl.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -28,6 +28,17 @@ db.categories.forEach(c => c.items.forEach(i => {
   const counts = hints.map(h => (COUNT_WORDS.find(([re]) => re.test(h)) || [null, /مرة واحدة/.test(h) ? 1 : null])[1]).filter(Boolean);
   if (counts.length && !counts.includes(i.repeat)) fail(`repeat ${c.id}:${i.id} is ${i.repeat} but the text says ${counts.join("/")} — fix in scripts/hisn-corrections.js`);
 }));
+
+// The virtue, narrator and source of each morning and evening dhikr (scripts/build-fadl.js): every dhikr of chapter 27
+// has its source, and a virtue pointing to another dhikr (see) points to one that exists.
+const fadl = readJson("data/fadl.json"), c27 = db.categories.find(c => c.id === 27);
+const itemIds = new Set(db.categories.flatMap(c => c.items.map(i => i.id)));
+c27.items.forEach(i => { if (!fadl.items[i.id]?.src.length) fail(`data/fadl.json: no source for dhikr ${i.id} — run npm run fadl`); });
+for (const [id, x] of Object.entries(fadl.items)) {
+  if (!c27.items.some(i => i.id === Number(id))) fail(`data/fadl.json: ${id} is not a morning or evening dhikr`);
+  x.fadl.forEach(f => { if (f.see ? !itemIds.has(f.see) : !f.t) fail(`data/fadl.json ${id}: empty virtue or unknown dhikr ${f.see}`); });
+}
+if (!fadl.intro?.t || !fadl.intro.src) fail("data/fadl.json: no virtue for the chapter");
 
 // Mushaf: every riwayah file + font exists and verse counts match the index
 const qi = readJson("quran/index.json"); let ayat = 0;

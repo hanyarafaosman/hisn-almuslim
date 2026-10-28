@@ -71,7 +71,7 @@ export function setupVideos(ctx) {
         return `<h3 class="vch">${esc(isAr() ? DATA.channels[k].ar : DATA.channels[k].en)}</h3><div class="list vlist">${list.map(seriesRow).join("")}</div>`;
       }).join("");
     };
-    $("#vgroups").onclick = e => { const b = e.target.closest("[data-g]"); if (!b || b.dataset.g === group) return; history.replaceState(null, "", "#/videos?g=" + b.dataset.g); show(b.dataset.g); b.scrollIntoView({ inline: "nearest", block: "nearest" }); };
+    $("#vgroups").onclick = e => { const b = e.target.closest("[data-g]"); if (!b || b.dataset.g === group) return; history.replaceState(history.state, "", "#/videos?g=" + b.dataset.g); show(b.dataset.g); b.scrollIntoView({ inline: "nearest", block: "nearest" }); };
     show(group);
     $("#vgroups .chip.on")?.scrollIntoView({ inline: "nearest", block: "nearest" });
   }
