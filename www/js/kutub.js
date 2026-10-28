@@ -79,7 +79,8 @@ export function setupKutub(ctx) {
   // Search ignores diacritics and letter forms. Folding keeps one character for one, so a match found in the
   // folded text is at the same place in the text without diacritics.
   const fold = s => ctx.stripTashkeel(String(s).replace(REF, "")).replace(/[ٱأإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه");
-  const terms = q => fold(q).toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").split(/\s+/).filter(Boolean);
+  // A joined «عبدالله» is searched as «عبد» + «الله», so it finds the name written either way.
+  const terms = q => fold(q).toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/(^|\s)عبد(?=ال)/g, "$1عبد ").split(/\s+/).filter(Boolean);
   function snippet(text, want) {
     const plain = ctx.stripTashkeel(text.replace(REF, "")), f = fold(text);
     const k = f.indexOf(want[0]); const from = Math.max(0, k - 40), to = Math.min(plain.length, k + 120);

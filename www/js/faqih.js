@@ -5,7 +5,7 @@
 // downloaded, and they are kept for offline use. It is a search of the books, never a fatwa.
 // When a question server is set (FAQIH.url, faqih/README.md: a model restates the passages it finds and every quotation
 // is checked against them) the question goes there instead.
-import { queryWords, filesOf, fileOf, forms, decodeFile, rank, mix, matcher, plain, fold } from "./fihris-words.js?v=1.35.0";
+import { queryWords, filesOf, fileOf, forms, decodeFile, rank, mix, matcher, plain, fold } from "./fihris-words.js?v=1.35.1";
 
 const FAQIH = { url: "" }; // the question server, once deployed (faqih/README.md); scripts/check-sources.js reads it
 const FIHRIS_CACHE = "hisn-fihris-v1";
