@@ -1,20 +1,20 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.34.0";
-import { setupHadith } from "./hadith.js?v=1.34.0";
-import { setupTafsir } from "./tafsir.js?v=1.34.0";
-import { setupAsma } from "./asma.js?v=1.34.0";
-import { setupKutub } from "./kutub.js?v=1.34.0";
-import { setupFaqih } from "./faqih.js?v=1.34.0";
-import { setupPrayer } from "./prayer.js?v=1.34.0";
-import { setupVideos } from "./videos.js?v=1.34.0";
-import { setupInstall } from "./install.js?v=1.34.0";
-import { setupTajweed } from "./tajweed.js?v=1.34.0";
-import { setupHijri } from "./hijri.js?v=1.34.0";
-import { setupQibla } from "./qibla.js?v=1.34.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.34.0";
-import { mirrorOf } from "./mirror.js?v=1.34.0";
+import { setupQuran } from "./quran.js?v=1.35.0";
+import { setupHadith } from "./hadith.js?v=1.35.0";
+import { setupTafsir } from "./tafsir.js?v=1.35.0";
+import { setupAsma } from "./asma.js?v=1.35.0";
+import { setupKutub } from "./kutub.js?v=1.35.0";
+import { setupFaqih } from "./faqih.js?v=1.35.0";
+import { setupPrayer } from "./prayer.js?v=1.35.0";
+import { setupVideos } from "./videos.js?v=1.35.0";
+import { setupInstall } from "./install.js?v=1.35.0";
+import { setupTajweed } from "./tajweed.js?v=1.35.0";
+import { setupHijri } from "./hijri.js?v=1.35.0";
+import { setupQibla } from "./qibla.js?v=1.35.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.35.0";
+import { mirrorOf } from "./mirror.js?v=1.35.0";
 
-const VERSION = "1.34.0";
+const VERSION = "1.35.0";
 const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
@@ -85,13 +85,16 @@ function formatText(text) {
 const plainText = s => s.replace(/\(\(/g, "«").replace(/\)\)/g, "»");
 
 // ---------- data ----------
-let DB = null; const catById = new Map(); const sectionOfCat = new Map();
+let DB = null; const catById = new Map(); const sectionOfCat = new Map(); const catOfItem = new Map();
 // Adhkar that are not in Hisn al-Muslim, shown in a separate section with their grading.
 let EXTRAS = [];
+// The virtue, narrator and source of each morning and evening dhikr, from the printed book's footnotes (scripts/build-fadl.js).
+let FADL = null;
 async function loadData() {
-  const [res, extras] = await Promise.all([fetch("data/hisn.json"), fetch("data/extras.json").then(r => r.ok ? r.json() : { items: [] }).catch(() => ({ items: [] }))]);
-  DB = await res.json(); EXTRAS = extras.items || [];
-  DB.categories.forEach(c => catById.set(c.id, c));
+  const optional = (url, empty) => fetch(url).then(r => r.ok ? r.json() : empty).catch(() => empty);
+  const [res, extras, fadl] = await Promise.all([fetch("data/hisn.json"), optional("data/extras.json", { items: [] }), optional("data/fadl.json", null)]);
+  DB = await res.json(); EXTRAS = extras.items || []; FADL = fadl;
+  DB.categories.forEach(c => { catById.set(c.id, c); c.items.forEach(i => catOfItem.set(i.id, c)); });
   DB.sections.forEach(s => s.cats.forEach(id => sectionOfCat.set(id, s)));
 }
 // Official English translation of the adhkar (hisnmuslim.com). Loaded only when needed.
@@ -232,7 +235,7 @@ let searchIndex = null;
 async function changeLang(code) {
   settings.lang = code; saveSettings();
   // A ?lang= in the address would override the new choice on the next visit, so drop it.
-  if (new URLSearchParams(location.search).has("lang")) history.replaceState(null, "", location.pathname + location.hash);
+  if (new URLSearchParams(location.search).has("lang")) history.replaceState(history.state, "", location.pathname + location.hash);
   await setLang(code, VERSION);
   if (showAdhkarTr() || code !== "ar") await loadEN().catch(() => {});
   searchIndex = null; applyStatic(); route(); PR.langChanged();
@@ -248,8 +251,13 @@ const HJ = setupHijri({ view, $, esc, icon, t, num, sep, getLang, share, SITE, s
 const QB = setupQibla({ view, $, esc, icon, t, num, sep, getLang, toast, share, SITE, vibrate, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), prayer: PR });
 
 // ---------- router ----------
+// In-app history: each entry keeps how many pages of the app lie behind it (history.state.d), so Back goes to the
+// page before, whichever part of the app it was in, and never leaves the app (with nothing behind, it goes Home).
+let depth = history.state?.d ?? 0, onHome = false;
+if (history.state?.d == null) history.replaceState({ ...history.state, d: depth }, "");
 function setHeader(title, { back = false, actions = "", onTitle = null } = {}) {
-  titleEl.textContent = title; backBtn.hidden = !back; actionsEl.innerHTML = actions;
+  // Every page but Home offers Back once another page of the app is behind it, so moving between tools is undone in one tap.
+  titleEl.textContent = title; backBtn.hidden = !(back || (depth > 0 && !onHome)); actionsEl.innerHTML = actions;
   // A title that opens something (the Quran index on a reading page) acts as a button.
   titleEl.onclick = onTitle; titleEl.classList.toggle("tappable", !!onTitle);
   if (onTitle) { titleEl.setAttribute("role", "button"); titleEl.tabIndex = 0; } else { titleEl.removeAttribute("role"); titleEl.removeAttribute("tabindex"); }
@@ -257,9 +265,9 @@ function setHeader(title, { back = false, actions = "", onTitle = null } = {}) {
     : title === t("app.name") ? title : `${title} — ${t("app.name")}`;
 }
 titleEl.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && titleEl.onclick) { e.preventDefault(); titleEl.onclick(); } });
-backBtn.addEventListener("click", () => { if (history.length > 1) history.back(); else location.hash = "#/"; });
-// Bottom bar: Home, Quran, Adhkar, Hadith, More. Pages reached from "More" highlight that tab.
-const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more", videos: "more", hijri: "more", qibla: "more" };
+backBtn.addEventListener("click", () => { if (depth > 0) history.back(); else location.hash = "#/"; });
+// Bottom bar: Home, Quran, Adhkar, Prayer, Tools. Pages reached from Tools highlight that tab.
+const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more", videos: "more", hijri: "more", qibla: "more", hadith: "more" };
 function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll(".bottom-nav a").forEach(a => a.classList.toggle("on", a.dataset.nav === name)); }
 
 function route() {
@@ -267,6 +275,7 @@ function route() {
   // The printed Mushaf fills the screen: the app bars step aside there (see .mm-on in app.css).
   document.body.classList.toggle("mm-on", parts[0] === "mushaf");
   stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 1) || (parts[0] === "tafsir" && parts.length > 2) || (parts[0] === "kutub" && parts.length > 2)); view.scrollTop = 0; window.scrollTo(0, 0);
+  onHome = !parts.length || parts[0] === "search"; if (parts.length) noteTool(parts[0]);
   if (!parts.length) return renderHub(params.get("q") || "");
   switch (parts[0]) {
     case "section": return renderSection(parts[1]);
@@ -292,13 +301,17 @@ function route() {
     case "prayer": return PR.render(parts.slice(1), params);
     case "hijri": return HJ.render(parts.slice(1), params);
     case "qibla": return QB.render();
-    case "more": return renderMore();
+    case "more": return renderTools();
     // Unknown address (for example a link to a newer version's page): show Home but keep the address,
     // so the page opens once the app updates instead of the link being lost.
     default: return renderHub();
   }
 }
-window.addEventListener("hashchange", route);
+window.addEventListener("hashchange", () => {
+  // A new entry has no depth yet; entries reached by Back or Forward keep theirs.
+  if (history.state?.d == null) history.replaceState({ ...history.state, d: depth + 1 }, "");
+  depth = history.state.d; route();
+});
 
 // ---------- views ----------
 function buildSearchIndex() {
@@ -322,24 +335,33 @@ function adhkarSearch(query, limit = 60) {
   return { count: hits.length, html };
 }
 
-// ---------- Home: a hub for every part of the app ----------
-const HUB_TILES = [
-  { href: "#/prayer", icon: "prayer", label: () => t("prayer.title") },
-  { href: "#/qibla", icon: "kaaba", label: () => t("qibla.title") },
-  { href: "#/hijri", icon: "calendar", label: () => t("hijri.title") },
-  { href: "#/adhkar", icon: "sun", label: () => t("nav.adhkar") },
-  { href: "#/quran", icon: "quran", label: () => t("nav.quran") },
-  { href: "#/hadith", icon: "books", label: () => t("hadith.books") },
-  { href: "#/tafsir", icon: "tafsir", label: () => t("tafsir.books") },
-  { href: "#/tajweed", icon: "palette", label: () => t("tajweed.title") },
-  { href: "#/asma", icon: "asma", label: () => t("asma.title") },
-  { href: "#/kutub", icon: "kutub", label: () => t("kutub.title") },
-  { href: "#/faqih", icon: "fiqh", label: () => t("faqih.title") },
-  { href: "#/listen", icon: "headphones", label: () => t("listen.recitations") },
-  { href: "#/radio", icon: "radio", label: () => t("listen.radios") },
-  { href: "#/videos", icon: "video", label: () => t("videos.title") },
-  { href: "#/tasbih", icon: "beads", label: () => t("nav.tasbih") },
+// ---------- every part of the app, grouped and ordered by how often it is used (Home and the Tools tab) ----------
+const TOOL_GROUPS = [
+  ["tools.daily", [["#/adhkar", "sun", "nav.adhkar"], ["#/quran", "quran", "nav.quran"], ["#/prayer", "prayer", "prayer.title"],
+    ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/hijri", "calendar", "hijri.title"]]],
+  ["tools.learn", [["#/hadith", "books", "hadith.books"], ["#/tafsir", "tafsir", "tafsir.books"], ["#/asma", "asma", "asma.title"],
+    ["#/tajweed", "palette", "tajweed.title"], ["#/kutub", "kutub", "kutub.title"], ["#/faqih", "fiqh", "faqih.title"]]],
+  ["tools.listen", [["#/listen", "headphones", "listen.recitations"], ["#/radio", "radio", "listen.radios"], ["#/videos", "video", "videos.title"]]],
+  ["tools.mine", [["#/fav", "star", "common.favorites"], ["#/extras", "book", "extra.section"], ["#/offline", "download", "offline.title"], ["#/settings", "settings", "nav.settings"]]],
 ];
+const TOOLS = TOOL_GROUPS.flatMap(([, list]) => list);
+// The tool a page belongs to, by the first part of its address (a chapter of adhkar is part of Adhkar).
+const PART_OF = { cat: "adhkar", section: "adhkar", mushaf: "quran" };
+const toolOf = part => TOOLS.find(x => x[0] === "#/" + (PART_OF[part] || part));
+// The tools opened last, newest first: one tap goes back to the one used before.
+let recentTools = LS.get("recentTools", []);
+function noteTool(part) {
+  const x = toolOf(part); if (!x || recentTools[0] === x[0]) return;
+  recentTools = [x[0], ...recentTools.filter(h => h !== x[0])].slice(0, 6); LS.set("recentTools", recentTools);
+}
+function toolsHtml() {
+  const recent = recentTools.map(h => TOOLS.find(x => x[0] === h)).filter(Boolean).slice(0, 4);
+  return (recent.length ? `<h2 class="section-title">${T("tools.recent")}</h2><div class="chips recent-tools">${recent.map(([href, ic, label]) => `<a class="chip" href="${href}">${icon(ic)}<span>${T(label)}</span></a>`).join("")}</div>` : "")
+    + TOOL_GROUPS.map(([title, list]) => `<h2 class="section-title">${T(title)}</h2><div class="hub-grid">${list.map(([href, ic, label]) =>
+      `<a class="hub-tile" href="${href}"><div class="ic">${icon(ic)}</div><div class="t">${T(label)}</div></a>`).join("")}</div>`).join("");
+}
+
+// ---------- Home: what fits now, search, and every part of the app ----------
 function renderHub(q = "") {
   setNav("home");
   setHeader(t("app.name"), { actions: `<button class="icon-btn" id="a-lang" aria-label="${T("common.language")}">${icon("globe")}</button><button class="icon-btn" id="a-search" aria-label="${T("common.search")}">${icon("search")}</button>` });
@@ -369,10 +391,7 @@ function renderHub(q = "") {
   IN.bind(view);
   if (reading) Q.resume().then(r => { const a = document.getElementById("hub-quran"); if (!a || !r) return; a.href = r.href; $("#hub-last").textContent = r.text; }).catch(() => {});
   const input = $("#q"), results = $("#results");
-  const tiles = () => {
-    results.innerHTML = `<h2 class="section-title">${T("hub.sections")}</h2><div class="hub-grid">${HUB_TILES.map(x =>
-      `<a class="hub-tile ${x.soon ? "soon" : ""}" href="${x.href}"><div class="ic">${icon(x.icon)}</div><div class="t">${esc(x.label())}</div>${x.soon ? `<div class="c">${T("hub.soon")}</div>` : ""}</a>`).join("")}</div>`;
-  };
+  const tiles = () => { results.innerHTML = toolsHtml(); };
   let seq = 0;
   const doSearch = async () => {
     const query = input.value.trim(); const r = adhkarSearch(query, 20); if (!r) return tiles();
@@ -390,14 +409,10 @@ function renderHub(q = "") {
   $("#a-search").onclick = () => { input.focus(); input.scrollIntoView({ behavior: "smooth", block: "start" }); };
 }
 
-function renderMore() {
-  setNav("more"); setHeader(t("nav.more"));
-  const rows = [
-    ["#/prayer", "prayer", t("prayer.title")], ["#/qibla", "kaaba", t("qibla.title")], ["#/hijri", "calendar", t("hijri.title")], ["#/tafsir", "tafsir", t("tafsir.books")], ["#/tajweed", "palette", t("tajweed.title")], ["#/asma", "asma", t("asma.title")], ["#/kutub", "kutub", t("kutub.title")], ["#/faqih", "fiqh", t("faqih.title")],
-    ["#/listen", "headphones", t("listen.recitations")], ["#/radio", "radio", t("listen.radios")], ["#/videos", "video", t("videos.title")], ["#/tasbih", "beads", t("nav.tasbih")],
-    ["#/fav", "star", t("common.favorites")], ["#/extras", "book", t("extra.section")], ["#/offline", "download", t("offline.title")], ["#/settings", "settings", t("nav.settings")],
-  ];
-  view.innerHTML = `<div class="list">${rows.map(([href, ic, label]) => `<a href="${href}"><div class="num">${icon(ic)}</div><div class="lbl">${esc(label)}</div>${icon("back", "chev")}</a>`).join("")}</div>`;
+// The Tools tab: every part of the app on one screen, reachable from any page by the bottom bar.
+function renderTools() {
+  setNav("more"); setHeader(t("nav.tools"));
+  view.innerHTML = toolsHtml();
 }
 
 function renderHome(q = "") {
@@ -451,6 +466,23 @@ const textFor = (cat, item) => isEveningText(cat, item) ? item.evening : item.te
 const countShown = (n, repeat) => n >= repeat ? icon("check") : num(settings.countMode === "up" ? n : repeat - n);
 const countBtn = (n, repeat, attrs = "") => `<button class="count-btn" type="button"${attrs} aria-label="${T("dhikr.count")}"><span class="big">${countShown(n, repeat)}</span>${repeat > 1 ? `<span class="of">/ ${num(repeat)}</span>` : ""}</button>`;
 
+// The virtue of each morning and evening dhikr, its narrator and where the hadith is, folded under it (data/fadl.json,
+// in Arabic as the book gives it). Dhikr 92's virtue for saying it ten times is a hadith of the book's own (see).
+const arText = s => esc(settings.tashkeel ? s : stripTashkeel(s));
+const fadlSource = (src, label = "") => `<div class="fadl-meta"><b>${T("fadl.source")}${label}</b><p lang="ar" dir="rtl">${arText(src)}</p></div>`;
+function fadlBox(cat, item) {
+  const x = cat.id === 27 && FADL?.items[item.id]; if (!x) return "";
+  const forOf = f => f.for ? `<b class="fadl-for">(${arText(f.for)})</b> ` : "";
+  const virtues = x.fadl.map(f => {
+    if (!f.see) return `<blockquote lang="ar" dir="rtl">${forOf(f)}${arText(f.t)}</blockquote>${f.sharh ? `<p class="fadl-cite">— ${T("fadl.sharh")}</p>` : ""}`;
+    const c = catOfItem.get(f.see), i = c?.items.find(y => y.id === f.see); if (!i) return "";
+    return `<blockquote lang="ar" dir="rtl">${forOf(f)}${formatText(i.text)}</blockquote><a class="fadl-see" href="#/cat/${c.id}?item=${i.id}">${icon("book")}<span>${esc(catTitle(c))}</span></a>`;
+  }).join("");
+  return `<details class="fadl"><summary>${icon(x.fadl.length ? "star" : "book")}<span>${T(x.fadl.length ? "tasbih.virtue" : "fadl.sourceTitle")}</span></summary><div class="fadl-body">
+    ${virtues}${x.rawi ? `<p class="fadl-meta"><b>${T("fadl.narrator")}:</b> <span lang="ar" dir="rtl">${arText(x.rawi)}</span></p>` : ""}
+    ${x.src.map(s => fadlSource(s.t, s.for ? ` <span lang="ar" dir="rtl">(${arText(s.for)})</span>` : "")).join("")}</div></details>`;
+}
+
 function dhikrCard(cat, item, { showWhere = false } = {}) {
   const key = itemKey(cat, item); const n = getCount(key); const done = n >= item.repeat; const fav = favorites.has(`${cat.id}:${item.id}`);
   const tr = showAdhkarTr() && EN?.items[item.id];
@@ -459,6 +491,7 @@ function dhikrCard(cat, item, { showWhere = false } = {}) {
     ${showWhere ? `<div class="where" style="padding-top:12px">${icon("book")} ${esc(catTitle(cat))}</div>` : ""}
     <div class="dhikr-text" lang="ar" dir="rtl" role="button" tabindex="0" aria-label="${T("dhikr.tapToCount")}">${formatText(textFor(cat, item))}</div>
     ${tr ? `<div class="dhikr-tr" lang="en" dir="ltr">${evening ? `<p class="trnote" dir="auto">${T("dhikr.trMorning")}</p>` : ""}${tr.n ? `<p class="translit">${esc(tr.n)}</p>` : ""}${tr.t ? `<p>${esc(tr.t)}</p>` : ""}</div>` : ""}
+    ${fadlBox(cat, item)}
     <div class="dhikr-bar">
       ${countBtn(n, item.repeat)}
       <span class="spacer"></span>
@@ -520,6 +553,7 @@ function renderCategory(id, params) {
       ${is27 ? `<div style="text-align:center"><div class="segmented" role="tablist">
         <button role="tab" data-p="morning" class="${currentPeriod() === "morning" ? "on" : ""}">${icon("sun")} ${T("cat.morning")}</button>
         <button role="tab" data-p="evening" class="${currentPeriod() === "evening" ? "on" : ""}">${icon("moon")} ${T("cat.evening")}</button></div></div>` : ""}
+      ${is27 && FADL?.intro ? `<details class="fadl intro"><summary>${icon("star")}<span>${T("fadl.chapter")}</span></summary><div class="fadl-body"><blockquote lang="ar" dir="rtl">${arText(FADL.intro.t)}</blockquote>${fadlSource(FADL.intro.src)}</div></details>` : ""}
       <div class="progress-row"><div class="progress"><div style="width:${p.pct}%"></div></div><span id="pct">${T("common.percent", { n: p.pct })}</span></div>
       <div id="cards">${itemsFor(cat).map(i => dhikrCard(cat, i)).join("")}</div>
       <div id="finish" class="finish" ${p.pct === 100 ? "" : "hidden"}>${icon("check")}${T("cat.finished", { title: catTitle(cat) })}</div>
@@ -711,6 +745,8 @@ function renderSettings() {
         <b>${T("about.hisnTitle")}</b><br>${T("about.hisnAuthor")}<br>
         ${th("about.hisnSource", { chapters: t("count.chapters", { n: DB.categories.length }), adhkar: t("count.adhkar", { n: DB.categories.reduce((a, c) => a + c.items.length, 0) }) }, { link: link(DB.sourceUrl, "hisnmuslim.com") }, esc)}<br>
         ${T("about.offline")}
+      </div><div class="about">
+        <b>${T("fadl.chapter")}</b><br>${th("about.fadlText", {}, { link: link("https://app.turath.io", "turath.io") }, esc)}
       </div><div class="about">
         <b>${T("about.mushafTitle")}</b><br>${T("about.mushafText", { source: t("kfgqpc.name") })}<br>${T("about.mushafOffline")}
       </div><div class="about">

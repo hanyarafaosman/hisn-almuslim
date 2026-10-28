@@ -9,8 +9,8 @@
 // in the background. When the app is closed, the server in push/ sends the same alerts by Web Push (syncPush below,
 // the push handler in sw.js); the page explains both to the user. The alerts are on unless the user turns them off:
 // on a phone, a window asks for the place and the notifications permission a moment after the app first starts.
-import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.34.0";
-import { regionName, collator } from "./i18n.js?v=1.34.0";
+import { METHODS, PRAYERS, prayerTimes, nextDay, methodFor, asrFor, countryOfZone } from "./prayer-calc.js?v=1.35.0";
+import { regionName, collator } from "./i18n.js?v=1.35.0";
 
 export const ADHAN_CACHE = "hisn-adhan-v1"; // the same name is in sw.js
 
@@ -491,7 +491,7 @@ export function setupPrayer(ctx) {
   let shownDay = null; // another day than today, when the user moves through the days
   function render(parts, params) {
     if (parts[0] === "month") return renderMonth(params);
-    setNav("home");
+    setNav("prayer");
     if (!state.loc) return renderSetup();
     setHeader(t("prayer.title"), { back: true, actions: `<a class="icon-btn" href="#/prayer/month" aria-label="${T("prayer.month")}">${icon("list")}</a><button class="icon-btn" id="pr-share" aria-label="${T("common.share")}">${icon("share")}</button>` });
     $("#pr-share").onclick = shareDay;
@@ -655,7 +655,7 @@ export function setupPrayer(ctx) {
 
   // ---------- the month table ----------
   function renderMonth(params) {
-    setNav("home"); setHeader(t("prayer.month"), { back: true });
+    setNav("prayer"); setHeader(t("prayer.month"), { back: true });
     if (!state.loc) { location.replace("#/prayer"); return; }
     const today = dayOf(Date.now());
     let [y, m] = (params?.get("m") || "").split("-").map(Number);

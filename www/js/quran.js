@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.34.0";
-import { mirrorOf } from "./mirror.js?v=1.34.0";
+import * as off from "./offline.js?v=1.35.0";
+import { mirrorOf } from "./mirror.js?v=1.35.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -1481,7 +1481,7 @@ export function setupQuran(ctx) {
       draw(); const qi = $("#radq"); if (qi) qi.oninput = () => { radioQuery = qi.value; draw(); };
       player.refresh();
     };
-    $("#rgroups").onclick = e => { const b = e.target.closest("[data-g]"); if (!b || b.dataset.g === group) return; history.replaceState(null, "", "#/radio/" + b.dataset.g); show(b.dataset.g); b.scrollIntoView({ inline: "nearest", block: "nearest" }); };
+    $("#rgroups").onclick = e => { const b = e.target.closest("[data-g]"); if (!b || b.dataset.g === group) return; history.replaceState(history.state, "", "#/radio/" + b.dataset.g); show(b.dataset.g); b.scrollIntoView({ inline: "nearest", block: "nearest" }); };
     box.addEventListener("click", e => { const b = e.target.closest("button[data-id]"); if (b && byId.has(b.dataset.id)) player.radio(byId.get(b.dataset.id)); });
     show(group);
     $("#rgroups .chip.on")?.scrollIntoView({ inline: "nearest", block: "nearest" });
