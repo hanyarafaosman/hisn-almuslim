@@ -125,7 +125,7 @@
  "faqih.askScholar": "Fetva için:",
  "faqih.tooMany": "Kısa sürede çok fazla soru soruldu; bir dakika bekleyip tekrar deneyin.",
  "faqih.busy": "Arama, günlük soru sınırına ulaştı; lütfen yarın tekrar gelin.",
- "faqih.notReady": "Arama şu anda kullanılamıyor.",
+ "faqih.wordsNote": "Bunlar kitaplarda sorunuzun kelimelerini içeren yerlerdir, en yakın olanlar önce. Yazarın sözlerini bağlamı içinde tam olarak okumak için yeri açın.",
  "kutub.title": "Akide ve fıkıh",
  "kutub.intro": "İlmin temel metinleri ve ana eserleri: Ehl-i Sünnet ve'l-Cemâat akidesi, hadis, mezheplere göre fıkıh ve İbn Kudâme, İbn Hazm, İbn Teymiyye ve İbnü'l-Kayyim gibi imamların kitapları. Her kitap, basıldığı şekliyle eksiksizdir.",
  "kutub.aqida": "Akide kitapları",

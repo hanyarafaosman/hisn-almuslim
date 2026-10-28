@@ -1,6 +1,6 @@
 {
   "name": "hisn-almuslim",
-  "version": "1.33.1",
+  "version": "1.34.0",
   "private": true,
   "description": "حصن ونور - أذكار حصن المسلم والمصحف وكتب السنة، يعمل على جميع الأنظمة (PWA + Capacitor)",
   "scripts": {
@@ -35,6 +35,7 @@
     "tajweed": "node scripts/build-tajweed.js",
     "kutub": "node scripts/build-kutub.js",
     "faqih": "node scripts/build-faqih.mjs",
+    "fihris": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON scripts/build-fihris.mjs",
     "series": "node scripts/build-series.js",
     "adhan": "node scripts/build-adhan.js",
     "check:prayer": "node scripts/check-prayer.js"

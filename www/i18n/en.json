@@ -125,7 +125,7 @@
  "faqih.askScholar": "For a fatwa:",
  "faqih.tooMany": "Too many questions in a short time; wait a minute and try again.",
  "faqih.busy": "The search has reached its daily limit of questions; please come back tomorrow.",
- "faqih.notReady": "The search is not available right now.",
+ "faqih.wordsNote": "These are places in the books that contain the words of your question, closest first. Open a place to read the author's words in full, in context.",
  "kutub.title": "Creed and Fiqh",
  "kutub.intro": "The primers of knowledge and its great books: the creed of Ahl as-Sunnah wal-Jamaʿah, hadith, fiqh in the schools, and the books of imams such as Ibn Qudamah, Ibn Hazm, Ibn Taymiyyah and Ibn al-Qayyim. Each book is complete, as printed.",
  "kutub.aqida": "Books of creed",

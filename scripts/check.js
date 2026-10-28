@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/faqih.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/qibla.js", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/faqih.js", "js/fihris-words.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/qibla.js", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "fihris/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -229,6 +229,24 @@ for (const b of kt.books) {
   });
 }
 
+// The word index of those books (scripts/build-fihris.mjs, read by js/faqih.js): made from the books as they are now,
+// each file named after the hash of its bytes, the word files in sorted order (the app finds a word's file by its
+// first word), no file left that the index does not list; the build and the app cut words with the same module.
+{
+  const fx = readJson("fihris/index.json");
+  if (JSON.stringify(fx.kutub) !== JSON.stringify(kt.books.map(b => b.file))) fail("fihris: made from other books than kutub/index.json lists (rebuild with npm run fihris)");
+  const fxHash = buf => require("crypto").createHash("sha256").update(buf).digest("hex").slice(0, 10);
+  const listed = new Map([[fx.docs, fx.docs.split(".")[1]], ...fx.words.map(([w, h], n) => [`w/${n}.${h}.bin`, h])]);
+  const files = [...fs.readdirSync(path.join(root, "fihris")).filter(f => f !== "w" && f !== "index.json"), ...fs.readdirSync(path.join(root, "fihris", "w")).map(f => "w/" + f)];
+  for (const f of files) if (!listed.has(f)) fail("fihris: file not in the index " + f);
+  for (const [f, h] of listed) { const p = path.join(root, "fihris", f); if (!fs.existsSync(p)) fail("fihris: missing " + f); else if (fxHash(fs.readFileSync(p)) !== h) fail(`fihris: ${f} does not match its bytes`); }
+  if (fx.words.some(([w], n) => n && !(fx.words[n - 1][0] < w))) fail("fihris: word files out of order");
+  if (!fs.readFileSync(path.join(root, "..", "scripts", "build-fihris.mjs"), "utf8").includes('"www", "js", "fihris-words.js"')) fail("scripts/build-fihris.mjs must import www/js/fihris-words.js");
+  if (!/from "\.\/fihris-words\.js\?v=/.test(fs.readFileSync(path.join(root, "js/faqih.js"), "utf8"))) fail("js/faqih.js must import js/fihris-words.js");
+  const t = spawnSync(process.execPath, ["--disable-warning=MODULE_TYPELESS_PACKAGE_JSON", path.join(__dirname, "fihris-test.mjs")], { encoding: "utf8" });
+  if (t.status !== 0) fail("scripts/fihris-test.mjs: " + (t.stderr + t.stdout).split("\n").filter(l => l.startsWith("✗") || /Error/.test(l)).join("; "));
+}
+
 // Adhan recordings: each file is named after its id and the hash of its bytes and is an AAC (ADTS) stream, each has its
 // source (a Commons file with its free licence, or an archive.org item or islamweb.net, which have none), its group in
 // the voice list and an interface name, there is one for Fajr and one for the other prayers (the defaults in
@@ -313,7 +331,7 @@ if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(
 // JS syntax (Node detects ES module syntax automatically)
 for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/videos.js", "js/tajweed.js", "../scripts/build-tajweed.js", "../scripts/tajweed-source.js", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
   "../push/src/index.js", "../push/src/webpush.js", "../push/src/schedule.js", "../push/keys.js", "../push/test.js",
-  "js/faqih.js", "../scripts/faqih-chunk.mjs", "../scripts/faqih-test.mjs", "../scripts/build-faqih.mjs", "../faqih/src/index.js", "../faqih/src/prompt.js", "../faqih/src/verify.js", "../faqih/src/llm.js", "../faqih/test.js"]) {
+  "js/faqih.js", "js/fihris-words.js", "../scripts/build-fihris.mjs", "../scripts/fihris-test.mjs", "../scripts/faqih-chunk.mjs", "../scripts/faqih-test.mjs", "../scripts/build-faqih.mjs", "../faqih/src/index.js", "../faqih/src/prompt.js", "../faqih/src/verify.js", "../faqih/src/llm.js", "../faqih/test.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
   if (r.status !== 0) fail(`${f}: ${(r.stderr || "").split("\n").slice(0, 5).join(" ")}`);
 }

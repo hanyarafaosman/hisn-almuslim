@@ -125,7 +125,7 @@
  "faqih.askScholar": "Para una fatua:",
  "faqih.tooMany": "Demasiadas preguntas en poco tiempo; espera un minuto y vuelve a intentarlo.",
  "faqih.busy": "La búsqueda ha alcanzado su límite diario de preguntas; vuelve mañana, por favor.",
- "faqih.notReady": "La búsqueda no está disponible en este momento.",
+ "faqih.wordsNote": "Estos son pasajes de los libros que contienen las palabras de tu pregunta, los más cercanos primero. Abre un pasaje para leer las palabras del autor completas, en su contexto.",
  "kutub.title": "Credo y fiqh",
  "kutub.intro": "Los textos básicos del conocimiento y sus grandes obras: el credo de Ahl as-Sunna wal-Yamaʿa, el hadiz, el fiqh según las escuelas y los libros de imames como Ibn Qudamah, Ibn Hazm, Ibn Taymiyyah e Ibn al-Qayyim. Cada libro está completo, tal como se imprimió.",
  "kutub.aqida": "Libros de credo",

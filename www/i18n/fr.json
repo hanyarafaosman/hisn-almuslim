@@ -125,7 +125,7 @@
  "faqih.askScholar": "Pour une fatwa :",
  "faqih.tooMany": "Trop de questions en peu de temps ; attendez une minute et réessayez.",
  "faqih.busy": "La recherche a atteint sa limite quotidienne de questions ; revenez demain, s’il vous plaît.",
- "faqih.notReady": "La recherche n’est pas disponible pour le moment.",
+ "faqih.wordsNote": "Voici des passages des livres qui contiennent les mots de votre question, les plus proches en premier. Ouvrez un passage pour lire les propos de l’auteur en entier, dans leur contexte.",
  "kutub.title": "Croyance et fiqh",
  "kutub.intro": "Les textes de base de la science religieuse et ses ouvrages majeurs : la croyance des Ahl as-Sunna wal-Jamâʿa, le hadith, le fiqh selon les écoles juridiques, et les livres d’imams tels qu’Ibn Qudamah, Ibn Hazm, Ibn Taymiyyah et Ibn al-Qayyim. Chaque livre est donné en entier, tel qu’imprimé.",
  "kutub.aqida": "Livres de croyance",

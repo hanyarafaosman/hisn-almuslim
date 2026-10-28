@@ -138,7 +138,7 @@ const S = {
   "faqih.askScholar": ["للفتوى:", "For a fatwa:"],
   "faqih.tooMany": ["أسئلة كثيرة في وقت قصير؛ انتظر دقيقة ثم أعد المحاولة.", "Too many questions in a short time; wait a minute and try again."],
   "faqih.busy": ["وصل الباحث إلى حدّه اليومي من الأسئلة، فعُد غدًا إن شاء الله.", "The search has reached its daily limit of questions; please come back tomorrow."],
-  "faqih.notReady": ["الباحث غير متاح الآن.", "The search is not available right now."],
+  "faqih.wordsNote": ["هذه مواضع من الكتب فيها كلمات سؤالك، الأقرب أولًا. افتح الموضع لتقرأ كلام المؤلف كاملًا في سياقه.", "These are places in the books that contain the words of your question, closest first. Open a place to read the author's words in full, in context."],
 
   "kutub.title": ["العقيدة والفقه", "Creed and Fiqh"],
   "kutub.intro": ["متون العلم وأمهات كتبه: عقيدة أهل السنة والجماعة، والحديث، والفقه على المذاهب، وكتب الأئمة كابن قدامة وابن حزم وابن تيمية وابن القيم. كل كتاب كاملًا كما طُبع.", "The primers of knowledge and its great books: the creed of Ahl as-Sunnah wal-Jamaʿah, hadith, fiqh in the schools, and the books of imams such as Ibn Qudamah, Ibn Hazm, Ibn Taymiyyah and Ibn al-Qayyim. Each book is complete, as printed."],

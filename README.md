@@ -148,7 +148,8 @@ npm run dev
 | `npm run adhan` | بناء تسجيلات الأذان (`www/adhan/`) من ويكيميديا كومنز وarchive.org بمتصفح Chrome أو Edge |
 | `npm run check:prayer` | مطابقة حساب مواقيت الصلاة مع aladhan.com ومعادلات NOAA لـ 27 مدينة في أربعة أيام |
 | `npm test` في `push/` | اختبار خادم التنبيهات دون إنترنت: التشفير على مثال RFC 8291، وتوقيع VAPID، ومواعيد التنبيهات، والطلبات ومهمة كل دقيقة (يشغّله `npm run check` أيضًا). النشر والتجربة المحلية في [`push/README.md`](push/README.md) |
-| `npm run faqih` | فهرس الباحث الفقهي: تقطيع كتب `www/kutub` إلى مقاطع (`--stats`)، ورفعها إلى Vectorize (`--embed`)، وتقييم الاسترجاع (`--eval`). التفاصيل في `faqih/README.md` |
+| `npm run fihris` | فهرس كلمات المكتبة (`www/fihris/`) الذي يبحث فيه الباحث الفقهي على الجهاز دون خادم ولا ذكاء اصطناعي؛ يُعاد بعد كل `npm run kutub` (يذكّر به `npm run check`). `--eval` يجرّب أسئلة `scripts/faqih-eval.json`، و`--ask="…"` يعرض نتائج سؤال |
+| `npm run faqih` | فهرس خادم الباحث الفقهي (اختياري): تقطيع كتب `www/kutub` إلى مقاطع (`--stats`)، ورفعها إلى Vectorize (`--embed`)، وتقييم الاسترجاع (`--eval`). التفاصيل في `faqih/README.md` |
 | `npm test` في `faqih/` | اختبار خادم الباحث الفقهي دون إنترنت: فحص الأسئلة والحدود، والتحقق الحرفي من كل اقتباس (يشغّله `npm run check` أيضًا) |
 | `npm run site` | بناء الموقع المنشور في `_site/`: التطبيق مع صفحة جاهزة لكل باب وكل سورة وخريطة الموقع |
 | `npm run site:preview` | بناء الموقع لعنوان محلي وتشغيله للمعاينة |
@@ -258,9 +259,10 @@ www/
   tafsir/index.json     فهرس كتب التفسير (النصوص تُقرأ من مصادرها)
   asma/book.json        كتاب شرح أسماء الله الحسنى للقحطاني
   kutub/index.json      فهرس المكتبة؛ ولكل كتاب ملف لفهرسه وأجزاء لنصه بأسمائها وبصماتها
+  fihris/               فهرس كلمات كتب المكتبة للباحث الفقهي (يولّده scripts/build-fihris.mjs، وتقطّع الكلمات js/fihris-words.js)
   adhan/index.json      تسجيلات الأذان ورخصها، وكل تسجيل في ملف AAC باسمه وبصمته
   sw.js                 عامل الخدمة للعمل دون اتصال
 scripts/                بناء البيانات والموقع والفحوص وخادم التطوير
 push/                   خادم تنبيهات الصلاة والتطبيق مغلق (Cloudflare Worker + D1، Web Push)
-faqih/                  خادم الباحث الفقهي: بحث في كتب المكتبة بالاقتباس الحرفي (Cloudflare Worker + Vectorize + Workers AI)
+faqih/                  خادم اختياري للباحث الفقهي (Cloudflare Worker + Vectorize + Workers AI)؛ الصفحة تبحث في فهرس الكلمات على الجهاز ما دام غير منشور
 ```

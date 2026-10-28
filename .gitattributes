@@ -5,5 +5,8 @@ www/quran/** -text
 *.jpg binary
 # Each book file and part file is named after the hash of its bytes (scripts/build-kutub.js)
 www/kutub/** -text
+# So is the word index of those books (scripts/build-fihris.mjs); its word files are binary
+www/fihris/** -text
+www/fihris/w/*.bin binary
 # Adhan recordings are named after the hash of their bytes (scripts/build-adhan.js)
 www/adhan/*.aac binary
