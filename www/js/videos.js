@@ -226,7 +226,8 @@ export function setupVideos(ctx) {
   // Series whose title, teacher or channel matches, for the Home search.
   async function search(q) {
     const fold = x => String(x).normalize("NFD").replace(/\p{M}/gu, "").replace(/[ٱأإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").toLowerCase();
-    const want = fold(q).split(/\s+/).filter(Boolean); if (want.join("").length < 2) return [];
+    // A joined «عبدالله» is searched as «عبد» + «الله», so it finds the name written either way.
+    const want = fold(q).replace(/(^|\s)عبد(?=ال)/g, "$1عبد ").split(/\s+/).filter(Boolean); if (want.join("").length < 2) return [];
     await load();
     return DATA.series.filter(s => { const k = fold([s.ar, s.en, s.by, s.byEn, channel(s)].join(" ")); return want.every(w => k.includes(w)); })
       .map(s => ({ href: `#/videos/${s.id}`, name: title(s), sub: by(s) }));

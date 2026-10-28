@@ -1,7 +1,7 @@
 /* ===== كتب الحديث: الكتب الستة والأربعون النووية والقدسية ===== */
 // Texts: fawazahmed0/hadith-api (Unlicense), loaded per section from a pinned, immutable jsDelivr release.
 // Arabic book and section titles: AhmedBaset/hadith-json. Built by scripts/build-hadith-index.js.
-import * as off from "./offline.js?v=1.35.0";
+import * as off from "./offline.js?v=1.35.1";
 
 const HADITH_STORE = off.STORES.HADITH;
 
@@ -134,7 +134,7 @@ export function setupHadith(ctx) {
       const mine = ++seq; box.innerHTML = loading(t("hadith.loadingSearch"));
       let data; try { data = await getJSON(searchUrl(b)); } catch { if (mine === seq) box.innerHTML = `<div class="empty">${esc(t("offline.needOnce"))}</div>`; return; }
       if (mine !== seq || stale(hash)) return;
-      const terms = k.split(" ").filter(Boolean);
+      const terms = k.replace(/(^|\s)عبد(?=ال)/g, "$1عبد ").split(" ").filter(Boolean); // «عبدالله» also finds «عبد الله»
       if (!searchText.has(b.id)) searchText.set(b.id, data.hadiths.map(h => normalize(h.text)));
       const texts = searchText.get(b.id);
       const hits = [];

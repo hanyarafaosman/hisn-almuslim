@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.35.0";
-import { mirrorOf } from "./mirror.js?v=1.35.0";
+import * as off from "./offline.js?v=1.35.1";
+import { mirrorOf } from "./mirror.js?v=1.35.1";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -55,6 +55,8 @@ const matchedWords = (text, k) => {
 // mp3quran.net localises reciter and riwayah names in these languages; everything else uses English.
 const MP3Q_LANG = { ar: "ar", en: "eng", fr: "fr", ru: "ru", de: "de", es: "es", tr: "tr", zh: "cn", ur: "ur", bn: "bn", bs: "bs", fa: "fa", id: "id", pt: "pt", ha: "ha", sw: "sw" };
 const KUFI_AYAT = 6236; // QuranEnc numbering follows the Kufan count (Hafs, Shuʿbah)
+// mp3quran's Arabic names join «عبد» to the name after it (عبدالباسط); Arabic writes it apart (عبد الباسط).
+const spaceAbd = s => String(s).replace(/(^|[\s(])عبد(?=ال)/g, "$1عبد ");
 
 export function setupQuran(ctx) {
   const { view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, setHeader, setNav, LS, copyText, share, SITE, adhkarAudio } = ctx;
@@ -100,6 +102,11 @@ export function setupQuran(ctx) {
   const stale = hash => location.hash !== hash; // user navigated away while we were loading
   const isAr = () => getLang() === "ar";
   const lower = s => String(s).toLocaleLowerCase();
+  // Search in names ignores diacritics, letter forms, spaces and dashes: «عبد الباسط» finds «عبدالباسط», «abdul basit» finds «Abdulbasit».
+  const nameKey = s => lower(String(s).normalize("NFD").replace(/\p{M}/gu, "").replace(/[ٱأإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^\p{L}\p{N}]|ـ/gu, ""));
+  const nameHas = (name, q) => nameKey(name).includes(nameKey(q));
+  // Reciters chosen before 1.35.1 kept the joined name.
+  if (getLang() === "ar") Object.values(state.reciters).forEach(r => { if (r?.name) r.name = spaceAbd(r.name); });
 
   // ---------- data ----------
   let INDEX = null; const dataCache = new Map(); const fontsReady = new Map(); const searchIdx = new Map();
@@ -167,8 +174,9 @@ export function setupQuran(ctx) {
   }
   const mp3Lang = () => MP3Q_LANG[getLang()] || "eng";
   const getRiwayatList = () => getJSON(`${API}/riwayat?language=${mp3Lang()}`).then(j => j.riwayat);
-  const getReciters = rewaya => getJSON(`${API}/reciters?language=${mp3Lang()}&rewaya=${rewaya}`).then(j => j.reciters);
-  const getReciterRadios = () => getJSON(`${API}/radios?language=${mp3Lang()}`).then(j => j.radios);
+  const named = (lang, list) => lang === "ar" ? list.map(x => ({ ...x, name: spaceAbd(x.name) })) : list;
+  const getReciters = rewaya => { const lang = mp3Lang(); return getJSON(`${API}/reciters?language=${lang}&rewaya=${rewaya}`).then(j => named(lang, j.reciters)); };
+  const getReciterRadios = () => { const lang = mp3Lang(); return getJSON(`${API}/radios?language=${lang}`).then(j => named(lang, j.radios)); };
   const once = (url, fix) => { let p = null; return () => p ||= fetch(url).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(fix).catch(e => { p = null; throw e; }); };
   const getRadios = once("data/radios.json", j => ({ live: j.live || [], sunnah: j.sunnah || [], topics: j.topics || [], hide: j.hide || [] }));
   const getLessons = once("data/lessons.json", j => j);
@@ -339,7 +347,7 @@ export function setupQuran(ctx) {
       const uniq = items.filter(x => !seen.has(x.server) && seen.add(x.server)).sort((x, y) => (fromAya ? timed.has(y.server) - timed.has(x.server) : 0) || c.compare(x.name, y.name));
       if (!uniq.length) { body.innerHTML = `<div class="empty">${esc(t("quran.noReciters"))}</div>`; return; }
       body.innerHTML = `${fromAya ? `<p class="riwayah-note">${icon("play")} ${esc(t("listen.pickTimed"))}</p>` : ""}<div class="searchbox small">${icon("search")}<input type="search" placeholder="${esc(t("quran.searchReciter"))}" id="rc-q"></div><div class="list flat" id="rc-list"></div>`;
-      const draw = f => { const q = lower(f); $("#rc-list", body).innerHTML = uniq.filter(x => !q || lower(x.name).includes(q)).map(x => `<button class="row" data-i="${uniq.indexOf(x)}"><div class="lbl" dir="auto">${esc(x.name)}<span class="sub" dir="auto">${esc(x.moshaf)}${sep()}${esc(t("count.surahs", { n: x.total }))}${timed.has(x.server) ? `<span class="timed">${icon("play")} ${esc(t("listen.timed"))}</span>` : ""}</span></div>${state.reciters[meta.id]?.server === x.server ? icon("check") : ""}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
+      const draw = q => { $("#rc-list", body).innerHTML = uniq.filter(x => !q || nameHas(x.name, q)).map(x => `<button class="row" data-i="${uniq.indexOf(x)}"><div class="lbl" dir="auto">${esc(x.name)}<span class="sub" dir="auto">${esc(x.moshaf)}${sep()}${esc(t("count.surahs", { n: x.total }))}${timed.has(x.server) ? `<span class="timed">${icon("play")} ${esc(t("listen.timed"))}</span>` : ""}</span></div>${state.reciters[meta.id]?.server === x.server ? icon("check") : ""}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
       draw(""); $("#rc-q", body).oninput = e => draw(e.target.value.trim());
       $("#rc-list", body).onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; const x = uniq[Number(b.dataset.i)]; state.reciters[meta.id] = x; save(); closeSheet(); then?.(x); };
     } catch (err) { body.innerHTML = `<div class="empty">${esc(t("quran.recitersFailed"))}<br><small>${esc(err.message)}</small></div>`; }
@@ -1258,7 +1266,7 @@ export function setupQuran(ctx) {
     const rows = []; reciters.forEach(r => r.moshaf.filter(m => m.rewaya_id === id).forEach(m => rows.push({ r, m })));
     const c = collator(); rows.sort((x, y) => c.compare(x.r.name, y.r.name));
     view.innerHTML = `<div class="searchbox">${icon("search")}<input id="rq" type="search" placeholder="${esc(t("quran.searchReciter"))}" autocomplete="off"></div><p class="riwayah-note">${esc(t("count.recitations", { n: rows.length }))}</p><div class="list" id="rlist"></div>`;
-    const draw = f => { const q = lower(f); $("#rlist").innerHTML = rows.filter(x => !q || lower(x.r.name).includes(q)).map(({ r, m }) => `<a href="#/listen/m/${id}/${m.id}"><div class="num">${esc(r.letter || r.name[0])}</div><div class="lbl" dir="auto">${esc(r.name)}<span class="sub" dir="auto">${esc(m.name)}${sep()}${esc(t("count.surahs", { n: m.surah_total }))}</span></div>${icon("back", "chev")}</a>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
+    const draw = q => { $("#rlist").innerHTML = rows.filter(x => !q || nameHas(x.r.name, q)).map(({ r, m }) => `<a href="#/listen/m/${id}/${m.id}"><div class="num">${esc(r.letter || r.name[0])}</div><div class="lbl" dir="auto">${esc(r.name)}<span class="sub" dir="auto">${esc(m.name)}${sep()}${esc(t("count.surahs", { n: m.surah_total }))}</span></div>${icon("back", "chev")}</a>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
     draw(""); $("#rq").oninput = e => draw(e.target.value.trim());
   }
   async function renderMoshaf(rewaya, moshafId, hash) {
@@ -1473,7 +1481,7 @@ export function setupQuran(ctx) {
     view.innerHTML = listenTabs("radio") + `<div class="chips radio-groups" id="rgroups" role="tablist">${RADIO_GROUPS.map(g => `<button class="chip" role="tab" data-g="${g}">${esc(t("media." + g))}</button>`).join("")}</div>
       <div id="radios"></div>`;
     const box = $("#radios");
-    const draw = () => { const q = lower(radioQuery.trim()); const list = $("#rlist"); if (!list) return; list.innerHTML = rows.filter(r => !q || lower(r.name).includes(q)).map(r => row("rad:" + r.id, "radio", r.name, "", ' dir="auto"')).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; player.refresh(); };
+    const draw = () => { const q = radioQuery.trim(); const list = $("#rlist"); if (!list) return; list.innerHTML = rows.filter(r => !q || nameHas(r.name, q)).map(r => row("rad:" + r.id, "radio", r.name, "", ' dir="auto"')).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; player.refresh(); };
     const show = g => {
       group = g; state.radioGroup = g; save();
       $("#rgroups").querySelectorAll("[data-g]").forEach(b => { const on = b.dataset.g === g; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); });
