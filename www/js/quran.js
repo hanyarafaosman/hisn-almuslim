@@ -4,13 +4,26 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.35.1";
-import { mirrorOf } from "./mirror.js?v=1.35.1";
+import * as off from "./offline.js?v=1.36.0";
+import { mirrorOf } from "./mirror.js?v=1.36.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
 // Shaykh al-Husary's murattal recitation (Hafs), read 118 of mp3quran's ayat_timing: the voice of the Tajweed examples.
 const HUSARY = "https://cdn.mp3quran.net/audio/mahmoud-husary/r1/";
+// A recitation with verse timings for each riwayah the app has (mp3quran's ayat_timing: folder and read id), the voice
+// of the Tajweed and readings examples; Qunbul has none. The timings follow each riwayah's own verse count; those of
+// Hafs number the basmala of Al-Fatihah 0 (see clips() below). scripts/check-sources.js watches these folders.
+const HUSARY_NAME = ["محمود خليل الحصري", "Maḥmūd Khalīl al-Ḥuṣarī"];
+const TIMED = {
+  hafs: { server: HUSARY, read: 118, name: HUSARY_NAME },
+  warsh: { server: "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/", read: 120, name: HUSARY_NAME },
+  qaloon: { server: "https://cdn.mp3quran.net/audio/mahmoud-husary/r5/", read: 270, name: HUSARY_NAME },
+  doori: { server: "https://cdn.mp3quran.net/audio/mahmoud-husary/r4/", read: 269, name: HUSARY_NAME },
+  soosi: { server: "https://cdn.mp3quran.net/audio/abdulrasheed-sufi/r2/", read: 65, name: ["عبد الرشيد صوفي", "ʿAbd al-Rashīd Ṣūfī"] },
+  shouba: { server: "https://cdn.mp3quran.net/audio/ali-hudhaifi/r3/", read: 305, name: ["علي الحذيفي", "ʿAlī al-Ḥudhayfī"] },
+  bazzi: { server: "https://cdn.mp3quran.net/audio/okasha-kameny/r2/", read: 296, name: ["عكاشة كميني", "ʿUkāshah Kamīnī"] },
+};
 const ch = (...cps) => String.fromCodePoint(...cps);
 const range = (a, b) => ch(a) + "-" + ch(b);
 const AYA_NUM = new RegExp("[\\s" + ch(0xA0) + "]*[" + range(0x660, 0x669) + "]+[\\s" + ch(0xA0) + "]*$");
@@ -105,7 +118,7 @@ export function setupQuran(ctx) {
   // Search in names ignores diacritics, letter forms, spaces and dashes: «عبد الباسط» finds «عبدالباسط», «abdul basit» finds «Abdulbasit».
   const nameKey = s => lower(String(s).normalize("NFD").replace(/\p{M}/gu, "").replace(/[ٱأإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^\p{L}\p{N}]|ـ/gu, ""));
   const nameHas = (name, q) => nameKey(name).includes(nameKey(q));
-  // Reciters chosen before 1.35.1 kept the joined name.
+  // Reciters chosen before 1.36.0 kept the joined name.
   if (getLang() === "ar") Object.values(state.reciters).forEach(r => { if (r?.name) r.name = spaceAbd(r.name); });
 
   // ---------- data ----------
@@ -658,6 +671,7 @@ export function setupQuran(ctx) {
         ${res?.kind !== "page" ? `<a class="resume" href="${pageHref(lp.ed, lp.p)}">${icon("quran")}<div><b>${esc(t("mushaf.pages"))}</b><span>${esc(t("mushaf.ed" + lp.ed))}${sep()}${esc(t("quran.page", { n: lp.p }))}</span></div></a>` : ""}
         <a class="resume" href="#/tafsir">${icon("tafsir")}<div><b>${esc(t("tafsir.books"))}</b><span>${esc(t("tafsir.homeHint"))}</span></div></a>
         <a class="resume" href="#/tajweed">${icon("palette")}<div><b>${esc(t("tajweed.title"))}</b><span>${esc(t("tajweed.hint"))}</span></div></a>
+        <a class="resume" href="#/qiraat">${icon("layers")}<div><b>${esc(t("qiraat.title"))}</b><span>${esc(t("qiraat.hint"))}</span></div></a>
       </div>
       ${A ? `<div class="open-in"><span>${esc(t("quran.openIn"))}</span><div class="segmented" id="q-view"><button data-v="pages" class="${mode === "pages" ? "on" : ""}">${icon("quran")} ${esc(t("mushaf.pages"))}</button><button data-v="text" class="${mode === "text" ? "on" : ""}">${icon("list", "flip")} ${esc(t("quran.viewText"))}</button></div></div>` : ""}
       <div id="finder"></div>`;
@@ -777,6 +791,7 @@ export function setupQuran(ctx) {
         if (act.dataset.act === "play") { closeTools(); playFrom(meta, s, n, showRec); return; }
         if (act.dataset.act === "copy") { copyText(`${plain(n)}\n${ref(n)}`); closeTools(); return; }
         if (act.dataset.act === "tafsir") { closeTools(); ctx.tafsir().openAyah({ s, a: n, rid: meta.id }); return; }
+        if (act.dataset.act === "qiraat") { closeTools(); ctx.qiraat().openAyah({ s, a: n, rid: meta.id }); return; }
         // The website has a page for every surah in Hafs; other riwayat link into the app.
         if (act.dataset.act === "share") { share(t("quran.surah", { name }), `${plain(n)}\n${ref(n)}\n${meta.id === "hafs" ? `${SITE}surah/${s}/#a-${n}` : `${SITE}#/quran/${meta.id}/${s}?a=${n}`}`); closeTools(); return; }
       }
@@ -789,6 +804,7 @@ export function setupQuran(ctx) {
       aya.insertAdjacentHTML("afterend", `<div class="aya-tools" dir="${document.documentElement.dir}" data-a="${n}"><span class="aya-ref">${esc(t("quran.ayaRef", { aya: n, page: Number(aya.dataset.p) }))}</span><span class="spacer"></span>
         <button class="icon-btn ${isBm ? "active" : ""}" data-act="bm" aria-label="${esc(t(isBm ? "quran.bmRemove" : "quran.bmAdd"))}">${icon(isBm ? "bookmark-f" : "bookmark")}</button>
         ${meta.ayat === KUFI_AYAT ? `<button class="icon-btn" data-act="tafsir" aria-label="${esc(t("tafsir.title"))}">${icon("tafsir")}</button>` : ""}
+        <button class="icon-btn" data-act="qiraat" aria-label="${esc(t("qiraat.title"))}">${icon("layers")}</button>
         <button class="icon-btn" data-act="play" aria-label="${esc(t("listen.fromAya"))}">${icon("headphones")}</button>
         <button class="icon-btn" data-act="copy" aria-label="${esc(t("common.copy"))}">${icon("copy")}</button>
         <button class="icon-btn" data-act="share" aria-label="${esc(t("common.share"))}">${icon("share")}</button></div>`);
@@ -1541,19 +1557,26 @@ export function setupQuran(ctx) {
       return loadPageFont("tajweed", n);
     },
     async surahNames() { await loadIndex(); return n => surahName(n); },
-    // For the Tajweed rules page: the recitation of Shaykh Mahmoud Khalil al-Husary (Hafs, murattal) on mp3quran.net,
-    // whose verse timings the player already uses. file(s): the surah's recording; times(s, a): where verse a starts
-    // and ends in it, in seconds (end null for the last verse), or null when the timings are missing or do not fit.
-    husary: {
-      file: s => surahUrl(HUSARY, s),
-      async times(s, a) {
-        await loadIndex(); const starts = await surahStarts(HUSARY, s); if (!starts) return null;
-        // In Al-Fatihah the timings number the basmala 0 and the verses after it 1–6, one less than the Mushaf.
-        const shift = s === 1 && starts.length - 1 === riw("hafs").surahs[0][1] - 1 ? 1 : 0;
-        if (!shift && !fits(starts, riw("hafs"), s)) return null;
-        const i = a - shift; if (typeof starts[i] !== "number") return null;
-        return { start: starts[i], end: typeof starts[i + 1] === "number" ? starts[i + 1] : null };
-      },
+    // For the Tajweed and readings pages (js/clip.js): a recitation with verse timings in riwayah rid (TIMED above), or
+    // null when the app has none. file(s): the surah's recording; times(s, a): where verse a starts and ends in it, in
+    // seconds (end null for the last verse), or null when the timings are missing or do not fit the riwayah's count.
+    clips(rid = "hafs") {
+      const r = TIMED[rid]; if (!r) return null;
+      return {
+        rid, name: r.name, file: s => surahUrl(r.server, s),
+        async times(s, a) {
+          await loadIndex(); const meta = riw(rid); const starts = await surahStarts(r.server, s); if (!starts) return null;
+          // Hafs recordings number the basmala of Al-Fatihah 0 and the verses after it 1–6, one less than the Mushaf.
+          const shift = s === 1 && starts.length - 1 === meta.surahs[0][1] - 1 ? 1 : 0;
+          if (!shift && !fits(starts, meta, s)) return null;
+          const i = a - shift; if (typeof starts[i] !== "number") return null;
+          return { start: starts[i], end: typeof starts[i + 1] === "number" ? starts[i + 1] : null };
+        },
+      };
     },
+    get husary() { return this.clips("hafs"); },
+    // For the readings page: the riwayat of the index, and whether a riwayah's text is saved on the device.
+    async riwayat() { await loadIndex(); return INDEX.riwayat; },
+    async isSaved(id) { await loadIndex(); return isCached(riw(id)); },
   };
 }
