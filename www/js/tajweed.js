@@ -3,6 +3,7 @@
 // Tajweed Mushaf itself. data/tajweed.json (scripts/build-tajweed.js) gives each example as the glyphs of its words on
 // their printed page: they are drawn with that page's Tajweed font, loaded only for the examples shown, so the colours
 // are exactly those of the Mushaf. The colour key comes from the same fonts (palette 0 by day, 1 at night).
+import { makeClipPlayer } from "./clip.js?v=1.36.0";
 
 export function setupTajweed(ctx) {
   const { view, $, esc, icon, t, num, sep, getLang, LS, setHeader, setNav, Q, sheet, toast } = ctx;
@@ -56,56 +57,15 @@ export function setupTajweed(ctx) {
       <button class="tj-play" type="button" data-k="${x.k}" aria-label="${esc(t("common.listen"))}">${icon("play")}<span>${esc(t("common.listen"))}</span></button></div>`;
   };
 
-  // ---------- listening: the verse of an example, in Shaykh al-Husary's recitation (mp3quran.net) ----------
-  // One audio element for the page. The verse is a stretch of its surah's recording, between its start time and the
-  // next verse's (the timings the player uses). Playback begins inside the tap, as phones require, but silent; once
-  // the timing is known and the file can seek, it jumps to the verse and the sound comes on.
-  const au = new Audio(); au.preload = "none";
-  let cur = null, tok = 0, stopAt = null, timer = 0;
-  const setBtn = (b, on, loading = false) => {
-    b.classList.toggle("on", on); b.classList.toggle("loading", loading);
-    b.innerHTML = `${icon(on ? "pause" : "play")}<span>${esc(t(on ? "common.stop" : "common.listen"))}</span>`; b.setAttribute("aria-label", t(on ? "common.stop" : "common.listen"));
-  };
-  const stopClip = () => { if (!au.paused) au.pause(); };
-  const reset = () => { clearTimeout(timer); if (cur) { setBtn(cur, false); cur = null; } };
-  // Stops at the end of the verse: a timer set for the moment it ends (timeupdate alone would run into the next verse).
-  function arm() {
-    clearTimeout(timer); if (stopAt == null || au.paused) return;
-    const left = stopAt - au.currentTime;
-    if (left <= 0.03) { au.pause(); return; }
-    timer = setTimeout(arm, left * 1000 / (au.playbackRate || 1));
-  }
-  au.addEventListener("playing", arm); au.addEventListener("seeked", arm);
-  au.addEventListener("timeupdate", () => { if (stopAt != null && au.currentTime >= stopAt) au.pause(); });
-  au.addEventListener("pause", () => { if (au.paused) reset(); }); // not the pause queued before the next clip started
-  au.addEventListener("ended", reset);
-  au.addEventListener("error", () => { if (!cur || !au.getAttribute("src")) return; reset(); toast(t("listen.loadFailed")); });
-  // The app's other players stop this one, and it stops them.
-  for (const id of ["audio", "qaudio"]) document.getElementById(id)?.addEventListener("play", stopClip);
-  async function playClip(b) {
-    if (cur === b) { stopClip(); return; }
-    stopClip(); document.getElementById("audio")?.pause(); document.getElementById("qaudio")?.pause();
-    const [s, a] = b.dataset.k.split(":").map(Number);
-    const mine = ++tok; cur = b; stopAt = null; setBtn(b, false, true);
-    const fail = key => { if (mine !== tok) return; au.pause(); au.removeAttribute("src"); reset(); toast(t(key)); };
-    const ready = new Promise(r => au.addEventListener("loadedmetadata", r, { once: true }));
-    au.muted = true; au.src = Q.husary.file(s);
-    au.play().catch(() => fail("listen.playFailed"));
-    let times = null; try { times = await Q.husary.times(s, a); } catch { /* no timings */ }
-    if (mine !== tok) return;
-    if (!times) { fail("listen.loadFailed"); return; }
-    await Promise.race([ready, new Promise(r => setTimeout(r, 15000))]);
-    if (mine !== tok) return;
-    if (!(au.readyState > 0)) { fail("listen.loadFailed"); return; }
-    au.currentTime = times.start; stopAt = times.end; au.muted = false; setBtn(b, true); arm();
-  }
-  const wirePlays = root => root.querySelectorAll(".tj-play").forEach(b => { b.onclick = () => playClip(b); });
+  // ---------- listening: the verse of an example, in Shaykh al-Husary's recitation (mp3quran.net), see js/clip.js ----------
+  const clip = makeClipPlayer({ Q, t, icon, esc, toast });
+  const stopClip = clip.stop, wirePlays = clip.wire;
 
   const poem = m => {
     const b = DATA.books[m.b];
     return `<details class="tj-matn"><summary>${icon("book")}<span>${esc(t("tajweed.fromBook", { book: L(b.title) }))}</span></summary>
       <div class="tj-poem" lang="ar" dir="rtl">${m.v.map(([a, c], i) => `<div class="bt"><span class="n">${num(m.from + i)}</span><span>${esc(a)}</span><span>${esc(c)}</span></div>`).join("")}</div>
-      <p class="source-note">${esc(L(b.author))}${b.url ? `${sep()}<a href="${esc(b.url)}" target="_blank" rel="noopener">turath.io</a>` : ""}</p></details>`;
+      <p class="source-note">${esc(L(b.author))}${sep()}<a href="#/mutun/${m.b}?v=${m.from}">${esc(t("mutun.fullChapter"))}</a>${b.url ? `${sep()}<a href="${esc(b.url)}" target="_blank" rel="noopener">turath.io</a>` : ""}</p></details>`;
   };
   const enNote = () => isAr() || getLang() === "en" ? "" : `<p class="info">${icon("translate")}<span>${esc(t("tajweed.inEnglish"))}</span></p>`;
   const keyRows = () => DATA.colors.map(x => `<a class="tj-key" href="#/tajweed/${x.rule}">${swatch(x.c)}<div class="lbl">${esc(L(x.t))}<span class="sub">${esc(L(x.sub))}</span></div>${exHtml(x.ex, false, false)}</a>`).join("");

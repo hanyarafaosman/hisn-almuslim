@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/faqih.js", "js/fihris-words.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/qibla.js", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "fihris/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/fadl.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/faqih.js", "js/fihris-words.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/qibla.js", "js/clip.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "fihris/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/fadl.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "data/mutun.json", "data/qiraat.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -106,6 +106,52 @@ const tjr = readJson("data/tajweed.json");
       (s.ex || []).forEach(x => checkEx(x, `${ch.id} §${i + 1}`));
     });
     ch.matn.forEach(m => checkMatn(m, ch.id));
+  }
+}
+
+// The matn poems (data/mutun.json + mutun/<id>.<hash>.json, scripts/build-mutun.js): every book's file exists under its
+// hash, holds its count of verses in two halves, its chapters cover the verses once in order, and the chapters of
+// فرش الحروف cover surahs 2–114 once. Texts are [Arabic, English].
+const mx = readJson("data/mutun.json");
+{
+  const pair = (x, where) => { if (!Array.isArray(x) || x.length !== 2 || x.some(v => typeof v !== "string" || !v.trim())) fail(`data/mutun.json ${where}: text must be [Arabic, English]`); };
+  pair(mx.source, "source");
+  if (new Set(mx.books.map(b => b.id)).size !== mx.books.length || mx.books.length !== 5) fail("data/mutun.json: 5 books with distinct ids expected");
+  for (const b of mx.books) {
+    pair(b.title, b.id); pair(b.author, b.id); pair(b.edition, b.id);
+    if (!/^[a-z]+\.[0-9a-f]{10}\.json$/.test(b.file || "") || !fs.existsSync(path.join(root, "mutun", b.file))) { fail(`mutun: ${b.id} file ${b.file} missing — run npm run mutun`); continue; }
+    const v = readJson("mutun/" + b.file).v;
+    if (v.length !== b.count || v.some(x => !Array.isArray(x) || x.length !== 2 || !x[0] || !x[1])) fail(`mutun: ${b.id} must hold ${b.count} verses in two halves`);
+    if (!b.chapters.length || b.chapters[0].from !== 1 || b.chapters.at(-1).to !== b.count || b.chapters.some((c, i) => !c.t || c.to < c.from || (i && c.from !== b.chapters[i - 1].to + 1))) fail(`mutun: ${b.id} chapters do not cover the verses once in order`);
+    const farsh = b.chapters.flatMap(c => c.s || []);
+    if (farsh.length && (farsh.length !== 113 || new Set(farsh).size !== 113 || farsh.some(n => n < 2 || n > 114))) fail(`mutun: ${b.id} فرش الحروف does not cover surahs 2–114 once`);
+  }
+  for (const f of fs.readdirSync(path.join(root, "mutun"))) if (!mx.books.some(b => b.file === f)) fail(`mutun: stray file ${f}`);
+}
+
+// The readings page (data/qiraat.json, scripts/build-qiraat.js): ten readers with two narrators each, matn references
+// inside their books, chapters of the uṣūl pointing at chapters of mutun.json, examples inside the Hafs text.
+const qx = readJson("data/qiraat.json");
+{
+  const pair = (x, where) => { if (!Array.isArray(x) || x.length !== 2 || x.some(v => typeof v !== "string" || !v.trim())) fail(`data/qiraat.json ${where}: text must be [Arabic, English]`); };
+  const book = id => mx.books.find(b => b.id === id);
+  [...qx.intro, qx.sourceNote].forEach((x, i) => pair(x, "intro " + i));
+  if (qx.readers.length !== 10 || qx.readers.some(r => r.nar.length !== 2)) fail("data/qiraat.json: ten readers with two narrators each expected");
+  for (const r of qx.readers) {
+    pair(r.n, r.id); pair(r.full, r.id); pair(r.city, r.id);
+    r.nar.forEach(x => { pair(x.n, x.id); if (x.riwayah && !qi.riwayat.some(q => q.id === x.riwayah)) fail(`qiraat: ${x.id} names an unknown riwayah ${x.riwayah}`); });
+    if (!Object.keys(r.ref).length) fail(`qiraat: ${r.id} has no matn reference`);
+    for (const [id, [a, z]] of Object.entries(r.ref)) { const b = book(id); if (!b || !(a >= 1 && a <= z && z <= b.count)) fail(`qiraat: ${r.id} reference ${id} ${a}–${z} is outside the poem`); }
+  }
+  if (new Set(qx.usul.map(u => u.id)).size !== qx.usul.length) fail("data/qiraat.json: duplicate chapter ids");
+  for (const u of qx.usul) {
+    pair(u.t, u.id); u.p.forEach(x => pair(x, u.id));
+    for (const [id, ids] of Object.entries(u.ch)) { const b = book(id); if (!b || ids.some(i => !b.chapters[i])) fail(`qiraat: ${u.id} points at a missing chapter of ${id}`); }
+    for (const x of u.ex) {
+      const [s, a] = x.k.split(":").map(Number);
+      if (!(s >= 1 && s <= 114 && a >= 1 && a <= hafsIdx.surahs[s - 1][1]) || !x.w.length || !x.t) fail(`qiraat: ${u.id} example ${x.k} is not a verse of the Hafs text`);
+      pair(x.n, `${u.id} ${x.k}`); x.riwayat.forEach(rid => { if (!qi.riwayat.some(q => q.id === rid)) fail(`qiraat: ${u.id} ${x.k} names an unknown riwayah ${rid}`); });
+    }
   }
 }
 
@@ -340,7 +386,7 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/videos.js", "js/tajweed.js", "../scripts/build-tajweed.js", "../scripts/tajweed-source.js", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
+for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/videos.js", "js/tajweed.js", "js/clip.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "../scripts/build-tajweed.js", "../scripts/tajweed-source.js", "../scripts/build-mutun.js", "../scripts/build-qiraat.js", "../scripts/qiraat-source.js", "../scripts/check-qiraat.mjs", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
   "../push/src/index.js", "../push/src/webpush.js", "../push/src/schedule.js", "../push/keys.js", "../push/test.js",
   "js/faqih.js", "js/fihris-words.js", "../scripts/build-fihris.mjs", "../scripts/fihris-test.mjs", "../scripts/faqih-chunk.mjs", "../scripts/faqih-test.mjs", "../scripts/build-faqih.mjs", "../faqih/src/index.js", "../faqih/src/prompt.js", "../faqih/src/verify.js", "../faqih/src/llm.js", "../faqih/test.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });

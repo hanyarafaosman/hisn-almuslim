@@ -905,7 +905,72 @@ details.info { display: block; }
 .tj-nav { display: flex; justify-content: space-between; gap: 8px; margin-top: 14px; }
 .tj-nav .btn { height: auto; min-height: 44px; padding-block: 8px; text-align: center; line-height: 1.4; }
 .tj-nav .btn svg { flex: none; }
+.tj-matn summary .sub { display: block; font-weight: 400; font-size: .82rem; color: var(--muted); margin-top: 2px; }
+.tj-matn summary > span { min-width: 0; }
 .mtools.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+
+/* ===== المتون: الأبواب والأبيات والتحفيظ ===== */
+.mt-search { margin-top: 12px; }
+.mt-chapters .section-title:first-child { margin-top: 12px; }
+.list a.mt-sub .lbl { padding-inline-start: 14px; }
+.list a.mt-sub .num { opacity: .6; }
+.mt-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 2px 8px; }
+.mt-bar .segmented button { padding: 7px 12px; font-size: .84rem; }
+.mt-range { color: var(--muted); font-size: .84rem; }
+.mt-hint { margin: -2px 4px 8px; }
+.mt-poem { padding-top: 6px; }
+.mt-poem .bt { cursor: default; }
+.mt-poem .bt .n { background: none; border: 0; font: inherit; font-family: var(--font-ui); font-size: .72em; color: var(--muted); cursor: pointer; padding: 0; text-align: start; }
+.mt-poem .bt .n:active { color: var(--primary); }
+.mt-poem .h-all, .mt-poem .h-ajuz { transition: filter .2s, opacity .2s; }
+.mt-poem.mode-ajuz .bt:not(.shown) .h-ajuz, .mt-poem.mode-all .bt:not(.shown) .h-ajuz, .mt-poem.mode-all .bt:not(.shown) .h-all { filter: blur(7px); opacity: .35; user-select: none; }
+.mt-poem.mode-ajuz .bt, .mt-poem.mode-all .bt { cursor: pointer; }
+.tj-poem .bt.flash { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+
+/* ===== القراءات: القراء، أمثلة الأصول، مقارنة الروايات ===== */
+.rd-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 8px; }
+.rd { display: block; padding: 10px 12px; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); color: inherit; }
+.rd:active { background: var(--surface-2); }
+.rd-name { font-weight: 700; color: var(--primary-2); }
+.rd-sub { color: var(--muted); font-size: .78rem; margin-top: 2px; }
+.rd-nar { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+.rd-nar span { display: inline-flex; align-items: center; gap: 2px; font-size: .78rem; padding: 2px 8px; border-radius: 99px; background: var(--surface-2); color: var(--muted); }
+.rd-nar span.has { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--surface)); }
+.rd-nar svg { width: 13px; height: 13px; }
+.qr-pick p { margin: 0 0 8px; }
+.qr-pick select, .qr-nar .sub { font: inherit; }
+.qr-pick select { width: 100%; height: 44px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); }
+.qr-nar { margin-top: 8px; padding: 12px 14px; }
+.qr-nar b { color: var(--primary-2); }
+.qr-nar .sub { color: var(--muted); font-size: .84rem; margin-top: 2px; }
+.qr-nar-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
+.qr { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 8px 14px 10px; margin-top: 10px; }
+.qr-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.qr-ref { color: var(--muted); font-size: .8rem; font-weight: 700; }
+.qr-note { margin: 2px 0 6px; font-size: .9rem; font-weight: 600; line-height: 1.6; }
+.qr-row { display: flex; align-items: flex-start; gap: 10px; padding: 6px 0; border-top: 1px dashed var(--border); }
+.qr-row:first-child, .qr-head + .qr-row, .qr-note + .qr-row { border-top: 0; }
+.qr-name { flex: none; width: 5.4em; padding-top: .55em; font-size: .78rem; font-weight: 700; color: var(--primary); line-height: 1.4; }
+.qr-text { flex: 1; min-width: 0; font-family: var(--qfont), var(--font-text); font-size: calc(1.3rem * var(--scale)); line-height: 2.15; text-align: start; overflow-wrap: anywhere; }
+.qr-text.sub { font-family: var(--font-ui); font-size: .84rem; line-height: 1.6; color: var(--muted); padding-top: .4em; }
+.qr-text .qd2, .qr-legend .qd2 { background: color-mix(in srgb, #e53935 24%, transparent); border-radius: 5px; padding: 0 .1em; }
+.qr-text .qd1, .qr-legend .qd1 { text-decoration: underline dotted; text-decoration-color: var(--primary); text-decoration-thickness: 2px; text-underline-offset: .32em; }
+.qr-text .qd3, .qr-legend .qd3 { outline: 1px dashed var(--muted); outline-offset: 1px; border-radius: 5px; }
+.qr-text.novow .qd1 { text-decoration: none; }
+.qr-none { font-family: var(--font-ui); font-size: .84rem; color: var(--muted); }
+.qr-play { flex: none; margin-top: .45em; }
+.tj-play.icon { padding: 6px; border-radius: 50%; }
+.tj-play.icon svg { width: 16px; height: 16px; }
+.qr-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 4px 4px; font-size: .78rem; color: var(--muted); }
+.qr-legend i { display: inline-block; width: 1.4em; height: 1em; vertical-align: -.15em; margin-inline-end: .35em; background: var(--surface); }
+.qr-legend .qd1 { text-decoration: none; border-bottom: 2px dotted var(--primary); }
+.qr-vow { display: flex; align-items: center; gap: 6px; margin: 2px 4px 8px; font-size: .84rem; color: var(--muted); }
+.qr-vow input { accent-color: var(--primary); width: 18px; height: 18px; }
+.qr-chips { margin-top: 10px; }
+.qr-aya.flash { background: color-mix(in srgb, var(--accent) 22%, var(--surface)); }
+.qr-farsh { margin-bottom: 10px; }
+.qr-farsh-body .tj-matn { margin: 0 10px 10px; }
+.sheet-body .qr { margin-top: 4px; }
 /* Size of the Quran text: the sheet of the printed pages, and the pill in the reader's bar. */
 .zoom-row { display: flex; align-items: center; gap: 8px; padding: 10px 0 4px; }
 .zoom-row input { flex: 1; min-width: 0; accent-color: var(--primary); height: 28px; }

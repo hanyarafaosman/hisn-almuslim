@@ -141,21 +141,26 @@ async function recitations() {
     }
     const { radios } = await getJSON(`${API}/radios?language=ar`);
     if (!Array.isArray(radios) || !radios.filter(r => r.url).length) error(G, "reciter radios list is empty");
-    // The Tajweed examples (#/tajweed) play verses of Shaykh al-Husary's recitation by its timings (HUSARY in js/quran.js).
-    const HUSARY = "https://cdn.mp3quran.net/audio/mahmoud-husary/r1/";
+    // The Tajweed and readings examples (#/tajweed, #/qiraat) play verses by the timings of one recording per riwayah
+    // (TIMED in js/quran.js: al-Husary for Hafs, Warsh, Qalun and al-Duri; others for al-Susi, Shuʿbah and al-Bazzi).
+    const TIMED = {
+      hafs: "https://cdn.mp3quran.net/audio/mahmoud-husary/r1/", warsh: "https://cdn.mp3quran.net/audio/mahmoud-husary/r3/",
+      qaloon: "https://cdn.mp3quran.net/audio/mahmoud-husary/r5/", doori: "https://cdn.mp3quran.net/audio/mahmoud-husary/r4/",
+      soosi: "https://cdn.mp3quran.net/audio/abdulrasheed-sufi/r2/", shouba: "https://cdn.mp3quran.net/audio/ali-hudhaifi/r3/", bazzi: "https://cdn.mp3quran.net/audio/okasha-kameny/r2/",
+    };
     const reads = await getJSON(`${API}/ayat_timing/reads`);
-    const read = (Array.isArray(reads) ? reads : []).find(r => r.folder_url === HUSARY);
-    if (!read) error(G, `ayat_timing/reads no longer lists al-Husary's folder ${HUSARY} (Tajweed examples)`);
-    else {
-      // Al-Fatihah, as Q.husary.times() in js/quran.js reads it: the timings number the basmala 0 and the verses after
-      // it 1–6, one less than the Mushaf (the app shifts them by one); numbered 1–7 as the Mushaf would do as well.
-      // Either way every verse of the examples (1:1–1:7) must get a start time.
+    for (const [rid, folder] of Object.entries(TIMED)) {
+      const read = (Array.isArray(reads) ? reads : []).find(r => r.folder_url === folder);
+      if (!read) { error(G, `ayat_timing/reads no longer lists the folder ${folder} (${rid} examples)`); continue; }
+      // Al-Fatihah, as Q.clips().times() in js/quran.js reads it: Hafs recordings number the basmala 0 and the verses
+      // after it 1–6, one less than the Mushaf (the app shifts them by one); the other riwayat number them 1–7.
+      // Either way every verse of the examples must get a start time.
       const rows = await getJSON(`${API}/ayat_timing?surah=1&read=${read.id}`);
       const starts = [0]; (Array.isArray(rows) ? rows : []).forEach(r => { if (r.ayah >= 1) starts[r.ayah] = r.start_time; });
       const verses = starts.length - 1, gaps = [...starts].some(v => typeof v !== "number");
-      if (![6, 7].includes(verses) || gaps) error(G, `ayat_timing for al-Husary (read ${read.id}) numbers surah 1 as ${verses} verses${gaps ? " with gaps" : ""}, not 0–6 or 1–7 (Tajweed examples)`);
-      const res = await request(`${HUSARY}001.mp3`, { method: "HEAD" });
-      if (!res.ok) error(G, `al-Husary's recording ${HUSARY}001.mp3 gave HTTP ${res.status} (Tajweed examples)`);
+      if (![6, 7].includes(verses) || gaps) error(G, `ayat_timing for ${rid} (read ${read.id}) numbers surah 1 as ${verses} verses${gaps ? " with gaps" : ""}, not 0–6 or 1–7 (examples)`);
+      const res = await request(`${folder}001.mp3`, { method: "HEAD" });
+      if (!res.ok) error(G, `the recording ${folder}001.mp3 gave HTTP ${res.status} (${rid} examples)`);
     }
     if (!errors.some(e => e.startsWith(G))) pass(G, `${rewayat.length} rewayat, ${reciters} recitations, ${radios.length} reciter radios`);
   } catch (e) { error(G, e.message); }
