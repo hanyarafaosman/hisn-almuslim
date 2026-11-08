@@ -1074,3 +1074,40 @@ details.info { display: block; }
 .qb-note { margin: 0; color: var(--muted); font-size: .82rem; text-align: center; line-height: 1.7; }
 .qb-time { font-weight: 700; color: var(--primary); font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { .qb-dial { transition: none; } }
+
+/* ===== تحفيظ القرآن: ورد اليوم، المقطع، إخفاء الآيات والكلمات، أدوات التكرار ===== */
+.hz-today h2 { font-size: 1.1rem; }
+.hz-today .progress { margin-top: 10px; }
+.hz-today .hz-due { margin-top: 8px; font-size: .88rem; }
+.hz-form .setting { flex-wrap: wrap; }
+.hz-select, .hz-num { height: 40px; padding-inline: 10px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit; font-size: .95rem; }
+.hz-select { max-width: 62%; }
+.hz-num { width: 84px; text-align: center; font-variant-numeric: tabular-nums; }
+.hz-goal { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.hz-goal .segmented button, .hz-seg button { padding: 6px 10px; font-size: .84rem; }
+.hz-form .hz-go .btn { flex: 1; }
+.hz-modes { margin-inline-start: auto; }
+.hz-modes button { padding: 6px 10px; font-size: .82rem; }
+.hz-hint { margin: 4px 4px 8px; }
+.hz-text { margin-top: 8px; }
+.hz-text .aya { cursor: default; }
+.hz-text .w { transition: filter .2s, opacity .2s; }
+.hz-text.mode-hide .aya:not(.shown) .w, .hz-text.mode-test .aya .w:not(.on) { filter: blur(9px); opacity: .3; user-select: none; }
+.hz-text.mode-hide .aya, .hz-text.mode-test .aya { cursor: pointer; }
+.hz-play { margin: 12px 0; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.hz-play .btn { max-width: 420px; }
+.hz-status { color: var(--muted); font-size: .9rem; min-height: 1.4em; text-align: center; font-variant-numeric: tabular-nums; }
+.hz-status.gap { color: var(--accent); font-weight: 700; }
+.hz-ctl .setting { gap: 10px; }
+.hz-ctl .lbl small { display: block; color: var(--muted); font-weight: 400; font-size: .8rem; }
+.hz-step { display: inline-flex; align-items: center; gap: 2px; }
+.hz-step button { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); color: var(--primary); display: grid; place-items: center; }
+.hz-step button svg { width: 18px; height: 18px; }
+.hz-step b { min-width: 2.4em; text-align: center; font-variant-numeric: tabular-nums; }
+.hz-note { margin: 4px 16px 10px; }
+.hz-done { margin-top: 12px; padding: 12px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.hz-done.ask { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 20%, transparent); }
+.hz-btns { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+.hz-ask { color: var(--muted); font-size: .9rem; text-align: center; }
+/* A memorised verse in the reader (js/hifz.js) */
+.aya.hz { border-inline-end: 4px solid color-mix(in srgb, var(--primary) 55%, transparent); }

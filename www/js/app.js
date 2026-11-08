@@ -1,22 +1,23 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.36.0";
-import { setupHadith } from "./hadith.js?v=1.36.0";
-import { setupTafsir } from "./tafsir.js?v=1.36.0";
-import { setupAsma } from "./asma.js?v=1.36.0";
-import { setupKutub } from "./kutub.js?v=1.36.0";
-import { setupFaqih } from "./faqih.js?v=1.36.0";
-import { setupPrayer } from "./prayer.js?v=1.36.0";
-import { setupVideos } from "./videos.js?v=1.36.0";
-import { setupInstall } from "./install.js?v=1.36.0";
-import { setupTajweed } from "./tajweed.js?v=1.36.0";
-import { setupMutun } from "./mutun.js?v=1.36.0";
-import { setupQiraat } from "./qiraat.js?v=1.36.0";
-import { setupHijri } from "./hijri.js?v=1.36.0";
-import { setupQibla } from "./qibla.js?v=1.36.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.36.0";
-import { mirrorOf } from "./mirror.js?v=1.36.0";
+import { setupQuran } from "./quran.js?v=1.37.0";
+import { setupHadith } from "./hadith.js?v=1.37.0";
+import { setupTafsir } from "./tafsir.js?v=1.37.0";
+import { setupAsma } from "./asma.js?v=1.37.0";
+import { setupKutub } from "./kutub.js?v=1.37.0";
+import { setupFaqih } from "./faqih.js?v=1.37.0";
+import { setupPrayer } from "./prayer.js?v=1.37.0";
+import { setupVideos } from "./videos.js?v=1.37.0";
+import { setupInstall } from "./install.js?v=1.37.0";
+import { setupTajweed } from "./tajweed.js?v=1.37.0";
+import { setupMutun } from "./mutun.js?v=1.37.0";
+import { setupQiraat } from "./qiraat.js?v=1.37.0";
+import { setupHijri } from "./hijri.js?v=1.37.0";
+import { setupQibla } from "./qibla.js?v=1.37.0";
+import { setupHifz } from "./hifz.js?v=1.37.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.37.0";
+import { mirrorOf } from "./mirror.js?v=1.37.0";
 
-const VERSION = "1.36.0";
+const VERSION = "1.37.0";
 const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
@@ -135,7 +136,7 @@ async function updateWakeLock(wanted) {
     else if (!wanted && wakeLock) { await wakeLock.release(); wakeLock = null; }
   } catch { wakeLock = null; }
 }
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && /^#\/(cat|quran\/)/.test(location.hash)) updateWakeLock(true); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && /^#\/(cat|quran\/|hifz\/)/.test(location.hash)) updateWakeLock(true); });
 
 // ---------- audio (short Hisn al-Muslim clips) ----------
 let playingBtn = null;
@@ -182,7 +183,7 @@ const catUrl = (cat, item) => `${SITE}adhkar/${cat.id === 27 ? currentPeriod() :
 const Q = setupQuran({
   view, $, esc, icon, toast, t, num, sep, getLang, collator, regionName, languageName, LS, copyText, share, SITE,
   adhkarAudio: () => ({ items: DB.categories.flatMap(c => c.items.map(i => i.audio)).filter(Boolean), chapters: DB.categories.map(c => c.audio).filter(Boolean) }),
-  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hadith: () => H, tafsir: () => TF, tajweed: () => TJ, qiraat: () => QR,
+  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hadith: () => H, tafsir: () => TF, tajweed: () => TJ, qiraat: () => QR, hifz: () => HF,
   // Night/day reading from the Quran pages: switches the app theme (as in Settings) and says whether it is now dark.
   toggleTheme() { settings.theme = isDark() ? "light" : "dark"; saveSettings(); applyTheme(); return settings.theme === "dark"; },
 });
@@ -208,6 +209,8 @@ const QR = setupQiraat({
   view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, sheet: (...a) => Q.sheet(...a), closeSheet: () => Q.closeSheet(), mutun: () => MT,
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
+// ---------- memorising the Quran: verses repeated and said aloud, hidden to test, and reviewed when due ----------
+const HF = setupHifz({ view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n) });
 // ---------- the Beautiful Names of Allah ----------
 const AS = setupAsma({
   view, $, esc, icon, t, num, sep, getLang, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel,
@@ -283,7 +286,7 @@ function route() {
   const h = location.hash || "#/"; const [path, qs] = h.slice(1).split("?"); const parts = path.split("/").filter(Boolean); const params = new URLSearchParams(qs || "");
   // The printed Mushaf fills the screen: the app bars step aside there (see .mm-on in app.css).
   document.body.classList.toggle("mm-on", parts[0] === "mushaf");
-  stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 1) || (parts[0] === "tafsir" && parts.length > 2) || (parts[0] === "kutub" && parts.length > 2) || (parts[0] === "mutun" && parts.length > 2) || (parts[0] === "qiraat" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
+  stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 1) || (parts[0] === "tafsir" && parts.length > 2) || (parts[0] === "kutub" && parts.length > 2) || (parts[0] === "mutun" && parts.length > 2) || (parts[0] === "qiraat" && parts.length > 1) || (parts[0] === "hifz" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
   onHome = !parts.length || parts[0] === "search"; if (parts.length) noteTool(parts[0]);
   if (!parts.length) return renderHub(params.get("q") || "");
   switch (parts[0]) {
@@ -306,6 +309,7 @@ function route() {
     case "tajweed": return TJ.render(parts.slice(1));
     case "mutun": return MT.render(parts.slice(1), params);
     case "qiraat": return QR.render(parts.slice(1), params);
+    case "hifz": return HF.render(parts.slice(1), params);
     case "asma": return AS.render(parts.slice(1));
     case "kutub": return KT.render(parts.slice(1), params);
     case "faqih": return FQ.render(parts.slice(1), params);
@@ -348,7 +352,7 @@ function adhkarSearch(query, limit = 60) {
 
 // ---------- every part of the app, grouped and ordered by how often it is used (Home and the Tools tab) ----------
 const TOOL_GROUPS = [
-  ["tools.daily", [["#/adhkar", "sun", "nav.adhkar"], ["#/quran", "quran", "nav.quran"], ["#/prayer", "prayer", "prayer.title"],
+  ["tools.daily", [["#/adhkar", "sun", "nav.adhkar"], ["#/quran", "quran", "nav.quran"], ["#/hifz", "repeat", "hifz.title"], ["#/prayer", "prayer", "prayer.title"],
     ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/hijri", "calendar", "hijri.title"]]],
   ["tools.learn", [["#/hadith", "books", "hadith.books"], ["#/tafsir", "tafsir", "tafsir.books"], ["#/asma", "asma", "asma.title"],
     ["#/tajweed", "palette", "tajweed.title"], ["#/qiraat", "layers", "qiraat.title"], ["#/mutun", "book", "mutun.title"], ["#/kutub", "kutub", "kutub.title"], ["#/faqih", "fiqh", "faqih.title"]]],
@@ -394,6 +398,7 @@ function renderHub(q = "") {
       ${PR.hubRow()}
       <a class="now" href="#/cat/${now.id}">${icon(now.ic)}<div><small>${T("hub.now")}</small><b>${esc(now.label)}</b><div class="progress light"><div style="width:${p.pct}%"></div></div></div><span class="pct">${T("common.percent", { n: p.pct })}</span></a>
       ${reading ? `<a class="now" id="hub-quran" href="#/quran">${icon("quran")}<div><small>${T("quran.continue")}</small><b id="hub-last">…</b></div>${icon("back", "chev")}</a>` : ""}
+      ${HF.hubCard()}
     </section>
     ${IN.card()}
     <div class="searchbox">${icon("search")}<input id="q" type="search" placeholder="${T("hub.searchPlaceholder")}" value="${esc(q)}" autocomplete="off" enterkeyhint="search"></div>

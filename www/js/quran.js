@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.36.0";
-import { mirrorOf } from "./mirror.js?v=1.36.0";
+import * as off from "./offline.js?v=1.37.0";
+import { mirrorOf } from "./mirror.js?v=1.37.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -118,6 +118,8 @@ export function setupQuran(ctx) {
   // Search in names ignores diacritics, letter forms, spaces and dashes: «عبد الباسط» finds «عبدالباسط», «abdul basit» finds «Abdulbasit».
   const nameKey = s => lower(String(s).normalize("NFD").replace(/\p{M}/gu, "").replace(/[ٱأإآ]/g, "ا").replace(/ى/g, "ي").replace(/ة/g, "ه").replace(/[^\p{L}\p{N}]|ـ/gu, ""));
   const nameHas = (name, q) => nameKey(name).includes(nameKey(q));
+  // The teaching Mushaf recordings (المصحف المعلم, with pauses to repeat after the reciter), by their name on mp3quran.
+  const TEACH = /المعلم|molim|muallim|moallim/;
   // Reciters chosen before 1.36.0 kept the joined name.
   if (getLang() === "ar") Object.values(state.reciters).forEach(r => { if (r?.name) r.name = spaceAbd(r.name); });
 
@@ -189,6 +191,8 @@ export function setupQuran(ctx) {
   const getRiwayatList = () => getJSON(`${API}/riwayat?language=${mp3Lang()}`).then(j => j.riwayat);
   const named = (lang, list) => lang === "ar" ? list.map(x => ({ ...x, name: spaceAbd(x.name) })) : list;
   const getReciters = rewaya => { const lang = mp3Lang(); return getJSON(`${API}/reciters?language=${lang}&rewaya=${rewaya}`).then(j => named(lang, j.reciters)); };
+  // Every recording of every reciter: the list by riwayah leaves some out, among them the teaching Mushaf recordings.
+  const getAllReciters = () => { const lang = mp3Lang(); return getJSON(`${API}/reciters?language=${lang}`).then(j => named(lang, j.reciters)); };
   const getReciterRadios = () => { const lang = mp3Lang(); return getJSON(`${API}/radios?language=${lang}`).then(j => named(lang, j.radios)); };
   const once = (url, fix) => { let p = null; return () => p ||= fetch(url).then(r => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(fix).catch(e => { p = null; throw e; }); };
   const getRadios = once("data/radios.json", j => ({ live: j.live || [], sunnah: j.sunnah || [], topics: j.topics || [], hide: j.hide || [] }));
@@ -235,7 +239,7 @@ export function setupQuran(ctx) {
 
   // ---------- persistent audio player ----------
   const player = (() => {
-    const el = document.getElementById("player"), a = document.getElementById("qaudio");
+    const el = document.getElementById("player"), a = document.getElementById("qaudio"), sil = document.getElementById("qsilence");
     const btn = $("#pl-toggle", el), t1 = $(".pl-name", el), ta = $(".pl-aya", el), t2 = $(".pl-sub", el), prev = $("#pl-prev", el), next = $("#pl-next", el);
     let q = null, jumping = false, aya = 0; const listeners = new Set(); // aya: the verse being recited, when known
     // What is playing and where: { server, surah, rid, time, paused, jumping } for a surah, null otherwise.
@@ -246,21 +250,99 @@ export function setupQuran(ctx) {
     // q.type: "surahs" (a reciter's surahs in order), "tracks" (the lessons of an audio series in order) or "radio" (a live stream).
     const url = () => q.type === "radio" ? q.url : q.type === "tracks" ? q.list[q.idx][0] : `${q.server}${pad(q.list[q.idx])}.mp3`;
     const title = () => q.type === "surahs" ? t("quran.surah", { name: surahName(q.list[q.idx]) }) : q.name;
+
+    // ---- the memorisation loop (js/hifz.js): verses from..to of one surah, each repeated reps times and the stretch
+    // rounds times, with a silent gap after each verse (gap × the verse's length) to say it aloud, at a chosen rate.
+    // L is the loop's place: the verse a, its repetition k, the round, and the phase ("verse" while it plays, "gap"
+    // in the silence after it; done once the last round ended, until play starts it again). With verse timings
+    // (loop.starts, see verseTimes) a verse ends where the next begins; without them (the teaching Mushaf recordings,
+    // Qunbul) a round is the whole surah, and reps and the gap do not apply. Every way out goes through loopEnd().
+    let L = null, loopTimer = 0; const loopListeners = new Set();
+    const loopState = () => q?.loop && L ? { ...L, from: q.loop.from, to: q.loop.to, reps: q.loop.reps, rounds: q.loop.rounds, timed: !!q.loop.starts } : null;
+    const tellLoop = () => { const s = loopState(); loopListeners.forEach(f => f(s)); };
+    const playing = () => q?.loop && L?.phase === "gap" ? !!sil && !sil.paused : !a.paused;
+    const verseEnd = () => { const e = q.loop.starts?.[L.a + 1]; return typeof e === "number" ? e - 0.1 : Infinity; };
+    const verseLen = () => { const s = q.loop.starts, b = s[L.a], e = typeof s[L.a + 1] === "number" ? s[L.a + 1] : a.duration; return Number.isFinite(e) && e > b ? e - b : 5; };
+    const loopLabel = () => q.loop.starts ? `${t("player.aya", { n: L.a })}${sep()}${num(L.k)}/${num(q.loop.reps)}${sep()}${t("hifz.round", { n: L.round, total: q.loop.rounds })}` : t("hifz.round", { n: L.round, total: q.loop.rounds });
+    // A timer set for the verse's end, as in js/clip.js: timeupdate alone (four times a second) would run into the next verse.
+    function arm() {
+      clearTimeout(loopTimer); if (!q?.loop || !L || L.phase !== "verse" || L.done || a.paused || jumping) return;
+      const left = verseEnd() - a.currentTime; if (!Number.isFinite(left)) return;
+      if (left <= 0.03) { verseDone(); return; }
+      loopTimer = setTimeout(arm, left * 1000 / (a.playbackRate || 1));
+    }
+    function verseDone() {
+      clearTimeout(loopTimer); if (!q?.loop || !L || L.phase !== "verse" || L.done) return;
+      a.pause();
+      const gap = q.loop.starts && q.loop.gap > 0 ? q.loop.gap * verseLen() : 0;
+      if (gap > 0) { L.phase = "gap"; L.left = gap; silence(true); render(); tellLoop(); return; }
+      advance();
+    }
+    // The gap is counted on the silent file's own clock (audio/silence.mp3, played in a loop): a page whose only sound
+    // has stopped is put to sleep within seconds in the background on phones, and its timers with it. The file is
+    // unlocked inside the tap that starts the loop (unlockSilence). If it cannot play, a timer counts the gap instead.
+    let silLast = 0;
+    function silence(on) {
+      if (!on) { if (sil && !sil.paused) sil.pause(); return; }
+      if (!sil) { loopTimer = setTimeout(advance, L.left * 1000); return; }
+      silLast = sil.currentTime; sil.play().catch(() => { if (L?.phase === "gap") loopTimer = setTimeout(advance, L.left * 1000); });
+    }
+    function unlockSilence() { if (!sil || !sil.paused) return; sil.play().then(() => { if (L?.phase !== "gap") sil.pause(); }).catch(() => {}); }
+    sil?.addEventListener("timeupdate", () => {
+      if (!q?.loop || L?.phase !== "gap") return;
+      const cur = sil.currentTime; let d = cur - silLast; if (d < 0) d = cur + Math.max(0, (sil.duration || 10) - silLast); // the file looped
+      silLast = cur; L.left -= Math.max(0, d);
+      if (L.left <= 0.05) advance();
+    });
+    // The next repetition, verse or round; after the last, the loop is done and waits.
+    function advance() {
+      clearTimeout(loopTimer); if (!q?.loop || !L) return;
+      silence(false);
+      const { from, to, reps, rounds, starts } = q.loop;
+      if (starts && L.k < reps) L.k++;
+      else if (starts && L.a < to) { L.a++; L.k = 1; }
+      else if (L.round < rounds) { L.round++; L.a = from; L.k = 1; }
+      else { L.phase = "verse"; L.done = true; L.a = from; L.k = 1; L.round = 1; render(); tellLoop(); return; }
+      L.phase = "verse"; seekPlay();
+    }
+    // Plays verse L.a from its start (the whole surah without timings). Seeking needs the file's metadata.
+    function seekPlay() {
+      L.phase = "verse"; L.done = false; L.retried = false;
+      const at = q.loop.starts ? q.loop.starts[L.a] || 0 : 0;
+      const go = () => { if (a.readyState > 0) a.currentTime = at; a.play().catch(() => {}); };
+      if (a.readyState > 0) go(); else { a.addEventListener("loadedmetadata", go, { once: true }); if (!a.getAttribute("src")) a.src = url(); a.load(); }
+      render(); tellLoop(); arm();
+    }
+    function stepVerse(d) {
+      if (!q.loop.starts) return;
+      const v = Math.min(q.loop.to, Math.max(q.loop.from, L.a + d)); if (v === L.a && !L.done) return;
+      clearTimeout(loopTimer); silence(false); L.a = v; L.k = 1; seekPlay();
+    }
+    function loopEnd() {
+      clearTimeout(loopTimer); silence(false);
+      if (!L && !q?.loop) return;
+      L = null; if (q) q.loop = null; tellLoop();
+    }
     function render() {
       el.hidden = !q; document.body.classList.toggle("has-player", !!q); if (!q) return;
+      const loop = !!(q.loop && L);
       // With the verse number beside it, the surah's name goes without "Surah" so both fit on a phone.
-      t1.textContent = aya ? surahName(q.list[q.idx]) : title(); t2.textContent = q.sub || "";
+      t1.textContent = aya || loop ? surahName(q.list[q.idx]) : title(); t2.textContent = q.sub || "";
       const lesson = q.type === "tracks" ? t("lessons.n", { n: q.idx + 1 }) : "";
-      ta.hidden = !aya && !lesson; ta.textContent = aya ? t("player.aya", { n: aya }) : lesson;
+      ta.hidden = !aya && !lesson && !loop; ta.textContent = loop ? loopLabel() : aya ? t("player.aya", { n: aya }) : lesson;
       const steps = q.type !== "radio"; prev.hidden = next.hidden = !steps;
-      if (steps) {
+      if (loop) {
+        prev.disabled = !q.loop.starts || L.a <= q.loop.from; next.disabled = !q.loop.starts || L.a >= q.loop.to;
+        prev.setAttribute("aria-label", t("hifz.prevAya")); next.setAttribute("aria-label", t("hifz.nextAya"));
+      } else if (steps) {
         prev.disabled = q.idx <= 0; next.disabled = q.idx >= q.list.length - 1;
         prev.setAttribute("aria-label", t(lesson ? "player.prevLesson" : "player.prev")); next.setAttribute("aria-label", t(lesson ? "player.nextLesson" : "player.next"));
       }
-      btn.innerHTML = icon(a.paused ? "play" : "pause"); btn.setAttribute("aria-label", t(a.paused ? "common.play" : "common.pause"));
+      const on = playing();
+      btn.innerHTML = icon(on ? "pause" : "play"); btn.setAttribute("aria-label", t(on ? "common.pause" : "common.play"));
       document.querySelectorAll("[data-playing]").forEach(x => x.classList.toggle("on", x.dataset.playing === key()));
       if ("mediaSession" in navigator) {
-        navigator.mediaSession.metadata = new MediaMetadata({ title: lesson ? `${title()} (${lesson})` : title(), artist: q.sub || "", album: t("app.name"), artwork: [{ src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }] });
+        navigator.mediaSession.metadata = new MediaMetadata({ title: lesson ? `${title()} (${lesson})` : loop ? `${title()}${sep()}${loopLabel()}` : title(), artist: q.sub || "", album: t("app.name"), artwork: [{ src: "icons/icon-512.png", sizes: "512x512", type: "image/png" }] });
       }
     }
     const failMsg = () => t(q.type === "radio" ? "radio.playFailed" : q.type === "tracks" ? "lessons.playFailed" : "listen.playFailed");
@@ -269,6 +351,7 @@ export function setupQuran(ctx) {
       document.getElementById("audio")?.pause();
       const mine = ++tok; const at = q.at; q.at = null;
       el.classList.add("loading"); a.muted = false; jumping = !!at; aya = 0;
+      a.defaultPlaybackRate = a.playbackRate = q.loop?.rate || 1;
       if (at) {
         // Start at a verse. Playback begins right away (inside the tap, as phones require) but silent;
         // once the verse's time is known and the file can seek, it jumps there and the sound comes on.
@@ -279,6 +362,7 @@ export function setupQuran(ctx) {
           if (mine !== tok) return;
           if (a.readyState > 0) a.currentTime = Number.isFinite(sec) && sec > 0 ? sec : 0; // no verse time: from the beginning
           a.muted = false; jumping = false; tell();
+          if (q?.loop && L) { render(); tellLoop(); arm(); }
         });
       }
       a.src = url();
@@ -286,40 +370,79 @@ export function setupQuran(ctx) {
       if (q.type === "tracks") q.save?.(q.idx, typeof at === "number" ? at : 0);
       render(); tell();
     }
-    function step(d) { if (!q || q.type === "radio") return; const i = q.idx + d; if (i < 0 || i >= q.list.length) return; q.idx = i; start(); }
+    function step(d) { if (!q || q.type === "radio") return; if (q.loop && L) return stepVerse(d); const i = q.idx + d; if (i < 0 || i >= q.list.length) return; q.idx = i; start(); }
     const key = () => !q ? "" : q.type === "radio" ? "radio:" + q.id : q.type === "tracks" ? `track:${q.id}:${q.idx}` : `surah:${q.server}:${q.list[q.idx]}`;
-    a.addEventListener("playing", () => { el.classList.remove("loading"); render(); });
+    a.addEventListener("playing", () => { el.classList.remove("loading"); if (q?.loop) { a.playbackRate = q.loop.rate || 1; if (L) L.retried = false; } render(); arm(); });
     a.addEventListener("waiting", () => el.classList.add("loading"));
-    a.addEventListener("pause", () => { render(); tell(); });
-    a.addEventListener("ended", () => { if (q && q.type !== "radio" && q.idx < q.list.length - 1) step(1); else render(); });
-    a.addEventListener("error", () => { if (!q || !a.getAttribute("src")) return; el.classList.remove("loading"); toast(t(q.type === "radio" ? "radio.playFailed" : q.type === "tracks" ? "lessons.loadFailed" : "listen.loadFailed")); render(); });
-    a.addEventListener("timeupdate", tell); a.addEventListener("seeked", tell);
+    a.addEventListener("pause", () => { clearTimeout(loopTimer); render(); tell(); });
+    a.addEventListener("ended", () => {
+      if (q?.loop && L) { if (L.phase === "verse" && !L.done) verseDone(); return; } // a loop never goes on to the next surah
+      if (q && q.type !== "radio" && q.idx < q.list.length - 1) step(1); else render();
+    });
+    a.addEventListener("error", () => {
+      if (!q || !a.getAttribute("src")) return;
+      // A loop coming back after a long time in the background: load the file again and go on from its verse, once.
+      if (q.loop && L && !L.retried) { L.retried = true; const at = q.loop.starts ? q.loop.starts[L.a] || 0 : 0; a.src = url(); a.addEventListener("loadedmetadata", () => { if (a.readyState > 0) a.currentTime = at; a.play().catch(() => {}); }, { once: true }); a.load(); return; }
+      el.classList.remove("loading"); toast(t(q.type === "radio" ? "radio.playFailed" : q.type === "tracks" ? "lessons.loadFailed" : "listen.loadFailed")); render();
+    });
+    a.addEventListener("timeupdate", () => { tell(); if (q?.loop && L?.phase === "verse" && !L.done && !jumping && a.currentTime >= verseEnd()) verseDone(); });
+    a.addEventListener("seeked", () => { tell(); arm(); });
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") arm(); }); // timers slow down in the background
+    // Another player starting (the adhkar clips) ends a loop: its gap would otherwise start the recitation again.
+    document.getElementById("audio")?.addEventListener("play", () => { if (q?.loop) loopEnd(); });
     // An audio series remembers the lesson and the minute reached (every few seconds while it plays).
     let savedAt = 0;
     a.addEventListener("timeupdate", () => { if (q?.type === "tracks" && !jumping && Date.now() - savedAt > 5000) { savedAt = Date.now(); q.save?.(q.idx, a.currentTime); } });
-    btn.onclick = () => { if (!q) return; if (a.paused) { if (q.type === "radio") start(); else a.play().catch(() => {}); } else a.pause(); };
+    btn.onclick = () => {
+      if (!q) return;
+      if (q.loop && L) {
+        if (L.done) return seekPlay();
+        if (L.phase === "gap") { if (sil && !sil.paused) { sil.pause(); clearTimeout(loopTimer); } else silence(true); render(); return; }
+      }
+      if (a.paused) { if (q.type === "radio") start(); else a.play().catch(() => {}); } else a.pause();
+    };
     prev.onclick = () => step(-1); next.onclick = () => step(1);
-    $("#pl-close", el).onclick = () => { a.pause(); a.removeAttribute("src"); a.load(); q = null; jumping = false; aya = 0; render(); tell(); };
+    $("#pl-close", el).onclick = () => { loopEnd(); a.pause(); a.removeAttribute("src"); a.load(); q = null; jumping = false; aya = 0; render(); tell(); };
     if ("mediaSession" in navigator) {
       navigator.mediaSession.setActionHandler("play", () => btn.click());
-      navigator.mediaSession.setActionHandler("pause", () => a.pause());
+      navigator.mediaSession.setActionHandler("pause", () => { if (playing()) btn.click(); });
       try { navigator.mediaSession.setActionHandler("previoustrack", () => step(-1)); navigator.mediaSession.setActionHandler("nexttrack", () => step(1)); } catch { /* unsupported */ }
     }
     return {
       // at: seconds (or a promise of seconds, or null) where the first surah starts; the next surahs start at the beginning.
       // rid: the riwayah of the Quran text this recitation follows, when there is one (for following the verse).
-      surahs({ server, list, start: s, sub, rid = "", at = null }) { const idx = list.indexOf(s); if (idx < 0) { toast(t("listen.surahUnavailable")); return; } q = { type: "surahs", server, list, idx, sub, rid, at }; start(); },
-      radio({ id, url: u, name, sub }) { if (q?.type === "radio" && q.id === id && !a.paused) { a.pause(); return; } q = { type: "radio", id, url: u, name, sub }; start(); },
+      // loop: { from, to, reps, rounds, gap, rate, starts } repeats verses from..to of surah s as described above; starts
+      // are the verse start times (verseTimes), a promise of them (the loop starts inside the tap, silent until they
+      // come), or null for a recording without timings.
+      surahs({ server, list, start: s, sub, rid = "", at = null, loop = null }) {
+        const idx = list.indexOf(s); if (idx < 0) { toast(t("listen.surahUnavailable")); return; }
+        loopEnd();
+        q = { type: "surahs", server, list, idx, sub, rid, at, loop: null };
+        if (loop) {
+          const from = Math.max(1, loop.from | 0), to = Math.max(from, loop.to | 0);
+          q.loop = { from, to, reps: Math.min(10, Math.max(1, loop.reps | 0)), rounds: Math.max(1, loop.rounds | 0), gap: Math.max(0, +loop.gap || 0), rate: +loop.rate || 1, starts: null };
+          L = { a: from, k: 1, round: 1, phase: "verse", done: false };
+          const mine = q;
+          q.at = Promise.resolve(loop.starts).catch(() => null).then(S => { if (q !== mine || !q.loop) return null; q.loop.starts = Array.isArray(S) && typeof S[from] === "number" ? S : null; return q.loop.starts ? q.loop.starts[from] : 0; });
+          if (q.loop.gap > 0) unlockSilence();
+        }
+        start();
+      },
+      radio({ id, url: u, name, sub }) { if (q?.type === "radio" && q.id === id && !a.paused) { a.pause(); return; } loopEnd(); q = { type: "radio", id, url: u, name, sub }; start(); },
       // list: [[mp3 url, description], …]; at: the second lesson `start` begins at; save(idx, seconds) is told the place reached.
       tracks({ id, list, start: i = 0, at = null, name, sub, save }) {
         if (q?.type === "tracks" && q.id === id && q.idx === i && a.getAttribute("src")) { if (a.paused) a.play().catch(() => {}); else a.pause(); return; }
-        q = { type: "tracks", id, list, idx: i, name, sub, save, at: at > 0 ? at : null }; start();
+        loopEnd(); q = { type: "tracks", id, list, idx: i, name, sub, save, at: at > 0 ? at : null }; start();
       },
-      pause() { a.pause(); },
+      pause() { if (q?.loop && L?.phase === "gap") { if (sil && !sil.paused) sil.pause(); clearTimeout(loopTimer); render(); } else a.pause(); },
       // The current track and time, and a function called with it on every change (about four times a second while playing).
       now, listen(f) { listeners.add(f); return () => listeners.delete(f); },
       showAya(n) { if (q?.type !== "surahs" || n === aya) return; aya = n; render(); },
       key, refresh: render,
+      // The memorisation loop: its place ({ a, k, round, phase, done, from, to, reps, rounds, timed } or null), a function
+      // called whenever it moves, whether it is playing, and its end (the recitation stays loaded, paused).
+      loopState, onLoop(f) { loopListeners.add(f); return () => loopListeners.delete(f); }, loopPlaying: () => !!(q?.loop && L && !L.done && playing()),
+      stopLoop() { if (!q?.loop) return; loopEnd(); a.pause(); render(); },
     };
   })();
 
@@ -342,6 +465,15 @@ export function setupQuran(ctx) {
   }
   // A timing fits the text only when it counts the verses as this riwayah does.
   const fits = (starts, meta, s) => !!starts && starts.length - 1 === meta.surahs[s - 1][1];
+  // Where every verse of surah s starts in a recording, by the Mushaf's verse numbers of riwayah meta: [0, verse 1, verse 2, …]
+  // (verse a ends where a + 1 starts), or null when the recording has no timings or they count the verses otherwise.
+  // Hafs recordings number the basmala of Al-Fatihah 0 and the verses after it 1–6, one less than the Mushaf, whose
+  // first verse is the basmala: those are shifted to the Mushaf's numbers here.
+  async function verseTimes(meta, server, s) {
+    const starts = await surahStarts(server, s); if (!starts) return null;
+    if (s === 1 && starts.length - 1 === meta.surahs[0][1] - 1) return [0, 0, ...starts.slice(1)];
+    return fits(starts, meta, s) ? starts : null;
+  }
   // Seconds from the start of the surah's recording to verse a, or null when this recording has no timings that fit.
   async function ayahStart(meta, server, s, a) {
     const starts = await surahStarts(server, s);
@@ -349,20 +481,24 @@ export function setupQuran(ctx) {
   }
 
   // ---------- reciter picker (for the reader) ----------
-  async function pickReciter(meta, then, { fromAya = false } = {}) {
+  // fromAya: sort the recordings with verse timings first; teach: mark the teaching Mushaf recordings and sort them
+  // next; current: the server of the recording chosen now (the reader's choice otherwise); remember: keep the choice
+  // as the reader's reciter (the memorisation page keeps its own).
+  async function pickReciter(meta, then, { fromAya = false, teach = false, current = null, remember = true } = {}) {
     const body = sheet(t("quran.pickReciterTitle", { name: rShort(meta) }), loading(t("quran.fetchingReciters")));
     try {
-      const [lists, timed] = await Promise.all([Promise.all(meta.audio.map(id => getReciters(id).catch(() => []))), timedServers().catch(() => new Map())]);
+      const [lists, timed] = await Promise.all([Promise.all([...meta.audio.map(id => getReciters(id).catch(() => [])), ...(teach ? [getAllReciters().catch(() => [])] : [])]), timedServers().catch(() => new Map())]);
       const items = [];
-      lists.flat().forEach(r => r.moshaf.filter(m => meta.audio.includes(m.rewaya_id)).forEach(m => items.push({ name: r.name, moshaf: m.name, server: m.server, list: m.surah_list, total: m.surah_total })));
+      lists.flat().forEach(r => r.moshaf.filter(m => meta.audio.includes(m.rewaya_id)).forEach(m => items.push({ name: r.name, moshaf: m.name, server: m.server, list: m.surah_list, total: m.surah_total, timed: timed.has(m.server), teach: TEACH.test(nameKey(m.name)) })));
       const c = collator(); const seen = new Set();
-      // Chosen to start at a verse: reciters whose recordings have verse timings come first.
-      const uniq = items.filter(x => !seen.has(x.server) && seen.add(x.server)).sort((x, y) => (fromAya ? timed.has(y.server) - timed.has(x.server) : 0) || c.compare(x.name, y.name));
+      // Chosen to start at a verse: reciters whose recordings have verse timings come first (then, for memorising, the teaching Mushaf).
+      const rank = x => fromAya && x.timed ? 0 : teach && x.teach ? 1 : 2;
+      const uniq = items.filter(x => !seen.has(x.server) && seen.add(x.server)).sort((x, y) => rank(x) - rank(y) || c.compare(x.name, y.name));
       if (!uniq.length) { body.innerHTML = `<div class="empty">${esc(t("quran.noReciters"))}</div>`; return; }
       body.innerHTML = `${fromAya ? `<p class="riwayah-note">${icon("play")} ${esc(t("listen.pickTimed"))}</p>` : ""}<div class="searchbox small">${icon("search")}<input type="search" placeholder="${esc(t("quran.searchReciter"))}" id="rc-q"></div><div class="list flat" id="rc-list"></div>`;
-      const draw = q => { $("#rc-list", body).innerHTML = uniq.filter(x => !q || nameHas(x.name, q)).map(x => `<button class="row" data-i="${uniq.indexOf(x)}"><div class="lbl" dir="auto">${esc(x.name)}<span class="sub" dir="auto">${esc(x.moshaf)}${sep()}${esc(t("count.surahs", { n: x.total }))}${timed.has(x.server) ? `<span class="timed">${icon("play")} ${esc(t("listen.timed"))}</span>` : ""}</span></div>${state.reciters[meta.id]?.server === x.server ? icon("check") : ""}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
+      const draw = q => { $("#rc-list", body).innerHTML = uniq.filter(x => !q || nameHas(x.name, q)).map(x => `<button class="row" data-i="${uniq.indexOf(x)}"><div class="lbl" dir="auto">${esc(x.name)}<span class="sub" dir="auto">${esc(x.moshaf)}${sep()}${esc(t("count.surahs", { n: x.total }))}${x.timed ? `<span class="timed">${icon("play")} ${esc(t("listen.timed"))}</span>` : ""}${teach && x.teach ? `<span class="timed">${icon("repeat")} ${esc(t("hifz.teach"))}</span>` : ""}</span></div>${(current ?? state.reciters[meta.id]?.server) === x.server ? icon("check") : ""}</button>`).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`; };
       draw(""); $("#rc-q", body).oninput = e => draw(e.target.value.trim());
-      $("#rc-list", body).onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; const x = uniq[Number(b.dataset.i)]; state.reciters[meta.id] = x; save(); closeSheet(); then?.(x); };
+      $("#rc-list", body).onclick = e => { const b = e.target.closest("[data-i]"); if (!b) return; const x = uniq[Number(b.dataset.i)]; if (remember) { state.reciters[meta.id] = x; save(); } closeSheet(); then?.(x); };
     } catch (err) { body.innerHTML = `<div class="empty">${esc(t("quran.recitersFailed"))}<br><small>${esc(err.message)}</small></div>`; }
   }
   const surahList = x => String(x.list || "").split(",").map(Number).filter(Boolean);
@@ -710,11 +846,12 @@ export function setupQuran(ctx) {
     setHeader(t("quran.surah", { name }), { back: true, onTitle: () => openIdx(), actions: `<button class="icon-btn" id="q-idx" aria-label="${esc(t("quran.index"))}">${icon("list", "flip")}</button><button class="icon-btn" id="q-search" aria-label="${esc(t("quran.searchTitle"))}">${icon("search")}</button><button class="icon-btn" id="q-play" aria-label="${esc(t("quran.listenSurah"))}">${icon("headphones")}</button><button class="icon-btn" id="q-tr" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button>` });
     const showBasmala = s !== 9 && !(s === 1 && meta.basmalaIsAya);
     const rec = state.reciters[meta.id];
+    const hz = ctx.hifz?.()?.memorised(meta.id, s) || new Set(); // verses memorised (js/hifz.js)
     let lastJuz = s > 1 ? data.s[s - 2].at(-1)[2] : ayat[0][2];
     const parts = [];
     ayat.forEach(([text, page, juz], i) => {
       if (juz !== lastJuz) { parts.push(`<div class="juz-mark"><span>${esc(t("quran.juz", { n: juz }))}</span></div>`); lastJuz = juz; }
-      parts.push(`<div class="aya ${isMarked(meta.id, s, i + 1) ? "bm" : ""}" id="a-${i + 1}" data-a="${i + 1}" data-p="${page}" tabindex="0"><span class="aya-text" lang="ar" dir="rtl">${esc(text)}</span></div>`);
+      parts.push(`<div class="aya ${isMarked(meta.id, s, i + 1) ? "bm" : ""}${hz.has(i + 1) ? " hz" : ""}" id="a-${i + 1}" data-a="${i + 1}" data-p="${page}" tabindex="0"><span class="aya-text" lang="ar" dir="rtl">${esc(text)}</span></div>`);
     });
     view.innerHTML = `
       <div class="reader-bar">
@@ -722,6 +859,7 @@ export function setupQuran(ctx) {
           ? `<button class="pill ghost" id="q-page" aria-label="${esc(t("mushaf.openPage"))}">${icon("quran")} ${esc(t("quran.page", { n: ayat[0][1] }))}</button>` : `<span class="pill ghost">${esc(t("quran.page", { n: ayat[0][1] }))}</span>`}
         <button class="pill ghost" id="q-theme" aria-label="${esc(t(isDark() ? "mushaf.toDayAria" : "mushaf.toNightAria"))}">${icon(isDark() ? "sun" : "moon")} ${esc(t(isDark() ? "mushaf.toDay" : "mushaf.toNight"))}</button>
         <span class="pill ghost zoom" role="group" aria-label="${esc(t("settings.fontSize"))}"><button data-qz="-1" aria-label="${esc(t("settings.smaller"))}">${icon("minus")}</button><b id="q-zoom">${esc(pct(state.qz))}</b><button data-qz="1" aria-label="${esc(t("settings.larger"))}">${icon("plus")}</button></span>
+        <a class="pill ghost" id="q-hifz" href="#/hifz/${meta.id}/${s}">${icon("repeat")} ${esc(t("hifz.inReader"))}</a>
         <button class="link" id="q-rec">${icon("headphones")} <span dir="auto">${esc(rec ? rec.name : t("quran.chooseReciter"))}</span></button>
       </div>
       <div id="tr-note"></div>
@@ -741,6 +879,8 @@ export function setupQuran(ctx) {
     const playWith = x => { following = true; player.surahs({ server: x.server, list: surahList(x), start: s, sub: `${x.name}${sep()}${rShort(meta)}`, rid: meta.id }); showRec(x); };
     const qp = $("#q-page"); if (qp) qp.onclick = () => { const a = curAya(); location.hash = pageHref(state.mushafEd || DEFAULT_ED, ayat[a - 1][1], `${s}:${a}`); };
     $("#q-idx").onclick = () => openIdx(); $("#q-search").onclick = () => openIdx(true);
+    // Memorise from the verse at the top of the screen to the end of its printed page (ten verses at most).
+    $("#q-hifz").onclick = e => { e.preventDefault(); const a = curAya(); const p = ayat[a - 1][1]; let b = a; while (b < ayat.length && b < a + 9 && ayat[b][1] === p) b++; location.hash = `#/hifz/${meta.id}/${s}?from=${a}&to=${b}`; };
     $("#q-play").onclick = () => { const r = state.reciters[meta.id]; r ? playWith(r) : pickReciter(meta, playWith); };
     $("#q-rec").onclick = () => pickReciter(meta, playWith);
     // Night or day reading, from here as from Settings.
@@ -1563,18 +1703,22 @@ export function setupQuran(ctx) {
     clips(rid = "hafs") {
       const r = TIMED[rid]; if (!r) return null;
       return {
-        rid, name: r.name, file: s => surahUrl(r.server, s),
+        rid, name: r.name, server: r.server, file: s => surahUrl(r.server, s),
         async times(s, a) {
-          await loadIndex(); const meta = riw(rid); const starts = await surahStarts(r.server, s); if (!starts) return null;
-          // Hafs recordings number the basmala of Al-Fatihah 0 and the verses after it 1–6, one less than the Mushaf.
-          const shift = s === 1 && starts.length - 1 === meta.surahs[0][1] - 1 ? 1 : 0;
-          if (!shift && !fits(starts, meta, s)) return null;
-          const i = a - shift; if (typeof starts[i] !== "number") return null;
-          return { start: starts[i], end: typeof starts[i + 1] === "number" ? starts[i + 1] : null };
+          await loadIndex(); const S = await verseTimes(riw(rid), r.server, s);
+          if (!S || typeof S[a] !== "number") return null;
+          return { start: S[a], end: typeof S[a + 1] === "number" ? S[a + 1] : null };
         },
       };
     },
     get husary() { return this.clips("hafs"); },
+    // For the memorisation page (js/hifz.js): the verse start times of surah s in a recording, by the Mushaf's verse
+    // numbers of riwayah rid (null without fitting timings); whether a recording has timings; the reciter picker; the
+    // surahs of a recording from its comma-separated list.
+    async verseTimes(rid, server, s) { await loadIndex(); return verseTimes(riw(rid), server, s); },
+    async isTimed(server) { return (await timedServers()).has(server); },
+    async pickReciter(rid, then, opts) { await loadIndex(); return pickReciter(riw(rid), then, opts); },
+    surahList,
     // For the readings page: the riwayat of the index, and whether a riwayah's text is saved on the device.
     async riwayat() { await loadIndex(); return INDEX.riwayat; },
     async isSaved(id) { await loadIndex(); return isCached(riw(id)); },

@@ -3,7 +3,7 @@
 // Tajweed Mushaf itself. data/tajweed.json (scripts/build-tajweed.js) gives each example as the glyphs of its words on
 // their printed page: they are drawn with that page's Tajweed font, loaded only for the examples shown, so the colours
 // are exactly those of the Mushaf. The colour key comes from the same fonts (palette 0 by day, 1 at night).
-import { makeClipPlayer } from "./clip.js?v=1.36.0";
+import { makeClipPlayer } from "./clip.js?v=1.37.0";
 
 export function setupTajweed(ctx) {
   const { view, $, esc, icon, t, num, sep, getLang, LS, setHeader, setNav, Q, sheet, toast } = ctx;
