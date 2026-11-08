@@ -4,7 +4,7 @@
 // episode starts by itself and the episode and minute reached are kept. The live channels are HLS streams of the
 // Saudi Broadcasting Authority: played by the browser itself where it can (phones), otherwise with hls.js (js/vendor).
 
-const GROUPS = ["quran", "sunnah", "seerah", "aqeedah", "fiqh", "misc"];
+const GROUPS = ["quran", "tajweed", "sunnah", "seerah", "aqeedah", "fiqh", "misc"];
 const YT_HOST = "https://www.youtube-nocookie.com";
 
 export function setupVideos(ctx) {

@@ -909,6 +909,33 @@ details.info { display: block; }
 .tj-matn summary > span { min-width: 0; }
 .mtools.six { grid-template-columns: repeat(6, minmax(0, 1fr)); }
 
+/* ===== تعلّم القراءة من الصفر: بطاقات الحروف والتمرين ===== */
+.qd-progress { margin: 12px 2px 4px; }
+.qd-progress span { flex: none; }
+.list a.qd-done .num { background: var(--primary); color: var(--on-primary); }
+.qd-head { display: flex; align-items: center; gap: 14px; margin-bottom: 4px; }
+.qd-big { font-family: var(--font-text); font-size: calc(3rem * var(--scale)); line-height: 1.25; color: var(--primary-2); min-width: 1.5em; text-align: center; background: var(--paper); border: 1px solid var(--border); border-radius: 14px; padding: 2px 10px; flex: none; }
+.qd-head h3 { margin: 0; }
+.qd-head h3 bdi { color: var(--muted); font-weight: 400; font-size: .9em; }
+.tj-sec p.qd-sound { margin: 2px 0 0; color: var(--muted); font-size: .92rem; line-height: 1.6; }
+.qd-letter h4 { margin: 10px 0 2px; font-size: .86rem; color: var(--muted); font-weight: 600; }
+.qd-form { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.qd-form-l { font-size: .76rem; color: var(--muted); text-align: center; }
+.qd-form .tj-ex { flex: 1; }
+.qd-muq { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-top: 8px; padding: 6px 10px; border-radius: 12px; background: color-mix(in srgb, var(--primary) 8%, var(--surface)); font-size: .85rem; font-weight: 600; }
+.qd-muq .tj-ex { flex: none; min-width: 120px; padding: 6px 10px; }
+.qd-stage { margin-top: 8px; }
+.qd-stage .tj-ex { padding: 18px 12px 14px; }
+.qd-stage .tj-ex.big .tj-g { font-size: calc(3.2rem * var(--scale)); line-height: 1.4; }
+.qd-stage .tj-ex.big .tj-t { font-size: calc(2.2rem * var(--scale)); }
+.qd-stage .tj-ex.big .tj-play { margin-top: 10px; font-size: .9rem; padding: 6px 14px 6px 10px; }
+.qd-stage .tj-ex.big .tj-play svg { width: 18px; height: 18px; }
+.qd-stage-nav { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; }
+.qd-count { color: var(--muted); font-size: .85rem; }
+.qd-done-row { margin-top: 14px; text-align: center; }
+.qd-done-row .btn { height: auto; min-height: 44px; padding-block: 8px; }
+.qd-stage .more-row { margin-top: 4px; }
+
 /* ===== المتون: الأبواب والأبيات والتحفيظ ===== */
 .mt-search { margin-top: 12px; }
 .mt-chapters .section-title:first-child { margin-top: 12px; }

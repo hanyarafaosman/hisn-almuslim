@@ -20,6 +20,12 @@ const CHANNELS = {
   ruhaili: { yt: "UCBc5AoNVZ4dIz-WFJogM-Ww", ar: "قناة الشيخ إبراهيم الرحيلي", en: "Shaykh Ibrahim ar-Ruhayli channel" },
   khamees: { yt: "UCWjCSGhmSGu0VLf2mPFS0Kg", ar: "قناة الشيخ عثمان الخميس", en: "Shaykh ʿUthman al-Khamis channel" },
   raslan: { yt: "UCbvwLzU45wgAHOqXRQoC11A", ar: "موقع فضيلة الشيخ محمد بن سعيد رسلان", en: "Shaykh Muhammad Saʿid Raslan’s website" },
+  // Tajweed and the readings: the teachers' own channels, the King Khalid Maqraʾah (Riyadh) and Islamweb.
+  swaid: { yt: "UCKtLDrh3IgxwcZtxiTvOQAA", ar: "قناة الشيخ د. أيمن سويد", en: "Shaykh Dr. Ayman Suwayd’s channel", dated: true },
+  ghawthani: { yt: "UChJFcmZKa0nnJ2LmmIKY2ZQ", ar: "قناة الشيخ د. يحيى الغوثاني", en: "Shaykh Dr. Yahya al-Ghawthani’s channel", dated: true },
+  maqraa: { yt: "UC2YbBjsy-7vD-_Smjgb5ViA", ar: "مقرأة الملك خالد بالرياض", en: "King Khalid Maqraʾah, Riyadh" },
+  abdelhakim: { yt: "UCzA1m28A6oFrL_FU3GjTM-g", ar: "قناة الدكتور أحمد عبد الحكيم", en: "Dr. Ahmad ʿAbd al-Hakim’s channel", dated: true },
+  islamweb: { yt: "UCeH0M5ZjsNE1BDBs-AeH4sA", ar: "إسلام ويب", en: "Islamweb" },
   // The lessons given in the Two Holy Mosques, broadcast live by the mosques' religious affairs and kept in playlists.
   // dated: their playlists run newest first; the first and last episode's publish dates tell, and the list is turned round.
   haram: { yt: "UC3QAoXf9GN9xeQYhk-AZbTg", ar: "دروس المسجد الحرام", en: "Lessons at the Sacred Mosque", dated: true },
@@ -29,7 +35,7 @@ const CHANNELS = {
 const LEVELS = [["المستوى الأول", "Level 1"], ["المستوى الثاني", "Level 2"], ["المستوى الثالث", "Level 3"], ["المستوى الرابع", "Level 4"]];
 const zad = lists => lists.map((list, i) => ({ ar: LEVELS[i][0], en: LEVELS[i][1], list }));
 
-// group: quran, sunnah, seerah, aqeedah, fiqh, misc (the same groups as the radio page).
+// group: quran, tajweed, sunnah, seerah, aqeedah, fiqh, misc (the same groups as the radio page).
 // strip: words every episode title of the playlist repeats (titles are checked with Arabic-Indic digits made 0-9).
 // only: keep just the videos whose title matches (a playlist that holds a stray video from another series).
 const RASLAN = { ch: "raslan", by: "الشيخ محمد بن سعيد رسلان", byEn: "Shaykh Muhammad Saʿid Raslan" };
@@ -46,6 +52,35 @@ const VIDEOS = [
     parts: [{ list: "PLH4NxcjPhgknP8YmUdubHEsuggQFdB9jr" }], strip: [/\s*\.?\s*التبيان في تفسير غريب القرآن/] },
   { id: "zad-haqq-quran", group: "quran", ch: "zad", ar: "حق القرآن على أمة القرآن", en: "What the Quran is owed by its nation", by: "أ. د. عبد الله بن عمر الدميجي", byEn: "Prof. ʿAbdullah ibn ʿUmar ad-Dumayji",
     parts: [{ list: "PLH4NxcjPhgknv0xuQyLQCSCilTgAriQ4R" }] },
+  // ---- Tajweed and the readings: learning to read, the rules, then the matns (تحفة الأطفال، الجزرية، الشاطبية، الدرة، الطيبة) ----
+  { id: "swaid-letters", group: "tajweed", ch: "swaid", ar: "سلسلة الحروف العربية: مخارجها وصفاتها", en: "The Arabic letters: where and how they are pronounced", by: "الشيخ د. أيمن رشدي سويد", byEn: "Shaykh Dr. Ayman Rushdi Suwayd",
+    parts: [{ list: "PLJi21Zen45zT3XYozZ4BMaFxzuFb4xGcz" }], strip: [/^سلسلة الحروف العربية\s*-\s*/, /\s*-\s*الشيخ أيمن سويد\s*\.?\s*$/] },
+  { id: "swaid-tajweed", group: "tajweed", ch: "swaid", ar: "أحكام التجويد", en: "The rules of Tajweed", by: "الشيخ د. أيمن رشدي سويد", byEn: "Shaykh Dr. Ayman Rushdi Suwayd",
+    parts: [{ list: "PLJi21Zen45zQfA0unCRScc_PuUSh02gjl" }] },
+  { id: "swaid-mufid", group: "tajweed", ch: "swaid", ar: "شرح منظومة المفيد في التجويد", en: "Commentary on al-Mufid fi at-Tajwid", by: "الشيخ د. أيمن رشدي سويد", byEn: "Shaykh Dr. Ayman Rushdi Suwayd",
+    parts: [{ list: "PLJi21Zen45zQ1s5r8ANaBG98rpGXD0GRV" }] },
+  { id: "abdelhakim-beginners", group: "tajweed", ch: "abdelhakim", ar: "تعليم التجويد للمبتدئين", en: "Tajweed for beginners", by: "الدكتور أحمد عبد الحكيم", byEn: "Dr. Ahmad ʿAbd al-Hakim",
+    parts: [{ list: "PL8dYLhZPtp45xZg5c66wWB7B7tXFKeYSK" }], strip: [/^تعليم التجويد للمبتدئين\s*[.…:]*\s*/, /\s*[.…]+\s*د\s*\.?\s*أحمد عبد الحكيم\s*$/] },
+  { id: "khamees-tuhfa", group: "tajweed", ch: "khamees", ar: "شرح تحفة الأطفال", en: "Commentary on Tuhfat al-Atfal", by: "الشيخ عثمان الخميس", byEn: "Shaykh ʿUthman al-Khamis",
+    parts: [{ list: "PLx3Fh1kiMbrdSg3GJ1Q51DqHLebAiLagD" }] },
+  { id: "ghawthani-tuhfa", group: "tajweed", ch: "ghawthani", ar: "تحفة الأطفال للحفظ", en: "Tuhfat al-Atfal for memorisation", by: "الشيخ د. يحيى الغوثاني", byEn: "Shaykh Dr. Yahya al-Ghawthani",
+    parts: [{ list: "PLJN0i5WJcTax_badQa8BMlqx6Wo0WgSov" }], strip: [/منظومة تحفة الأطفال (?=من البيت)/] }, // «#1 منظومة…»: the number comes first
+  { id: "ghawthani-jazariyya", group: "tajweed", ch: "ghawthani", ar: "شرح المقدمة الجزرية", en: "Commentary on al-Muqaddimah al-Jazariyyah", by: "الشيخ د. يحيى الغوثاني", byEn: "Shaykh Dr. Yahya al-Ghawthani",
+    parts: [{ list: "PLJN0i5WJcTaxqJY-uTcGDJIEkI_NVJ_Ev" }], strip: [/\s*\(\s*كل خميس حلقة جديدة\s*\)/, /\s*بشرح د\.\s*يحيى الغوثاني/, /\|\s*شرح (?:منظومة )?الجزرية(?:\s*الحلقة)?[^|]*$/, /\s*د\.\s*يحيى الغوثاني\s*$/] },
+  { id: "maqraa-jazariyya", group: "tajweed", ch: "maqraa", ar: "شرح المقدمة الجزرية", en: "Commentary on al-Muqaddimah al-Jazariyyah", by: "الشيخ المقرئ عدنان بن عبد الرحمن العرضي", byEn: "Shaykh ʿAdnan ibn ʿAbd ar-Rahman al-ʿArdi",
+    parts: [{ list: "PLSY19X_iYpq6PfRB9sQPguLQidoaGF5k4" }], strip: [/^\(\d+\)\s*/, /\s*\.?\s*شرح المقدمة الجزرية\s*\.?\s*(?:للشيخ المقرئ|للمقرئ)\s*\.?\s*عدنان(?: بن عبد الرحمن)? العرضي\s*$/] },
+  { id: "islamweb-jazariyya", group: "tajweed", ch: "islamweb", ar: "شرح متن الجزرية", en: "Commentary on al-Jazariyyah", by: "الشيخ المقرئ عبد الرشيد صوفي", byEn: "Shaykh ʿAbd ar-Rashid Sufi",
+    parts: [{ list: "PLP3ke6jz11_AQiy1iYiK7gLJ3kdzX17IX" }] },
+  { id: "maqraa-shatibiyya", group: "tajweed", ch: "maqraa", ar: "شرح متن الشاطبية", en: "Commentary on ash-Shatibiyyah", by: "الشيخ المقرئ عدنان بن عبد الرحمن العرضي", byEn: "Shaykh ʿAdnan ibn ʿAbd ar-Rahman al-ʿArdi",
+    parts: [{ list: "PLSY19X_iYpq7kvVm7h95EbAD0mKHtFWQu" }], strip: [/\s*[–-]\s*للشيخ عدنان العرضي\s*$/] },
+  { id: "abdelhakim-shatibiyya", group: "tajweed", ch: "abdelhakim", ar: "شرح الشاطبية كاملًا", en: "Commentary on ash-Shatibiyyah, complete", by: "الدكتور أحمد عبد الحكيم", byEn: "Dr. Ahmad ʿAbd al-Hakim",
+    parts: [{ list: "PL8dYLhZPtp45zr8g4sTQYHTgB1DhNx0Gh" }], strip: [/^شرح الشاطبية\s*:\s*/, /\s*\.{3,}\s*أحمد عبد الحكيم\s*$/] },
+  { id: "maqraa-durrah", group: "tajweed", ch: "maqraa", ar: "شرح متن الدرة المضية", en: "Commentary on ad-Durrah al-Mudiyyah", by: "الشيخ المقرئ عدنان بن عبد الرحمن العرضي", byEn: "Shaykh ʿAdnan ibn ʿAbd ar-Rahman al-ʿArdi",
+    parts: [{ list: "PLSY19X_iYpq5dBa_nCe5yMX4DJR5aIRyt" }] },
+  { id: "maqraa-tayyiba", group: "tajweed", ch: "maqraa", ar: "شرح طيبة النشر في القراءات العشر", en: "Commentary on Tayyibat an-Nashr (the ten readings)", by: "الشيخ المقرئ عدنان بن عبد الرحمن العرضي", byEn: "Shaykh ʿAdnan ibn ʿAbd ar-Rahman al-ʿArdi",
+    parts: [{ list: "PLSY19X_iYpq7N9DlN7jWZERgyxQSBuIop" }], strip: [/^شرح طيبة النشر\s*\(\d+\)\s*\.?\s*/, /\s*\.?\s*ل?فضيلة الشيخ المقرئ\s*[–./-]?\s*عدنان بن عبد الرحمن العرضي\s*/] },
+  { id: "maqraa-ashara", group: "tajweed", ch: "maqraa", ar: "تدريبات عملية على القراء العشر", en: "Practical training in the ten readings", by: "الشيخ المقرئ عدنان بن عبد الرحمن العرضي", byEn: "Shaykh ʿAdnan ibn ʿAbd ar-Rahman al-ʿArdi",
+    parts: [{ list: "PLSY19X_iYpq6xbZSzIqjmO7IAV4n91Snq" }], strip: [/^تدريبات عملية على القراء العشر\s*\(\d+\)\s*\|?\s*/, /\|?\s*(?:لفضيلة الشيخ المقرئ|مع الشيخ)\s*\/?\s*عدنان بن عبد الرحمن العرضي\s*$/, /\s*\(\d+\)\s*$/] },
   // ---- the Sunnah ----
   { id: "uthaymeen-arbaeen", group: "sunnah", ch: "uthaymeen", ar: "شرح الأربعين النووية", en: "Commentary on an-Nawawi’s Forty Hadith", by: "الشيخ محمد بن صالح العثيمين", byEn: "Shaykh Muhammad ibn Salih al-ʿUthaymin",
     parts: [{ list: "PLXS0usquloW_VC2gPb6nu1FFQTxWc1Ww_" }], strip: [/\s*للشيخ محمد بن عثيمين\s*$/] },
@@ -187,7 +222,25 @@ const LESSONS = [
   { id: "bayquniya", ih: 2830779, group: "sunnah", ar: "شرح المنظومة البيقونية في مصطلح الحديث", en: "Al-Manzuma al-Bayquniyya (hadith terminology)" },
   { id: "fiqh-ibadat", ih: 2831627, group: "fiqh", ar: "مختصر فقه العبادات", en: "A summary of the fiqh of worship" },
   { id: "mumti-tahara", ih: 2830890, group: "fiqh", ar: "الشرح الممتع على زاد المستقنع: كتاب الطهارة", en: "Ash-Sharh al-Mumtiʿ: Purification" },
-].map(s => ({ ...UTHAYMEEN, ...s }));
+].map(s => ({ ...UTHAYMEEN, ...s })).concat([
+  // ---- Tajweed and the readings. IslamHouse has no Arabic audio commentary on the matns (only Somali and Kurdish ones),
+  // so the explanations are the video series above; here the lessons of Tajweed, and the matns read aloud chapter by
+  // chapter, to memorise them with the matn library (#/mutun).
+  { id: "amer-tajweed", ih: 174077, group: "tajweed", ar: "كيف نتعلم قراءة القرآن الكريم: السلسلة الميسرة لتعليم التجويد", en: "How to learn to read the Quran: Tajweed made easy",
+    by: "الشيخ أحمد عامر", byEn: "Shaykh Ahmad ʿAmir", src: 174055, source: "الشيخ أحمد عامر", sourceEn: "Shaykh Ahmad ʿAmir" },
+  { id: "zour-tartil", ih: 5164, group: "tajweed", ar: "دروس في ترتيل القرآن الكريم", en: "Lessons in reciting the Quran",
+    by: "الشيخ فائز عبد القادر شيخ الزور", byEn: "Shaykh Faʾiz ʿAbd al-Qadir Shaykh az-Zur", src: 8038, source: "الشيخ فائز عبد القادر شيخ الزور", sourceEn: "Shaykh Faʾiz ʿAbd al-Qadir Shaykh az-Zur" },
+  { id: "matn-tuhfa", ih: 276698, group: "tajweed", ar: "متن تحفة الأطفال (قراءة بأبوابه)", en: "Tuhfat al-Atfal, read chapter by chapter",
+    by: "القارئ ياسر سلامة", byEn: "Yasir Salamah", src: 8322, source: "القارئ ياسر سلامة", sourceEn: "Yasir Salamah" },
+  { id: "matn-jazariyya", ih: 327602, group: "tajweed", ar: "متن المقدمة الجزرية (قراءة بأبوابه)", en: "Al-Muqaddimah al-Jazariyyah, read chapter by chapter",
+    by: "القارئ عادل السنيد", byEn: "ʿAdil as-Sunayd", src: 204110, source: "موقع نداء الإسلام", sourceEn: "Nidaa al-Islam website" },
+  { id: "matn-shatibiyya", ih: 289087, group: "tajweed", ar: "متن الشاطبية (قراءة بأبوابه)", en: "Ash-Shatibiyyah, read chapter by chapter",
+    by: "الشيخ مشاري بن راشد العفاسي", byEn: "Shaykh Mishari ibn Rashid al-ʿAfasi", src: 204110, source: "موقع نداء الإسلام", sourceEn: "Nidaa al-Islam website" },
+  { id: "matn-durrah", ih: 289096, group: "tajweed", ar: "متن الدرة المضية (قراءة بأبوابه)", en: "Ad-Durrah al-Mudiyyah, read chapter by chapter",
+    by: "الشيخ مشاري بن راشد العفاسي", byEn: "Shaykh Mishari ibn Rashid al-ʿAfasi", src: 204110, source: "موقع نداء الإسلام", sourceEn: "Nidaa al-Islam website" },
+  { id: "matn-tayyiba", ih: 289561, group: "tajweed", ar: "متن طيبة النشر (قراءة بأبوابه)", en: "Tayyibat an-Nashr, read chapter by chapter",
+    by: "القارئ ياسر بن إبراهيم المزروعي", byEn: "Yasir ibn Ibrahim al-Mazruʿi", src: 204110, source: "موقع نداء الإسلام", sourceEn: "Nidaa al-Islam website" },
+]);
 
 // ---------- fetching (with a file cache) ----------
 fs.mkdirSync(CACHE, { recursive: true });

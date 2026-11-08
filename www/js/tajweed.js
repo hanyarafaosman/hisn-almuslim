@@ -3,7 +3,8 @@
 // Tajweed Mushaf itself. data/tajweed.json (scripts/build-tajweed.js) gives each example as the glyphs of its words on
 // their printed page: they are drawn with that page's Tajweed font, loaded only for the examples shown, so the colours
 // are exactly those of the Mushaf. The colour key comes from the same fonts (palette 0 by day, 1 at night).
-import { makeClipPlayer } from "./clip.js?v=1.36.0";
+import { makeClipPlayer } from "./clip.js?v=1.38.0";
+import { makeGlyphs } from "./glyphs.js?v=1.38.0";
 
 export function setupTajweed(ctx) {
   const { view, $, esc, icon, t, num, sep, getLang, LS, setHeader, setNav, Q, sheet, toast } = ctx;
@@ -27,35 +28,11 @@ export function setupTajweed(ctx) {
   const colorOf = c => DATA.colors.find(x => x.c === c);
   const swatch = c => { const x = colorOf(c); return x ? `<i class="tj-sw" style="--l:${x.light};--d:${x.dark}" title="${esc(L(x.t))}"></i>` : ""; };
 
-  // ---------- examples: glyphs of the Tajweed print, in the font of their page ----------
-  const isDark = () => { const th = document.documentElement.dataset.theme; return th === "dark" || (th !== "light" && matchMedia("(prefers-color-scheme: dark)").matches); };
-  const families = new Set();
-  // A COLR font picks its palette per family: the night palette when the app is dark, as on the Mushaf pages.
-  function palettes() {
-    let st = document.getElementById("tj-ex-palette"); if (!st) { st = document.createElement("style"); st.id = "tj-ex-palette"; document.head.appendChild(st); }
-    const base = isDark() ? 1 : 0;
-    st.textContent = [...families].map(n => `@font-palette-values --tjx-${n} { font-family: 'qcf-tajweed-${n}'; base-palette: ${base}; } .tj-g[data-p="${n}"] { font-family: 'qcf-tajweed-${n}'; font-palette: --tjx-${n}; }`).join("\n");
-  }
-  matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => families.size && palettes());
-  new MutationObserver(() => families.size && palettes()).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
-  // Draws the examples inside root once the font of their page is ready; until then (or offline) the plain text shows.
-  function drawExamples(root) {
-    const byPage = new Map();
-    root.querySelectorAll(".tj-ex[data-p]").forEach(a => { const p = a.dataset.p; if (!byPage.has(p)) byPage.set(p, []); byPage.get(p).push(a); });
-    for (const [p, els] of byPage) Q.tajweedFont(Number(p)).then(() => {
-      families.add(p); palettes(); els.forEach(a => a.classList.add("ready"));
-    }).catch(() => {});
-  }
+  // ---------- examples: glyphs of the Tajweed print, in the font of their page (js/glyphs.js, shared with learning to read) ----------
   let names = n => String(n);
-  const ref = x => { const [s, a] = x.k.split(":").map(Number); return `${names(s)} ${num(a)}`; };
-  // An example opens its verse in the Mushaf and plays it; inside a row that is itself a link (the key) it is a plain span.
-  const exHtml = (x, note = true, link = true) => {
-    const body = `<span class="tj-w" aria-hidden="true"><span class="tj-g" data-p="${x.p}" lang="ar" dir="rtl">${x.g.map(w => `<span>${esc(w)}</span>`).join("")}</span><span class="tj-t" lang="ar" dir="rtl">${esc(x.t)}</span></span>
-      ${note && x.n ? `<span class="tj-note">${esc(L(x.n))}</span>` : ""}<span class="tj-ref">${esc(ref(x))}</span>`;
-    if (!link) return `<span class="tj-ex" data-p="${x.p}">${body}</span>`;
-    return `<div class="tj-ex" data-p="${x.p}"><a class="tj-ex-a" href="#/mushaf/tajweed/${x.p}?v=${x.k}" aria-label="${esc(`${x.t} (${ref(x)})`)}">${body}</a>
-      <button class="tj-play" type="button" data-k="${x.k}" aria-label="${esc(t("common.listen"))}">${icon("play")}<span>${esc(t("common.listen"))}</span></button></div>`;
-  };
+  const G = makeGlyphs({ Q, esc, icon, t, num, names: () => names, L });
+  const drawExamples = G.drawExamples;
+  const exHtml = (x, note = true, link = true) => G.exHtml(x, { note, link });
 
   // ---------- listening: the verse of an example, in Shaykh al-Husary's recitation (mp3quran.net), see js/clip.js ----------
   const clip = makeClipPlayer({ Q, t, icon, esc, toast });
@@ -79,6 +56,7 @@ export function setupTajweed(ctx) {
     if (stale(hash)) return;
     view.innerHTML = `${enNote()}
       <div class="tj-text">${DATA.intro.map(p => `<p>${para(L(p))}</p>`).join("")}</div>
+      <a class="info" href="#/qaida">${icon("school")}<span>${esc(t("tajweed.learnFirst"))}</span></a>
       ${DATA.introMatn.map(poem).join("")}
       <h2 class="section-title">${esc(t("tajweed.key"))}</h2>
       <div class="list tj-keys">${keyRows()}</div>
@@ -89,6 +67,8 @@ export function setupTajweed(ctx) {
         const cs = [...new Set(c.s.flatMap(s => [...(s.c || "")]))];
         return `<a href="#/tajweed/${c.id}"><div class="num">${num(i + 1)}</div><div class="lbl">${esc(L(c.t))}${cs.length ? `<span class="sub tj-sws">${cs.map(swatch).join("")}</span>` : ""}</div>${icon("back", "chev")}</a>`;
       }).join("")}</div>
+      <h2 class="section-title">${esc(t("tajweed.seriesLink"))}</h2>
+      <div class="list"><a href="#/videos?g=tajweed"><div class="num">${icon("video")}</div><div class="lbl">${esc(t("radio.videosLink", { group: t("media.tajweed") }))}</div>${icon("back", "chev")}</a><a href="#/radio/tajweed"><div class="num">${icon("headphones")}</div><div class="lbl">${esc(t("qaida.audioLink", { group: t("media.tajweed") }))}</div>${icon("back", "chev")}</a></div>
       <p class="source-note">${esc(L(DATA.source))}</p>`;
     drawExamples(view);
   }
