@@ -4,8 +4,8 @@
 // riwayat is made here from the King Fahd Complex texts the Quran reader already has (js/qdiff.js): Hafs's words are
 // aligned with another riwayah's, and the words that read differently are marked. A verse can be heard in every
 // riwayah that has a recitation with verse timings (Q.clips, js/clip.js).
-import { makeClipPlayer } from "./clip.js?v=1.37.0";
-import { compare, words, AYA_NUM } from "./qdiff.js?v=1.37.0";
+import { makeClipPlayer } from "./clip.js?v=1.38.0";
+import { compare, words, AYA_NUM } from "./qdiff.js?v=1.38.0";
 
 export function setupQiraat(ctx) {
   const { view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, sheet, closeSheet, setHeader, setNav, mutun } = ctx;
@@ -103,6 +103,8 @@ export function setupQiraat(ctx) {
         <select id="qr-s" aria-label="${esc(t("qiraat.chooseSurah"))}"><option value="">${esc(t("qiraat.chooseSurah"))}</option>${Array.from({ length: 114 }, (_, i) => `<option value="${i + 1}">${num(i + 1)}${sep()}${esc(names(i + 1))}</option>`).join("")}</select></div>
       <h2 class="section-title">${esc(t("qiraat.usul"))}</h2>
       <div class="list">${DATA.usul.map((u, i) => `<a href="#/qiraat/usul/${u.id}"><div class="num">${num(i + 1)}</div><div class="lbl">${esc(L(u.t))}</div>${icon("back", "chev")}</a>`).join("")}</div>
+      <h2 class="section-title">${esc(t("tajweed.seriesLink"))}</h2>
+      <div class="list"><a href="#/videos?g=tajweed"><div class="num">${icon("video")}</div><div class="lbl">${esc(t("radio.videosLink", { group: t("media.tajweed") }))}</div>${icon("back", "chev")}</a><a href="#/radio/tajweed"><div class="num">${icon("headphones")}</div><div class="lbl">${esc(t("qaida.audioLink", { group: t("media.tajweed") }))}</div>${icon("back", "chev")}</a></div>
       <p class="source-note">${esc(L(DATA.sourceNote))}</p>`;
     $("#qr-s").onchange = e => { if (e.target.value) location.hash = `#/qiraat/surah/${e.target.value}`; };
   }

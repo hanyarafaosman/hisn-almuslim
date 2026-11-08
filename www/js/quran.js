@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.37.0";
-import { mirrorOf } from "./mirror.js?v=1.37.0";
+import * as off from "./offline.js?v=1.38.0";
+import { mirrorOf } from "./mirror.js?v=1.38.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -1580,11 +1580,11 @@ export function setupQuran(ctx) {
     });
   }
 
-  // ---------- radios: six groups (the Quran, the Sunnah, the Seerah, creed, fiqh, other) ----------
+  // ---------- radios: seven groups (the Quran, Tajweed and the readings, the Sunnah, the Seerah, creed, fiqh, other) ----------
   // data/radios.json: live Quran stations, hadith book stations (sunnah) and one-subject mp3quran stations (topics, with a group).
   // data/lessons.json: recorded audio series that play one lesson after another, for subjects no station broadcasts all day.
   // Every other mp3quran station (the reciters) is listed in the Quran group.
-  const RADIO_GROUPS = ["quran", "sunnah", "seerah", "aqeedah", "fiqh", "misc"];
+  const RADIO_GROUPS = ["quran", "tajweed", "sunnah", "seerah", "aqeedah", "fiqh", "misc"];
   let radioQuery = "";
   const lessonState = () => LS.get("lessons", {}); // { seriesId: [lesson index, seconds] }
   const saveLesson = (id, i, sec) => { const s = lessonState(); s[id] = [i, Math.floor(sec)]; LS.set("lessons", s); };
