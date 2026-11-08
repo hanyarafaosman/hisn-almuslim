@@ -4,8 +4,8 @@
 // riwayat is made here from the King Fahd Complex texts the Quran reader already has (js/qdiff.js): Hafs's words are
 // aligned with another riwayah's, and the words that read differently are marked. A verse can be heard in every
 // riwayah that has a recitation with verse timings (Q.clips, js/clip.js).
-import { makeClipPlayer } from "./clip.js?v=1.36.0";
-import { compare, words, AYA_NUM } from "./qdiff.js?v=1.36.0";
+import { makeClipPlayer } from "./clip.js?v=1.37.0";
+import { compare, words, AYA_NUM } from "./qdiff.js?v=1.37.0";
 
 export function setupQiraat(ctx) {
   const { view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, sheet, closeSheet, setHeader, setNav, mutun } = ctx;
