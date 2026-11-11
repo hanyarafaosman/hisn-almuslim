@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.38.0";
-import { mirrorOf } from "./mirror.js?v=1.38.0";
+import * as off from "./offline.js?v=1.39.0";
+import { mirrorOf } from "./mirror.js?v=1.39.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -1688,6 +1688,16 @@ export function setupQuran(ctx) {
     async resume() { await loadIndex(); const r = resumeInfo(); return r && { href: r.href, text: r.text }; },
     listen: renderListen, radio: parts => renderRadio(parts), offline: renderOffline, mushaf: (ed, n, params) => renderPages(ed, n, params), player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
+    // For learning Arabic (js/arabic.js): the meanings of surah s's verses in the translation the reader shows
+    // (QuranEnc, the user's language by default): { source, dir, lang, ayat: { verse: text } }, or null in Arabic or with none.
+    async meanings(s) {
+      const key = await currentTr(); if (!key) return null;
+      const [list, m] = await Promise.all([getTrSura(key, s), trMeta(key)]);
+      return {
+        source: m ? t("quran.trSource", { title: m.title, v: m.version }) : "", dir: m?.direction === "rtl" ? "rtl" : "ltr", lang: m?.language_iso_code || "",
+        ayat: Object.fromEntries(list.map(r => [Number(r.aya), r.translation])),
+      };
+    },
     // Quran text of a riwayah (with its font) and surah names, for the tafsir pages.
     textOf: id => loadRiwayah(id), surahName,
     // For the Tajweed rules page: the Tajweed print's font of page n (with its backup copy), and the surah names.

@@ -1,24 +1,25 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.38.0";
-import { setupHadith } from "./hadith.js?v=1.38.0";
-import { setupTafsir } from "./tafsir.js?v=1.38.0";
-import { setupAsma } from "./asma.js?v=1.38.0";
-import { setupKutub } from "./kutub.js?v=1.38.0";
-import { setupFaqih } from "./faqih.js?v=1.38.0";
-import { setupPrayer } from "./prayer.js?v=1.38.0";
-import { setupVideos } from "./videos.js?v=1.38.0";
-import { setupInstall } from "./install.js?v=1.38.0";
-import { setupTajweed } from "./tajweed.js?v=1.38.0";
-import { setupMutun } from "./mutun.js?v=1.38.0";
-import { setupQiraat } from "./qiraat.js?v=1.38.0";
-import { setupQaida } from "./qaida.js?v=1.38.0";
-import { setupHijri } from "./hijri.js?v=1.38.0";
-import { setupQibla } from "./qibla.js?v=1.38.0";
-import { setupHifz } from "./hifz.js?v=1.38.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.38.0";
-import { mirrorOf } from "./mirror.js?v=1.38.0";
+import { setupQuran } from "./quran.js?v=1.39.0";
+import { setupHadith } from "./hadith.js?v=1.39.0";
+import { setupTafsir } from "./tafsir.js?v=1.39.0";
+import { setupAsma } from "./asma.js?v=1.39.0";
+import { setupKutub } from "./kutub.js?v=1.39.0";
+import { setupFaqih } from "./faqih.js?v=1.39.0";
+import { setupPrayer } from "./prayer.js?v=1.39.0";
+import { setupVideos } from "./videos.js?v=1.39.0";
+import { setupInstall } from "./install.js?v=1.39.0";
+import { setupTajweed } from "./tajweed.js?v=1.39.0";
+import { setupMutun } from "./mutun.js?v=1.39.0";
+import { setupQiraat } from "./qiraat.js?v=1.39.0";
+import { setupQaida } from "./qaida.js?v=1.39.0";
+import { setupArabic } from "./arabic.js?v=1.39.0";
+import { setupHijri } from "./hijri.js?v=1.39.0";
+import { setupQibla } from "./qibla.js?v=1.39.0";
+import { setupHifz } from "./hifz.js?v=1.39.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.39.0";
+import { mirrorOf } from "./mirror.js?v=1.39.0";
 
-const VERSION = "1.38.0";
+const VERSION = "1.39.0";
 const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
@@ -214,6 +215,8 @@ const QR = setupQiraat({
 const HF = setupHifz({ view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n) });
 // ---------- learning to read from scratch: the letters and the signs, with words of the Mushaf ----------
 const QD = setupQaida({ view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n) });
+// ---------- Arabic for non-native speakers: the Quran's most frequent words, and the short surahs word by word ----------
+const AR = setupArabic({ view, $, esc, icon, t, num, sep, getLang, languageName, LS, Q, toast, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n) });
 // ---------- the Beautiful Names of Allah ----------
 const AS = setupAsma({
   view, $, esc, icon, t, num, sep, getLang, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel,
@@ -311,6 +314,7 @@ function route() {
     case "tafsir": return TF.render(parts.slice(1), params);
     case "tajweed": return TJ.render(parts.slice(1));
     case "qaida": return QD.render(parts.slice(1));
+    case "arabic": return AR.render(parts.slice(1), params);
     case "mutun": return MT.render(parts.slice(1), params);
     case "qiraat": return QR.render(parts.slice(1), params);
     case "hifz": return HF.render(parts.slice(1), params);
@@ -359,7 +363,7 @@ const TOOL_GROUPS = [
   ["tools.daily", [["#/adhkar", "sun", "nav.adhkar"], ["#/quran", "quran", "nav.quran"], ["#/hifz", "repeat", "hifz.title"], ["#/prayer", "prayer", "prayer.title"],
     ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/hijri", "calendar", "hijri.title"]]],
   ["tools.learn", [["#/hadith", "books", "hadith.books"], ["#/tafsir", "tafsir", "tafsir.books"], ["#/asma", "asma", "asma.title"],
-    ["#/qaida", "school", "qaida.title"], ["#/tajweed", "palette", "tajweed.title"], ["#/qiraat", "layers", "qiraat.title"], ["#/mutun", "book", "mutun.title"], ["#/kutub", "kutub", "kutub.title"], ["#/faqih", "fiqh", "faqih.title"]]],
+    ["#/qaida", "school", "qaida.title"], ["#/arabic", "translate", "arabic.title"], ["#/tajweed", "palette", "tajweed.title"], ["#/qiraat", "layers", "qiraat.title"], ["#/mutun", "book", "mutun.title"], ["#/kutub", "kutub", "kutub.title"], ["#/faqih", "fiqh", "faqih.title"]]],
   ["tools.listen", [["#/listen", "headphones", "listen.recitations"], ["#/radio", "radio", "listen.radios"], ["#/videos", "video", "videos.title"]]],
   ["tools.mine", [["#/fav", "star", "common.favorites"], ["#/extras", "book", "extra.section"], ["#/offline", "download", "offline.title"], ["#/settings", "settings", "nav.settings"]]],
 ];

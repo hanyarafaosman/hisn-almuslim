@@ -1138,3 +1138,71 @@ details.info { display: block; }
 .hz-ask { color: var(--muted); font-size: .9rem; text-align: center; }
 /* A memorised verse in the reader (js/hifz.js) */
 .aya.hz { border-inline-end: 4px solid color-mix(in srgb, var(--primary) 55%, transparent); }
+/* ===== Arabic for non-native speakers (js/arabic.js) ===== */
+.ar-ml { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 12px 4px 0; color: var(--muted); font-size: .88rem; }
+.ar-ml .chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; font-size: .88rem; color: var(--primary); }
+.ar-ml .chip svg { width: 16px; height: 16px; }
+.ar-known { display: flex; align-items: center; gap: 6px; margin: 6px 4px 10px; }
+.ar-known svg { width: 16px; height: 16px; color: var(--primary); flex: none; }
+.list .ar-cov { color: var(--muted); font-weight: 400; font-size: .78rem; margin-inline-start: 4px; }
+.list .ar-sub { font-family: var(--font-text); font-size: 1rem; }
+.ar-surahs { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.ar-surahs .chip { font-family: var(--font-text); font-size: 1.02rem; padding: 4px 14px; font-weight: 400; }
+.ar-surahs .ar-sn { font-family: var(--font-ui); font-size: .72rem; color: var(--muted); }
+.ar-actions { gap: 8px; flex-wrap: wrap; margin: 10px 0; }
+.ar-words { display: flex; flex-direction: column; gap: 10px; }
+.ar-word { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 10px 14px; scroll-margin: 70px; }
+.ar-word-head { display: flex; align-items: center; gap: 12px; }
+.ar-word-main { display: flex; flex-direction: column; align-items: flex-start; min-width: 0; flex: 1; }
+.ar-form { font-family: var(--font-text); font-size: calc(1.9rem * var(--scale)); line-height: 1.5; color: var(--primary-2); }
+.ar-tr { color: var(--muted); font-style: italic; font-size: .85rem; unicode-bidi: isolate; }
+.ar-count { flex: none; color: var(--muted); font-size: .76rem; text-align: center; max-width: 7.5em; line-height: 1.35; }
+.ar-means { margin: 4px 0 2px; font-size: 1.02rem; line-height: 1.6; }
+.ar-mean { font-weight: 600; unicode-bidi: isolate; }
+.ar-en { color: var(--muted); font-size: .72rem; font-weight: 400; }
+.ar-say { width: 44px; height: 44px; flex: none; border-radius: 50%; display: inline-grid; place-items: center; background: color-mix(in srgb, var(--primary) 12%, var(--surface)); color: var(--primary); border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); }
+.ar-say svg { width: 22px; height: 22px; }
+.ar-say.on, .ar-cell.on { background: var(--primary); color: var(--on-primary); border-color: var(--primary); }
+.ar-say.big { width: 48px; height: 48px; }
+.ar-say.huge { width: 88px; height: 88px; }
+.ar-say.huge svg { width: 40px; height: 40px; }
+.ar-ex { margin-top: 6px; border-top: 1px dotted var(--border); padding-top: 6px; }
+.ar-ex summary { cursor: pointer; color: var(--primary); font-size: .86rem; font-weight: 600; }
+.ar-ex-tools { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.ar-ex-tools .tj-play { margin-top: 0; }
+.ar-ex-tools .link { margin-inline-start: 0; }
+.ar-ex-tools .link svg { width: 16px; height: 16px; }
+.ar-verse { display: flex; flex-wrap: wrap; align-items: stretch; gap: 6px; margin-top: 8px; }
+.ar-cell { display: flex; flex-direction: column; align-items: center; gap: 1px; min-width: 52px; max-width: 46%; padding: 4px 8px 6px; border-radius: 12px; background: var(--surface-2); border: 1px solid transparent; color: inherit; font: inherit; text-align: center; }
+.ar-cell.hit { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, var(--surface)); }
+.ar-cell.on .ar-t, .ar-cell.on .ar-g { color: inherit; }
+.ar-w { font-family: var(--font-text); font-size: calc(1.45rem * var(--scale)); line-height: 1.7; }
+.ar-t { color: var(--muted); font-style: italic; font-size: .72rem; line-height: 1.3; }
+.ar-g { font-size: .8rem; line-height: 1.35; overflow-wrap: anywhere; }
+.ar-g.en { color: var(--muted); font-style: italic; }
+.ar-num { align-self: center; font-family: var(--font-text); color: var(--gold); font-size: 1.2rem; padding-inline: 4px; }
+.ar-surah { display: flex; flex-direction: column; gap: 10px; margin-top: 8px; }
+.ar-aya { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 4px 10px 10px; }
+.ar-aya-tr { margin-top: 8px; padding-top: 8px; border-top: 1px dotted var(--border); font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif; font-size: calc(.95rem * var(--scale)); line-height: 1.7; }
+.ar-aya-tr[dir="rtl"] { font-family: "Noto Naskh Arabic", Tahoma, sans-serif; }
+.ar-quiz { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); padding: 12px 16px 16px; }
+.ar-ask { text-align: center; color: var(--muted); margin: 14px 0 6px; font-weight: 600; }
+.ar-prompt { display: flex; align-items: center; justify-content: center; gap: 14px; min-height: 96px; text-align: center; }
+.ar-prompt .ar-form { font-size: calc(2.6rem * var(--scale)); }
+.ar-prompt .ar-mean { font-size: 1.3rem; }
+.ar-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.ar-opt { min-height: 60px; padding: 8px 10px; border-radius: 14px; border: 1px solid var(--border); background: var(--surface-2); color: inherit; font: inherit; text-align: center; line-height: 1.45; }
+.ar-opts.ar .ar-form { font-size: calc(1.6rem * var(--scale)); color: inherit; }
+.ar-opt.right { background: color-mix(in srgb, var(--primary) 20%, var(--surface)); border-color: var(--primary); }
+.ar-opt.wrong { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); border-color: var(--danger); }
+.ar-opt:disabled { color: inherit; opacity: 1; }
+.ar-feedback { min-height: 40px; text-align: center; margin-top: 10px; }
+.ar-feedback p { margin: 0; line-height: 1.8; }
+.ar-feedback .ar-form { font-size: 1.4rem; }
+.ar-ok { color: var(--primary); font-weight: 700; display: inline-flex; align-items: center; gap: 6px; }
+.ar-ok svg { width: 20px; height: 20px; }
+.ar-no { color: var(--danger); }
+.ar-no .ar-mean { color: var(--text); }
+.ar-done { text-align: center; padding: 10px 0 4px; }
+.ar-score { font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+.ar-done .more-row { gap: 8px; flex-wrap: wrap; }
