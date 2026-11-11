@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.38.0";
-import { mirrorOf } from "./mirror.js?v=1.38.0";
+import * as off from "./offline.js?v=1.39.0";
+import { mirrorOf } from "./mirror.js?v=1.39.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -427,6 +427,16 @@ export function setupQuran(ctx) {
           if (q.loop.gap > 0) unlockSilence();
         }
         start();
+      },
+      // A change to a running loop's settings (js/hifz.js) takes effect at once: the rate on the recording, the counts
+      // on the next step (the present repetition or round is not cut short). False when no loop is running.
+      setLoop({ reps, rounds, gap, rate } = {}) {
+        if (!q?.loop || !L) return false;
+        if (reps != null) { q.loop.reps = Math.min(10, Math.max(1, reps | 0)); L.k = Math.min(L.k, q.loop.reps); }
+        if (rounds != null) { q.loop.rounds = Math.max(1, rounds | 0); L.round = Math.min(L.round, q.loop.rounds); }
+        if (gap != null) { q.loop.gap = Math.max(0, +gap || 0); if (q.loop.gap > 0) unlockSilence(); }
+        if (rate != null) { q.loop.rate = +rate || 1; a.defaultPlaybackRate = a.playbackRate = q.loop.rate; arm(); }
+        render(); tellLoop(); return true;
       },
       radio({ id, url: u, name, sub }) { if (q?.type === "radio" && q.id === id && !a.paused) { a.pause(); return; } loopEnd(); q = { type: "radio", id, url: u, name, sub }; start(); },
       // list: [[mp3 url, description], …]; at: the second lesson `start` begins at; save(idx, seconds) is told the place reached.
@@ -860,6 +870,7 @@ export function setupQuran(ctx) {
         <button class="pill ghost" id="q-theme" aria-label="${esc(t(isDark() ? "mushaf.toDayAria" : "mushaf.toNightAria"))}">${icon(isDark() ? "sun" : "moon")} ${esc(t(isDark() ? "mushaf.toDay" : "mushaf.toNight"))}</button>
         <span class="pill ghost zoom" role="group" aria-label="${esc(t("settings.fontSize"))}"><button data-qz="-1" aria-label="${esc(t("settings.smaller"))}">${icon("minus")}</button><b id="q-zoom">${esc(pct(state.qz))}</b><button data-qz="1" aria-label="${esc(t("settings.larger"))}">${icon("plus")}</button></span>
         <a class="pill ghost" id="q-hifz" href="#/hifz/${meta.id}/${s}">${icon("repeat")} ${esc(t("hifz.inReader"))}</a>
+        ${meta.ayat === KUFI_AYAT ? `<button class="pill ghost" id="q-trpill" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")} <span dir="auto">${esc(t("quran.showTranslation"))}</span></button>` : ""}
         <button class="link" id="q-rec">${icon("headphones")} <span dir="auto">${esc(rec ? rec.name : t("quran.chooseReciter"))}</span></button>
       </div>
       <div id="tr-note"></div>
@@ -890,6 +901,9 @@ export function setupQuran(ctx) {
     const setQz = zoomGestures(art, "qz", applyQz); zoomKeys = { k: "qz", apply: applyQz };
     view.querySelectorAll("[data-qz]").forEach(b => b.onclick = () => { setQz(state.qz + 0.1 * Number(b.dataset.qz)); save(); });
     $("#q-tr").onclick = () => pickTranslation(() => renderReader(meta.id, s, params));
+    // The translation pill in the bar says which translation shows (none: «show translation») and opens the same list.
+    const trPill = $("#q-trpill");
+    if (trPill) { trPill.onclick = $("#q-tr").onclick; currentTr().then(trMeta).then(m => { if (m && !stale(hash)) trPill.querySelector("span").textContent = m.title; }).catch(() => {}); }
     $("#q-riw").onclick = () => {
       const body = sheet(t("quran.chooseRiwayah"), `<div class="list flat">${INDEX.riwayat.map(r => `<button class="row" data-r="${r.id}"><div class="lbl">${esc(rName(r))}<span class="sub">${esc(t("count.ayat", { n: r.ayat }))}</span></div>${r.id === meta.id ? icon("check") : ""}</button>`).join("")}</div>`);
       body.onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; closeSheet(); location.hash = `#/quran/${riw(b.dataset.r).id}/${s}`; };
@@ -1688,6 +1702,9 @@ export function setupQuran(ctx) {
     async resume() { await loadIndex(); const r = resumeInfo(); return r && { href: r.href, text: r.text }; },
     listen: renderListen, radio: parts => renderRadio(parts), offline: renderOffline, mushaf: (ed, n, params) => renderPages(ed, n, params), player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
+    // The chosen translation of surah s ({ rows: [{ aya, translation, footnotes }], meta }) or null when none is chosen
+    // (the memorisation page shows it under the verses; only for the Kufan count, as the reader does).
+    async translationOf(s) { const key = await currentTr(); if (!key) return null; const [rows, meta] = await Promise.all([getTrSura(key, s), trMeta(key)]); return { key, rows, meta }; },
     // Quran text of a riwayah (with its font) and surah names, for the tafsir pages.
     textOf: id => loadRiwayah(id), surahName,
     // For the Tajweed rules page: the Tajweed print's font of page n (with its backup copy), and the surah names.

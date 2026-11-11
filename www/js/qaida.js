@@ -4,8 +4,8 @@
 // (sections of explanation with examples). Every example is drawn with its page's Tajweed font (js/glyphs.js) and can be
 // heard in Shaykh al-Husary's recitation of its verse (js/clip.js). A lesson ends with the exercise «read, then listen»
 // over its words, and the learner marks it done; progress is kept in LS "qaida".
-import { makeClipPlayer } from "./clip.js?v=1.38.0";
-import { makeGlyphs } from "./glyphs.js?v=1.38.0";
+import { makeClipPlayer } from "./clip.js?v=1.39.0";
+import { makeGlyphs } from "./glyphs.js?v=1.39.0";
 
 export function setupQaida(ctx) {
   const { view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, setHeader, setNav } = ctx;
