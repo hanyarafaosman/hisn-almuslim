@@ -7,6 +7,8 @@ www/quran/** -text
 www/kutub/** -text
 # The matn files are named after the hash of their bytes too (scripts/build-mutun.js)
 www/mutun/** -text
+# The learning-Arabic files are named after the hash of their bytes too (scripts/build-arabic.js)
+www/arabic/** -text
 # So is the word index of those books (scripts/build-fihris.mjs); its word files are binary
 www/fihris/** -text
 www/fihris/w/*.bin binary

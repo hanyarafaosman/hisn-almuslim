@@ -7,7 +7,7 @@
 // (the first word shows, a tap shows the next). What was memorised is kept in LS "hifz": each stretch in a Leitner box
 // 0–4 with reviews after 1, 3, 7, 14 and 30 days, a daily goal, and a day log for the streak. Progress is kept per
 // riwayah, since the verse numbers differ between them.
-import { AYA_NUM } from "./qdiff.js?v=1.38.0";
+import { AYA_NUM } from "./qdiff.js?v=1.39.0";
 
 const INTERVALS = [1, 3, 7, 14, 30]; // days until the next review, by box
 const DAY = 86400000;
