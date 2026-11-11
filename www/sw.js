@@ -1,5 +1,5 @@
 /* Service worker: offline-first app shell for حصن ونور */
-const VERSION = "hisn-v1.38.0";
+const VERSION = "hisn-v1.39.0";
 const SHELL = [
   "./", "./index.html", "./manifest.webmanifest",
   "./css/fonts.css", "./css/app.css", "./js/app.js", "./js/quran.js", "./js/i18n.js", "./js/offline.js", "./js/mirror.js", "./js/hadith.js", "./js/tafsir.js", "./js/asma.js", "./js/kutub.js", "./js/faqih.js", "./js/fihris-words.js", "./js/prayer.js", "./js/prayer-calc.js", "./js/videos.js", "./js/install.js", "./js/tajweed.js", "./js/hijri.js", "./js/qibla.js", "./js/clip.js", "./js/glyphs.js", "./js/qaida.js", "./js/mutun.js", "./js/qiraat.js", "./js/qdiff.js", "./js/hifz.js", "./audio/silence.mp3", "./adhan/index.json", "./hadith/index.json", "./tafsir/index.json", "./asma/book.json", "./kutub/index.json", "./fihris/index.json", "./data/audio-sizes.json", "./data/hisn.json", "./data/hisn.en.json", "./data/extras.json", "./data/radios.json", "./data/lessons.json", "./data/videos.json", "./data/tajweed.json", "./data/qaida.json", "./data/mutun.json", "./data/qiraat.json", "./quran/index.json",

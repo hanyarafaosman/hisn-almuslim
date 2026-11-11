@@ -59,6 +59,9 @@ svg { width: 24px; height: 24px; flex: none; }
 :root[data-theme="dark"] .topbar { background: #13201d; color: #e9efed; border-bottom: 1px solid var(--border); }
 .topbar-title { flex: 1; margin: 0; font-size: 1.15rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-inline-start: 8px; }
 .topbar-actions { display: flex; gap: 2px; }
+/* Five or more actions (the Quran reader with the language button): narrower buttons keep the title readable on phones. */
+.topbar-actions:has(> :nth-child(5)) .icon-btn { width: 38px; }
+.topbar-actions:has(> :nth-child(5)) { gap: 0; }
 .icon-btn { width: 44px; height: 44px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: inherit; }
 .icon-btn:active { background: rgba(0,0,0,.12); }
 .icon-btn.active { color: var(--accent); }
