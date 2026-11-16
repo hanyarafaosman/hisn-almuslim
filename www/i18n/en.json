@@ -128,6 +128,8 @@
  "qaida.nextTajweed": "After these lessons: the rules of Tajweed",
  "qaida.audioLink": "Audio series: {group}",
  "arabic.title": "Learn Arabic",
+ "kids.title": "Kids' corner",
+ "muslim.title": "A Muslim's day",
  "arabic.full": "Arabic for non-native speakers",
  "arabic.intro": "The Quran has {total} words, yet just {n} words come so often that they make up {pct} of them. Learn them lesson by lesson: each word with its meaning in your language, how to say it in Latin letters, its recitation, and a verse it comes in. Then practise and review them until they stay.",
  "arabic.meaningsIn": "Word meanings in:",

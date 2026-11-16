@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.40.0";
-import { mirrorOf } from "./mirror.js?v=1.40.0";
+import * as off from "./offline.js?v=1.41.0";
+import { mirrorOf } from "./mirror.js?v=1.41.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -1705,6 +1705,13 @@ export function setupQuran(ctx) {
     // The chosen translation of surah s ({ rows: [{ aya, translation, footnotes }], meta }) or null when none is chosen
     // (the memorisation page and the surahs of learning Arabic show it under the verses; only for the Kufan count, as the reader does).
     async translationOf(s) { const key = await currentTr(); if (!key) return null; const [rows, meta] = await Promise.all([getTrSura(key, s), trMeta(key)]); return { key, rows, meta }; },
+    // The meaning of one verse in the chosen translation ({ text, meta }), or null when none is chosen: the lessons of
+    // js/guide.js show it under the verses they quote (one small request per verse, kept by the service worker).
+    async ayaMeaning(s, a) {
+      const key = await currentTr(); if (!key) return null;
+      const [j, meta] = await Promise.all([getJSON(`${QE}/translation/aya/${key}/${s}/${a}`, { keep: false }), trMeta(key)]);
+      return j?.result?.translation ? { text: j.result.translation, meta } : null;
+    },
     // Quran text of a riwayah (with its font) and surah names, for the tafsir pages.
     textOf: id => loadRiwayah(id), surahName,
     // For the Tajweed rules page: the Tajweed print's font of page n (with its backup copy), and the surah names.
