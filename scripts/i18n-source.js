@@ -140,6 +140,9 @@ const S = {
   "qaida.audioLink": ["سلاسل صوتية: {group}", "Audio series: {group}"],
   // Arabic for non-native speakers (#/arabic)
   "arabic.title": ["تعلّم العربية", "Learn Arabic"],
+  // The words of these two pages are in www/guide/<lang>.json (scripts/guide-source.js); only their names are here.
+  "kids.title": ["ركن الأطفال", "Kids' corner"],
+  "muslim.title": ["يوميات مسلم", "A Muslim's day"],
   "arabic.full": ["العربية لغير الناطقين بها", "Arabic for non-native speakers"],
   "arabic.intro": ["في القرآن {total} كلمة، و{n} كلمة منها فقط تتكرر حتى تكون {pct} منها. تعلّمها درسًا بعد درس: لكل كلمة معناها بلغتك، ونطقها بالحروف اللاتينية، وصوتها من التلاوة، وآية وردت فيها. ثم تمرّن عليها وراجعها حتى تثبت.", "The Quran has {total} words, yet just {n} words come so often that they make up {pct} of them. Learn them lesson by lesson: each word with its meaning in your language, how to say it in Latin letters, its recitation, and a verse it comes in. Then practise and review them until they stay."],
   "arabic.meaningsIn": ["معاني الكلمات بلغة:", "Word meanings in:"],

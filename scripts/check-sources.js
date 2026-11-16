@@ -7,6 +7,7 @@
 //                      the prayer alerts server (push/, PUSH.url in www/js/prayer.js): it answers and its minute job runs
 //   warnings (exit 0): live radio stations, hadith and subject radio stations, audio lesson series (IslamHouse.com),
 //                      video series (YouTube), live channels (win.holol.com), changed audio sizes,
+//                      the reviewed books of the kids' corner and A Muslim's day (IslamHouse.com),
 //                      city search and place names for prayer times (open-meteo.com, nominatim.openstreetmap.org)
 const fs = require("fs"), path = require("path");
 const { probe } = require("./check-radios.js");
@@ -302,6 +303,18 @@ async function audioSeries() {
   if (bad.length) warn(G, `${bad.length} of ${files.length} lessons not answering: ${listBad(bad)}`);
   else pass(G, `${files.length} lessons in ${series.length} series answer`);
 }
+// The kids' corner and A Muslim's day (js/guide.js): the books of IslamHouse.com they link to in each language
+// (opened outside the app, so no CORS is needed), and the meaning of one verse from QuranEnc as the lessons ask for it.
+async function guideBooks() {
+  let G = "Guide books (IslamHouse.com)"; const { books } = readJson("data/guide.json");
+  const files = [...new Map(Object.entries(books).flatMap(([part, by]) => Object.entries(by).flatMap(([l, list]) => list.map(b => [b.url, `${part} ${l} ${b.id}`])))).entries()].map(([u, name]) => ({ u, name }));
+  const bad = await each(files, async f => { const r = await request(f.u, { method: "HEAD" }); return r.ok ? "" : `${f.name} (HTTP ${r.status})`; });
+  if (bad.length) warn(G, `${bad.length} of ${files.length} books not answering (run npm run guide -- --books): ${listBad(bad)}`);
+  else pass(G, `${files.length} books answer`);
+  G = "Verse meanings (quranenc.com)";
+  try { const j = await getJSON("https://quranenc.com/api/v1/translation/aya/english_rwwad/112/1"); if (j.result?.translation) pass(G, "one verse by its number"); else error(G, "no translation in the answer"); }
+  catch (e) { error(G, e.message); }
+}
 // Video series: the first and last episode of every playlist still play inside other sites (YouTube oEmbed answers 200).
 async function videoSeries() {
   const G = "Video series"; const { series, live } = readJson("data/videos.json"); const channels = live.filter(c => c.url);
@@ -316,7 +329,7 @@ async function videoSeries() {
 }
 
 (async () => {
-  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), wordAudio(), radioList("Live radios", live), radioList("Hadith radios", sunnah), radioList("Subject radios", topics), audioSeries(), videoSeries(), placeSearch(), alertsServer(), faqihServer()]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), wordAudio(), radioList("Live radios", live), radioList("Hadith radios", sunnah), radioList("Subject radios", topics), audioSeries(), videoSeries(), guideBooks(), placeSearch(), alertsServer(), faqihServer()]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);

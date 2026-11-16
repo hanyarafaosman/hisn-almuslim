@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/faqih.js", "js/fihris-words.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/qibla.js", "js/clip.js", "js/glyphs.js", "js/qaida.js", "js/arabic.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "js/hifz.js", "audio/silence.mp3", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "fihris/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/fadl.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "data/qaida.json", "data/mutun.json", "data/qiraat.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/faqih.js", "js/fihris-words.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/qibla.js", "js/clip.js", "js/glyphs.js", "js/qaida.js", "js/arabic.js", "js/guide.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "js/hifz.js", "audio/silence.mp3", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "fihris/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/fadl.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "data/qaida.json", "data/guide.json", "guide/ar.json", "guide/en.json", "data/mutun.json", "data/qiraat.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -441,6 +441,52 @@ for (const b of kt.books) {
   }
 }
 
+// The kids' corner and A Muslim's day (data/guide.json and guide/<lang>.json, scripts/build-guide.js): every text the
+// structure names is there in Arabic and English; every interface language has the same texts, with the same
+// {placeholders}, the same number of list lines, and the Arabic words quoted in «» kept as they are; the evidence
+// points at verses that exist, hadith sections of the hadith index and adhkar of the adhkar data.
+{
+  const g = readJson("data/guide.json"), gen = readJson("guide/en.json"), gar = readJson("guide/ar.json");
+  const want = new Set(Object.keys(gen).filter(k => /^(ui|menu)\./.test(k)));
+  const ev = (list, where) => (list || []).forEach(([kind, x]) => {
+    if (kind === "q") { const v = g.verses[x]; if (!v || v.text.length !== v.to - v.from + 1 || v.text.some(a => !/[ء-ي]/.test(a))) fail("data/guide.json " + where + ": verse " + x); }
+    else if (kind === "h") { const h = g.hadith[x], b = h && hx.books.find(k => k.id === h[0]); if (!b || !b.sections.some(sec => sec[0] === h[2]) || !g.hbooks[h[0]]) fail("data/guide.json " + where + ": hadith " + x); }
+    else if (kind === "d") { if (!db.categories.some(c => c.items.some(i => i.id === x))) fail("data/guide.json " + where + ": dhikr " + x); }
+    else fail("data/guide.json " + where + ": evidence " + kind);
+  });
+  const links = (list, where) => (list || []).forEach(([href, key]) => { if (!/^#\//.test(href) || (key.startsWith("@") ? !(key.slice(1) in gen) : !(key in readJson("i18n/en.json")))) fail("data/guide.json " + where + ": link " + href + " " + key); });
+  for (const u of g.kids) {
+    want.add("k." + u.id + ".t").add("k." + u.id + ".s");
+    for (const c of u.cards) { const k = "k." + u.id + "." + c.id; want.add(k + ".q").add(k + ".a"); if (c.l) want.add(k + ".l"); ev(c.ev, k); links(c.links, k); }
+    for (let i = 1; i <= u.quiz; i++) { const z = "k." + u.id + ".z" + i; want.add(z + ".q").add(z + ".0").add(z + ".1").add(z + ".2"); }
+    if (!u.cards.length || u.quiz < 1) fail("data/guide.json: unit " + u.id + " needs cards and a quiz");
+  }
+  for (const st of g.steps) {
+    want.add("m." + st.id + ".t").add("m." + st.id + ".s").add("m." + st.id + ".todo"); links(st.links, "m." + st.id);
+    for (const x of st.secs) { const k = "m." + st.id + "." + x.id; want.add(k + ".h"); if (x.p) want.add(k + ".p"); if (x.l) want.add(k + ".l"); ev(x.ev, k); links(x.links, k); }
+  }
+  for (const p of g.day) { want.add("d." + p.id + ".t"); for (const i of p.items) { want.add("d." + p.id + "." + i.id + ".t"); if (i.x) want.add("d." + p.id + "." + i.id + ".x"); if (![1, 2, 3].includes(i.lv)) fail("data/guide.json: level of " + i.id); } }
+  if (!g.day.some(p => p.items.some(i => i.lv === 1))) fail("data/guide.json: the day needs essentials (level 1)");
+  for (const part of ["kids", "muslim"]) for (const [l, list] of Object.entries(g.books[part] || {})) for (const b of list) if (!b.t || !/^https:\/\/d1\.islamhouse\.com\/.+\.pdf$/i.test(b.url)) fail("data/guide.json: book " + part + " " + l);
+  const holes = x => [...String(x).matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort().join(",");
+  const quoted = x => [...String(x).matchAll(/«([^»]*[ء-ي][^»]*)»/g)].map(m => m[1]);
+  const glangs = [...new Set([...fs.readFileSync(path.join(root, "js/i18n.js"), "utf8").matchAll(/\["([a-z]{2,3})", "[^"]+"\]/g)].map(m => m[1]))];
+  for (const l of glangs) {
+    if (!fs.existsSync(path.join(root, "guide", l + ".json"))) { fail("missing guide/" + l + ".json"); continue; }
+    const d = l === "en" ? gen : l === "ar" ? gar : readJson("guide/" + l + ".json"), errs = [];
+    for (const k of want) {
+      const v = d[k], e = gen[k];
+      if (typeof v !== "string" || !v.trim()) { errs.push("missing " + k); continue; }
+      if (holes(v) !== holes(e)) errs.push(k + ": placeholders");
+      if (/\.l$/.test(k) && v.split("\n").length !== e.split("\n").length) errs.push(k + ": " + v.split("\n").length + " lines, " + e.split("\n").length + " expected");
+      if (l !== "ar") for (const q of quoted(e)) if (!v.includes(q)) errs.push(k + ": the Arabic «" + q.slice(0, 25) + "» is not kept");
+    }
+    for (const k of Object.keys(d)) if (!want.has(k)) errs.push("unknown " + k);
+    if (errs.length) fail("guide/" + l + ".json: " + errs.length + " problem(s): " + errs.slice(0, 6).join("; "));
+  }
+  if (glangs.some(l => !g.langs.includes(l))) fail("data/guide.json langs: rerun npm run guide after adding a language file");
+}
+
 // Interface languages: every language listed in js/i18n.js has a strings file that passes check-i18n.js
 // LANGS entries look like ["fr", "Français"]; other arrays in the file do not end right after the second string.
 const langs = [...new Set([...fs.readFileSync(path.join(root, "js/i18n.js"), "utf8").matchAll(/\["([a-z]{2,3})", "[^"]+"\]/g)].map(m => m[1]))];
@@ -449,7 +495,7 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/videos.js", "js/tajweed.js", "js/clip.js", "js/glyphs.js", "js/qaida.js", "js/arabic.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "js/hifz.js", "../scripts/build-tajweed.js", "../scripts/tajweed-source.js", "../scripts/lib/glyphs.js", "../scripts/build-qaida.js", "../scripts/qaida-source.js", "../scripts/build-mutun.js", "../scripts/build-qiraat.js", "../scripts/qiraat-source.js", "../scripts/check-qiraat.mjs", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
+for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/kutub.js", "js/videos.js", "js/tajweed.js", "js/clip.js", "js/glyphs.js", "js/qaida.js", "js/arabic.js", "js/guide.js", "../scripts/build-guide.js", "../scripts/guide-source.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "js/hifz.js", "../scripts/build-tajweed.js", "../scripts/tajweed-source.js", "../scripts/lib/glyphs.js", "../scripts/build-qaida.js", "../scripts/qaida-source.js", "../scripts/build-mutun.js", "../scripts/build-qiraat.js", "../scripts/qiraat-source.js", "../scripts/check-qiraat.mjs", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
   "../push/src/index.js", "../push/src/webpush.js", "../push/src/schedule.js", "../push/keys.js", "../push/test.js",
   "js/faqih.js", "js/fihris-words.js", "../scripts/build-fihris.mjs", "../scripts/fihris-test.mjs", "../scripts/faqih-chunk.mjs", "../scripts/faqih-test.mjs", "../scripts/build-faqih.mjs", "../faqih/src/index.js", "../faqih/src/prompt.js", "../faqih/src/verify.js", "../faqih/src/llm.js", "../faqih/test.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });
