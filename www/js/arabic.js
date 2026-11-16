@@ -4,7 +4,7 @@
 // arabic/<lang>.<hash>.json the meanings in one of Quran.com's eight word-by-word languages (others read English).
 // Every word can be heard in its recitation (audio.qurancdn.com/wbw). Practice asks a word's meaning, which word was
 // heard, or which word has a meaning; what the learner knows comes back for review after 1, 2, 4… days (LS "arabic").
-import { makeClipPlayer } from "./clip.js?v=1.39.0";
+import { makeClipPlayer } from "./clip.js?v=1.40.0";
 
 const ARABIC_CACHE = "hisn-arabic-v1";
 const AUDIO = "https://audio.qurancdn.com/wbw/";
@@ -317,9 +317,13 @@ export function setupArabic(ctx) {
     $("#ar-all").onclick = e => sayAll($("#ar-surah"), e.currentTarget);
     // The meaning of each whole verse in the learner's language (the translation the Quran reader shows).
     try {
-      const m = await Q.meanings(s); if (!m || stale(hash)) return;
-      view.querySelectorAll(".ar-aya-tr").forEach(el => { const x = m.ayat[el.dataset.a]; if (!x) return; el.textContent = x; el.dir = m.dir; el.lang = m.lang; el.hidden = false; });
-      $("#ar-trsrc").textContent = m.source;
+      const tr = await Q.translationOf(s); if (!tr || stale(hash)) return;
+      const m = tr.meta, ayat = Object.fromEntries(tr.rows.map(r => [Number(r.aya), r.translation]));
+      view.querySelectorAll(".ar-aya-tr").forEach(el => {
+        const x = ayat[el.dataset.a]; if (!x) return;
+        el.textContent = x; el.dir = m?.direction === "rtl" ? "rtl" : "ltr"; el.lang = m?.language_iso_code || ""; el.hidden = false;
+      });
+      if (m) $("#ar-trsrc").textContent = t("quran.trSource", { title: m.title, v: m.version });
     } catch { /* the words alone */ }
   }
 
