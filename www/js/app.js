@@ -1,24 +1,24 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.38.0";
-import { setupHadith } from "./hadith.js?v=1.38.0";
-import { setupTafsir } from "./tafsir.js?v=1.38.0";
-import { setupAsma } from "./asma.js?v=1.38.0";
-import { setupKutub } from "./kutub.js?v=1.38.0";
-import { setupFaqih } from "./faqih.js?v=1.38.0";
-import { setupPrayer } from "./prayer.js?v=1.38.0";
-import { setupVideos } from "./videos.js?v=1.38.0";
-import { setupInstall } from "./install.js?v=1.38.0";
-import { setupTajweed } from "./tajweed.js?v=1.38.0";
-import { setupMutun } from "./mutun.js?v=1.38.0";
-import { setupQiraat } from "./qiraat.js?v=1.38.0";
-import { setupQaida } from "./qaida.js?v=1.38.0";
-import { setupHijri } from "./hijri.js?v=1.38.0";
-import { setupQibla } from "./qibla.js?v=1.38.0";
-import { setupHifz } from "./hifz.js?v=1.38.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.38.0";
-import { mirrorOf } from "./mirror.js?v=1.38.0";
+import { setupQuran } from "./quran.js?v=1.39.0";
+import { setupHadith } from "./hadith.js?v=1.39.0";
+import { setupTafsir } from "./tafsir.js?v=1.39.0";
+import { setupAsma } from "./asma.js?v=1.39.0";
+import { setupKutub } from "./kutub.js?v=1.39.0";
+import { setupFaqih } from "./faqih.js?v=1.39.0";
+import { setupPrayer } from "./prayer.js?v=1.39.0";
+import { setupVideos } from "./videos.js?v=1.39.0";
+import { setupInstall } from "./install.js?v=1.39.0";
+import { setupTajweed } from "./tajweed.js?v=1.39.0";
+import { setupMutun } from "./mutun.js?v=1.39.0";
+import { setupQiraat } from "./qiraat.js?v=1.39.0";
+import { setupQaida } from "./qaida.js?v=1.39.0";
+import { setupHijri } from "./hijri.js?v=1.39.0";
+import { setupQibla } from "./qibla.js?v=1.39.0";
+import { setupHifz } from "./hifz.js?v=1.39.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.39.0";
+import { mirrorOf } from "./mirror.js?v=1.39.0";
 
-const VERSION = "1.38.0";
+const VERSION = "1.39.0";
 const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
@@ -272,7 +272,10 @@ let depth = history.state?.d ?? 0, onHome = false;
 if (history.state?.d == null) history.replaceState({ ...history.state, d: depth }, "");
 function setHeader(title, { back = false, actions = "", onTitle = null } = {}) {
   // Every page but Home offers Back once another page of the app is behind it, so moving between tools is undone in one tap.
-  titleEl.textContent = title; backBtn.hidden = !(back || (depth > 0 && !onHome)); actionsEl.innerHTML = actions;
+  // The language button is on every page, at the outer end of the actions, so the language is a tap away anywhere.
+  titleEl.textContent = title; backBtn.hidden = !(back || (depth > 0 && !onHome));
+  actionsEl.innerHTML = actions + `<button class="icon-btn" id="a-lang" aria-label="${esc(t("common.language"))}">${icon("globe")}</button>`;
+  $("#a-lang").onclick = pickLanguage;
   // A title that opens something (the Quran index on a reading page) acts as a button.
   titleEl.onclick = onTitle; titleEl.classList.toggle("tappable", !!onTitle);
   if (onTitle) { titleEl.setAttribute("role", "button"); titleEl.tabIndex = 0; } else { titleEl.removeAttribute("role"); titleEl.removeAttribute("tabindex"); }
@@ -383,8 +386,7 @@ function toolsHtml() {
 // ---------- Home: what fits now, search, and every part of the app ----------
 function renderHub(q = "") {
   setNav("home");
-  setHeader(t("app.name"), { actions: `<button class="icon-btn" id="a-lang" aria-label="${T("common.language")}">${icon("globe")}</button><button class="icon-btn" id="a-search" aria-label="${T("common.search")}">${icon("search")}</button>` });
-  $("#a-lang").onclick = pickLanguage;
+  setHeader(t("app.name"), { actions: `<button class="icon-btn" id="a-search" aria-label="${T("common.search")}">${icon("search")}</button>` });
   const h = new Date().getHours();
   const greet = t(h < 12 ? "home.greetMorning" : h < 18 ? "home.greetEvening" : "home.greetNight");
   // What fits now: morning adhkar until mid-afternoon, evening adhkar until night, then the adhkar before sleeping.
@@ -437,8 +439,7 @@ function renderTools() {
 
 function renderHome(q = "") {
   setNav("adhkar");
-  setHeader(t("nav.adhkar"), { actions: `<button class="icon-btn" id="a-lang" aria-label="${T("common.language")}">${icon("globe")}</button><a class="icon-btn" href="#/fav" aria-label="${T("common.favorites")}">${icon("star")}</a><button class="icon-btn" id="a-search" aria-label="${T("common.search")}">${icon("search")}</button>` });
-  $("#a-lang").onclick = pickLanguage;
+  setHeader(t("nav.adhkar"), { actions: `<a class="icon-btn" href="#/fav" aria-label="${T("common.favorites")}">${icon("star")}</a><button class="icon-btn" id="a-search" aria-label="${T("common.search")}">${icon("search")}</button>` });
   const period = currentPeriod(); const h = new Date().getHours();
   const greet = t(h < 12 ? "home.greetMorning" : h < 18 ? "home.greetEvening" : "home.greetNight");
   const p27 = catProgress(catById.get(27), period), p28 = catProgress(catById.get(28)), p1 = catProgress(catById.get(1));

@@ -7,7 +7,7 @@
 // (the first word shows, a tap shows the next). What was memorised is kept in LS "hifz": each stretch in a Leitner box
 // 0–4 with reviews after 1, 3, 7, 14 and 30 days, a daily goal, and a day log for the streak. Progress is kept per
 // riwayah, since the verse numbers differ between them.
-import { AYA_NUM } from "./qdiff.js?v=1.38.0";
+import { AYA_NUM } from "./qdiff.js?v=1.39.0";
 
 const INTERVALS = [1, 3, 7, 14, 30]; // days until the next review, by box
 const DAY = 86400000;
@@ -158,10 +158,12 @@ export function setupHifz(ctx) {
     const nextHref = to < n ? `#/hifz/${rid}/${s}?from=${to + 1}&to=${Math.min(n, to + (to - from + 1))}` : s < 114 ? `#/hifz/${rid}/${s + 1}?from=1&to=${Math.min(meta.surahs[s][1], to - from + 1)}` : "";
     const seg = Array.from({ length: to - from + 1 }, (_, i) => from + i);
     const had = memorised(rid, s); const known = seg.every(a => had.has(a));
+    const kufi = meta.ayat === 6236; // translations are numbered on the Kufan count (Hafs, Shuʿbah), as in the reader
     view.innerHTML = `
       <div class="reader-bar">
         <span class="pill">${icon("layers")} ${esc(rShort(rid))}</span><span class="pill ghost">${esc(range)}</span>
         <a class="pill ghost" href="#/quran/${rid}/${s}${from > 1 ? `?a=${from}` : ""}">${icon("book")} ${esc(t("hifz.openReader"))}</a>
+        ${kufi ? `<button type="button" class="pill ghost" id="hz-tr" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")} <span dir="auto">${esc(t("quran.showTranslation"))}</span></button>` : ""}
         <span class="segmented hz-modes" id="hz-mode">${MODES.map(([m, k]) => `<button type="button" data-m="${m}" class="${H.set.mode === m ? "on" : ""}">${esc(t(k))}</button>`).join("")}</span>
       </div>
       <p class="source-note hz-hint" id="hz-hint"></p>
@@ -180,6 +182,7 @@ export function setupHifz(ctx) {
         <div class="setting"><div class="lbl">${esc(t("hifz.gap"))}<small>${esc(t("hifz.gapHint"))}</small></div><span class="segmented hz-seg" id="hz-gap">${GAPS.map(g => `<button type="button" data-v="${g}" class="${H.set.gap === g ? "on" : ""}">${g ? "×" + num(g) : esc(t("hifz.gapNone"))}</button>`).join("")}</span></div>
         <div class="setting"><div class="lbl">${esc(t("hifz.rate"))}</div><span class="segmented hz-seg" id="hz-rate">${RATES.map(r => `<button type="button" data-v="${r}" class="${H.set.rate === r ? "on" : ""}">×${num(r)}</button>`).join("")}</span></div>
         <p class="source-note hz-note" id="hz-note" hidden></p>
+        <p class="source-note">${esc(t("hifz.autoSaved"))}</p>
       </div>
       <div class="card hz-done" id="hz-done"></div>
       <nav class="tj-nav">
@@ -207,16 +210,28 @@ export function setupHifz(ctx) {
     text.addEventListener("click", e => { if (window.getSelection && String(window.getSelection()).length) return; const el = e.target.closest(".aya"); if (el) reveal(el); });
     text.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && e.target.classList.contains("aya")) { e.preventDefault(); reveal(e.target); } });
 
-    // ---- the loop's settings
+    // ---- the loop's settings: saved as they change, and applied to the loop that is running (player.setLoop)
     const LIM = { reps: [1, 10], rounds: [1, 10] };
+    const applyLive = () => { if (mineLoop()) { player.setLoop({ reps: H.set.reps, rounds: H.set.rounds, gap: H.set.gap, rate: H.set.rate }); showLoop(player.loopState()); } };
     view.querySelectorAll("[data-step]").forEach(b => b.onclick = () => {
       const [k, d] = b.dataset.step.split(":"); const [lo, hi] = LIM[k];
-      H.set[k] = clamp(H.set[k] + Number(d), lo, hi); save(); $("#hz-" + k).textContent = num(H.set[k]);
+      H.set[k] = clamp(H.set[k] + Number(d), lo, hi); save(); $("#hz-" + k).textContent = num(H.set[k]); applyLive();
     });
     for (const [id, k] of [["hz-gap", "gap"], ["hz-rate", "rate"]]) $("#" + id).onclick = e => {
       const b = e.target.closest("[data-v]"); if (!b) return; H.set[k] = Number(b.dataset.v); save();
-      $("#" + id).querySelectorAll("button").forEach(x => x.classList.toggle("on", Number(x.dataset.v) === H.set[k]));
+      $("#" + id).querySelectorAll("button").forEach(x => x.classList.toggle("on", Number(x.dataset.v) === H.set[k])); applyLive();
     };
+    // ---- the translation under the verses, when one is chosen (the same list as the reader's)
+    const trPill = $("#hz-tr");
+    if (trPill) {
+      trPill.onclick = () => Q.pickTranslation(() => renderSegment(rid, s, params));
+      Q.translationOf(s).then(tr => {
+        if (!tr || stale(hash)) return;
+        trPill.querySelector("span").textContent = tr.meta?.title || trPill.textContent;
+        const dir = tr.meta?.direction === "rtl" ? "rtl" : "ltr", lang = tr.meta?.language_iso_code || "";
+        tr.rows.forEach(r => { const el = text.querySelector(`.aya[data-a="${Number(r.aya)}"]`); if (el) el.insertAdjacentHTML("beforeend", `<div class="aya-tr" dir="${dir}" lang="${esc(lang)}">${esc(r.translation)}</div>`); });
+      }).catch(() => {});
+    }
     const showRec = () => { const r = recOf(rid); $("#hz-rec").textContent = r ? r.name : t("hifz.chooseReciter"); note.hidden = !(r && !r.timed && r.teach); if (!note.hidden) note.textContent = t("hifz.teachNote"); };
     showRec();
     $("#hz-rec-btn").onclick = () => pickRec(rid, showRec);
