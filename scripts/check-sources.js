@@ -2,7 +2,7 @@
 // Run daily by .github/workflows/sources.yml (a failed run emails the repository owner). Usage: npm run check:sources
 //   errors   (exit 1): adhkar audio (hisnmuslim.com), Mushaf page fonts (static.qurancdn.com, verses.quran.foundation),
 //                      recitations API (mp3quran.net), translations API (quranenc.com), hadith books (jsDelivr),
-//                      tafsir books (quranenc.com, jsDelivr),
+//                      tafsir books (quranenc.com, jsDelivr), word recitations for learning Arabic (audio.qurancdn.com),
 //                      backup copy of the audio and page fonts (hisn-almuslim-assets, see www/js/mirror.js),
 //                      the prayer alerts server (push/, PUSH.url in www/js/prayer.js): it answers and its minute job runs
 //   warnings (exit 0): live radio stations, hadith and subject radio stations, audio lesson series (IslamHouse.com),
@@ -226,6 +226,20 @@ async function tafsirBooks() {
 }
 
 // Prayer times: finding a city, and naming a GPS position. Warnings only: without them the times still work by GPS.
+// Learning Arabic (js/arabic.js): the recitation of each of the 500 words, and of the first and last word of each
+// surah read word by word (audio.qurancdn.com/wbw/SSS_AAA_WWW.mp3).
+async function wordAudio() {
+  const G = "Word recitations (audio.qurancdn.com)";
+  const ax = readJson("data/arabic.json"), core = readJson("arabic/" + ax.files.core);
+  const url = loc => ax.audio + loc.split(":").map(x => x.padStart(3, "0")).join("_") + ".mp3";
+  const locs = ax.words.map(w => w[3]);
+  for (const s of ax.surahs) { const v = core.s[s]; locs.push(`${s}:1:1`, `${s}:${v.length}:${v.at(-1).length}`); }
+  const urls = [...new Set(locs.map(url))];
+  const { bytes, bad } = await headAll(urls, /audio|mpeg/i);
+  if (bad.length) error(G, `${bad.length} of ${urls.length} files unavailable: ${listBad(bad)}`);
+  else pass(G, `${urls.length} files, ${mb(bytes)}`);
+}
+
 async function placeSearch() {
   let G = "City search (open-meteo.com)";
   try { const c = (await getJSON("https://geocoding-api.open-meteo.com/v1/search?name=Cairo&count=1&language=ar&format=json")).results?.[0]; if (c?.timezone && c.country_code) pass(G, `${c.name}, ${c.timezone}`); else warn(G, "no city or time zone in the answer"); }
@@ -302,7 +316,7 @@ async function videoSeries() {
 }
 
 (async () => {
-  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), radioList("Live radios", live), radioList("Hadith radios", sunnah), radioList("Subject radios", topics), audioSeries(), videoSeries(), placeSearch(), alertsServer(), faqihServer()]);
+  await Promise.all([Promise.all([adhkarAudio(), mushafPageFonts()]).then(backup), tajweedPageFonts(), recitations(), translations(), hadithBooks(), tafsirBooks(), wordAudio(), radioList("Live radios", live), radioList("Hadith radios", sunnah), radioList("Subject radios", topics), audioSeries(), videoSeries(), placeSearch(), alertsServer(), faqihServer()]);
   const summary = ["## Outside sources", "", ...errors.map(e => `- ❌ ${e}`), ...warnings.map(w => `- ⚠️ ${w}`), ...passed.map(p => `- ✅ ${p}`), ""].join("\n");
   if (process.env.GITHUB_STEP_SUMMARY) fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, summary);
   console.log(errors.length ? `\n${errors.length} source(s) need attention` : `\n✓ all sources ok${warnings.length ? ` (${warnings.length} warning(s))` : ""}`);

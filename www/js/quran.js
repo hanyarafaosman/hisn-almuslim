@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.39.0";
-import { mirrorOf } from "./mirror.js?v=1.39.0";
+import * as off from "./offline.js?v=1.40.0";
+import { mirrorOf } from "./mirror.js?v=1.40.0";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -1703,7 +1703,7 @@ export function setupQuran(ctx) {
     listen: renderListen, radio: parts => renderRadio(parts), offline: renderOffline, mushaf: (ed, n, params) => renderPages(ed, n, params), player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
     // The chosen translation of surah s ({ rows: [{ aya, translation, footnotes }], meta }) or null when none is chosen
-    // (the memorisation page shows it under the verses; only for the Kufan count, as the reader does).
+    // (the memorisation page and the surahs of learning Arabic show it under the verses; only for the Kufan count, as the reader does).
     async translationOf(s) { const key = await currentTr(); if (!key) return null; const [rows, meta] = await Promise.all([getTrSura(key, s), trMeta(key)]); return { key, rows, meta }; },
     // Quran text of a riwayah (with its font) and surah names, for the tafsir pages.
     textOf: id => loadRiwayah(id), surahName,
