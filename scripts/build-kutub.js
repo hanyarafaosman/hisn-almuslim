@@ -3,13 +3,16 @@
 // Text: turath.io. The whole book comes from files.turath.io/books-v3/<id>.json and its headings from
 // api.turath.io/book; both follow the printed edition page by page. The text is copied word for word:
 // the script only splits each book at its own headings, joins a sentence that runs over a page break,
-// and ties every footnote to the place that refers to it.
+// and ties every footnote to the place that refers to it. The one exception is a book's "fix" list: slips of the
+// electronic copy (a dropped word, a mistyped one), each corrected from another printed edition named beside it.
 // A book is written as kutub/<id>.<hash>.json (its contents and reading pages) and the text of its reading pages
 // as kutub/<id>/<n>.<hash>.json, about 250 KB each, so a reader downloads only the part being read (al-Mughni
 // alone is 30 MB). Every name carries a hash of its bytes: a corrected part gets a new name and devices never keep
 // an old copy.
 // Usage: node scripts/build-kutub.js
 //        node scripts/build-kutub.js --only=mawsua-kuwaitiya --dry   (check one book's build without writing anything)
+//        node scripts/build-kutub.js --only=usul-thalatha            (rebuild one book after a correction: its files and
+//                                                                    its entry in the index; then npm run fihris)
 const fs = require("fs"), path = require("path"), crypto = require("crypto");
 const ARGS = Object.fromEntries(process.argv.slice(2).map(a => { const m = /^--([\w-]+)(?:=(.*))?$/.exec(a); return m ? [m[1], m[2] ?? true] : [a, true]; }));
 const ONLY = ARGS.only ? String(ARGS.only).split(",") : null, DRY = !!ARGS.dry;
@@ -25,6 +28,10 @@ const API = "https://api.turath.io", FILES = "https://files.turath.io";
 // left out in between (an index printed at the end of a volume).
 // items: the book has no chapters, only numbered paragraphs (one page; the contents lists each paragraph).
 // marks "text": the headings are read from the marks in the text, not from turath.io's index of headings (see build()).
+// fix: slips of the electronic copy: [page (its place in the book file, from 1), the words as they are there, the words
+// as they should be]. Only where the copy cannot be read as it stands, and only with the words of another printed
+// edition of the same text. The words must be on that page exactly once, or the build fails (so a copy that turath.io
+// corrects later is noticed).
 // group: the shelf of the library (GROUPS); author: a key of AUTHORS, for browsing the books of one author.
 const GROUPS = ["aqida", "hadith", "fiqh", "usul", "tafsir", "sira", "suluk", "fatawa"];
 const AUTHORS = {
@@ -137,6 +144,17 @@ const BOOKS = [
     ar: "ثلاثة الأصول وأدلتها", en: "The Three Fundamental Principles", by: "محمد بن عبد الوهاب", byEn: "Muhammad ibn ʿAbd al-Wahhab",
     about: "معرفة العبد ربه ودينه ونبيه ﷺ بالأدلة، ويليها «شروط الصلاة وأركانها وواجباتها» و«القواعد الأربع».",
     aboutEn: "Knowing one's Lord, one's religion and one's Prophet ﷺ with the proofs, followed by “The Conditions, Pillars and Obligations of Prayer” and “The Four Principles”.",
+    // Corrected from the same treatises as printed in «مؤلفات الشيخ محمد بن عبد الوهاب» (turath.io 11126: ثلاثة الأصول,
+    // pages 185 and 186; 8524: القواعد الأربع, pages 200 and 201); the Four Principles also in «شرح القواعد الأربع»
+    // (turath.io 11252, pages 18 and 21).
+    fix: [
+      [6, "قال الشافعي رحمه اله تَعَالَى", "قال الشافعي رحمه الله تَعَالَى"], // the name of Allah mistyped
+      [7, "موالاة من حاد اله وَرَسُولَهُ", "موالاة من حاد الله وَرَسُولَهُ"], // the same
+      [41, "قاتلهم رسول الله ﷺ بأن الله تعالى هو الخالق", "قاتلهم رسول الله ﷺ مقرون بأن الله تعالى هو الخالق"], // «مقرون» dropped
+      [43, "والشافع مكرم الشفاعة،", "والشافع مكرم بالشفاعة،"],
+      // «رضي الله» was turned into the sign «رضي الله عنه»
+      [43, "والمشفوع له من " + String.fromCodePoint(0xFD41) + " قوله وعمله", "والمشفوع له من رضي الله قوله وعمله"],
+    ],
   },
   {
     id: "bayan-aqida", turath: 96481, group: "aqida", author: "qahtani", died: 1440, from: 2, unit: 2,
@@ -434,6 +452,9 @@ function build(cfg, info, whole, problems, infos) {
   const NESTED = /(<span data-type=["']title["'][^>]*>)([^<]*)<span data-type=["']title["'][^>]*?\bid=["']?toc-(\d+)["']?[^>]*>([^<]*)<\/span>([^<]*)<\/span>/;
   const pages = whole.pages.slice(0, last).map((p, i) => {
     let text = p.text;
+    for (const [pg, was, now] of cfg.fix || []) if (pg === i + 1) {
+      if (text.split(was).length === 2) text = text.replace(was, () => now); else say(pg, `the words to correct are not on the page once: ${was}`);
+    }
     // marks "text": stray marks around one or two letters inside a heading (the encyclopedia's «ا<span…>ل</span>قاضي»)
     // are dropped; a mark that opens inside a word takes the whole word.
     if (cfg.marks === "text") text = text.replace(/<span data-type=["']title["'][^>]*>([^<]{0,4})<\/span>/g, (m, inner) => norm(inner).length <= 2 ? inner : m)
@@ -761,7 +782,7 @@ function build(cfg, info, whole, problems, infos) {
     const file = `${cfg.id}.${hashOf(data)}.json`; keep.add(file);
     if (!DRY) fs.writeFileSync(path.join(OUT, file), data + "\n");
     const m = info.meta;
-    const { turath, unit, from, to, skip, items, known, loose, marks, ...meta } = cfg;
+    const { turath, unit, from, to, skip, items, known, loose, marks, fix, ...meta } = cfg;
     index.books.push({
       ...meta, file, chunks, bytes: total, title: m.name,
       edition: m.info.split("\n").map(x => x.trim()).filter(x => x && !/^\[/.test(x)).join("\n"),
@@ -782,7 +803,24 @@ function build(cfg, info, whole, problems, infos) {
   if (!DRY && !ONLY) sweep("");
   if (infos.length) console.log("· " + infos.join("\n· "));
   if (problems.length) { console.error("✗ " + problems.join("\n✗ ")); process.exitCode = 1; }
-  if (DRY || ONLY) { console.log(`${DRY ? "dry run" : "partial build"}: ${index.books.length} book(s) checked, www/kutub/index.json not written`); return; }
+  if (DRY) { console.log(`dry run: ${index.books.length} book(s) checked, nothing written`); return; }
+  if (ONLY) {
+    // Some books rebuilt (a correction): each takes its place in the index and the files it had before are removed;
+    // the other books stay as they are.
+    if (problems.length) { console.error("www/kutub/index.json not written"); return; }
+    const old = JSON.parse(fs.readFileSync(path.join(OUT, "index.json"), "utf8"));
+    for (const b of index.books) {
+      const at = old.books.findIndex(x => x.id === b.id);
+      if (at < 0) { console.error(`✗ ${b.id} is not in www/kutub/index.json yet: run the whole build`); process.exitCode = 1; return; }
+      const was = old.books[at];
+      for (const f of [was.file, ...was.chunks.map((h, k) => `${b.id}/${k}.${h}.json`)]) if (!keep.has(f)) fs.rmSync(path.join(OUT, f), { force: true });
+      old.books[at] = b;
+    }
+    old.built = index.built;
+    fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify(old, null, 1) + "\n");
+    console.log(`✓ www/kutub: ${index.books.length} of ${old.books.length} books rebuilt`);
+    return;
+  }
   fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify(index, null, 1) + "\n");
   console.log(`✓ www/kutub: ${index.books.length} books`);
 })().catch(e => { console.error(e); process.exit(1); });
