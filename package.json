@@ -37,6 +37,7 @@
     "tajweed": "node scripts/build-tajweed.js",
     "qaida": "node scripts/build-qaida.js",
     "guide": "node scripts/build-guide.js",
+    "mawasim": "node scripts/build-mawasim.js",
     "arabic": "node scripts/build-arabic.js",
     "mutun": "node scripts/build-mutun.js",
     "qiraat": "node scripts/build-qiraat.js",
