@@ -4,7 +4,7 @@
 // arabic/<lang>.<hash>.json the meanings in one of Quran.com's eight word-by-word languages (others read English).
 // Every word can be heard in its recitation (audio.qurancdn.com/wbw). Practice asks a word's meaning, which word was
 // heard, or which word has a meaning; what the learner knows comes back for review after 1, 2, 4… days (LS "arabic").
-import { makeClipPlayer } from "./clip.js?v=1.42.0";
+import { makeClipPlayer } from "./clip.js?v=1.43.0";
 
 const ARABIC_CACHE = "hisn-arabic-v1";
 const AUDIO = "https://audio.qurancdn.com/wbw/";
