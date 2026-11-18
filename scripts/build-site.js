@@ -4,7 +4,7 @@
 // Each page is the app's index.html with its content already written in, so the app starts on it as usual.
 // GitHub Actions runs this before deploying. Local preview:
 //   node scripts/build-site.js --site http://localhost:5173/ && node scripts/serve.js _site
-const fs = require("fs"), path = require("path");
+const fs = require("fs"), path = require("path"), crypto = require("crypto");
 const root = path.join(__dirname, ".."), www = path.join(root, "www"), out = path.join(root, "_site");
 const readJson = f => JSON.parse(fs.readFileSync(path.join(www, f), "utf8"));
 
@@ -45,6 +45,9 @@ function snippet(s, max = 110) {
 const icon = (n, cls = "") => `<svg class="${cls}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
 const APP = t("app.name");
 const BOOK = t("about.hisnTitle"), AUTHOR = t("about.hisnAuthor");
+// The image of shared links (scripts/make-og.js). Chat apps and social networks keep an image by its address
+// for weeks, so the address changes whenever the image does.
+const OG_IMAGE = "icons/og-image.jpg?v=" + crypto.createHash("sha1").update(fs.readFileSync(path.join(www, "icons/og-image.jpg"))).digest("hex").slice(0, 8);
 
 // ---------- page shell ----------
 // Runs first: moves the address to the app's own #/ route on the same page (no reload), so the app,
@@ -71,7 +74,7 @@ function render({ at, route, title, description, h1, content, nav, head = "", cr
     `<meta property="og:title" content="${esc(title)}">`,
     `<meta property="og:description" content="${esc(description)}">`,
     index ? `<meta property="og:url" content="${url}">` : "",
-    `<meta property="og:image" content="${SITE}icons/og-image.jpg">`,
+    `<meta property="og:image" content="${SITE}${OG_IMAGE}">`,
     `<meta property="og:image:width" content="1200">`, `<meta property="og:image:height" content="630">`,
     `<meta property="og:image:alt" content="${esc(APP)}">`,
     `<meta name="twitter:card" content="summary_large_image">`,
