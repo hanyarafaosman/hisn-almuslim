@@ -646,11 +646,16 @@ export function setupQuran(ctx) {
   const openIn = mode => `<div class="open-in"><span>${esc(t("quran.openIn"))}</span><div class="segmented" id="q-view"><button data-v="pages" class="${mode === "pages" ? "on" : ""}">${icon("quran")} ${esc(t("mushaf.pages"))}</button><button data-v="text" class="${mode === "text" ? "on" : ""}">${icon("list", "flip")} ${esc(t("quran.viewText"))}</button></div></div>`;
   // The way to the readings and the Quran sciences (renderUlum), from the index page and from the print sheet.
   const ulumCard = () => `<a class="resume" href="#/ulum">${icon("riwayat")}<div><b>${esc(t("ulum.title"))}</b><span>${esc(t("ulum.hint"))}</span></div></a>`;
-  // The latest reading place: a printed page or a verse in a reader, whichever was opened last.
+  // The reading places: the printed page last read (state.lastPage, Hafs) and the verse last read in the reader of
+  // each riwayah (state.places; state.last is the latest of them, and all that was kept before 1.43.0).
+  const lastIn = rid => state.places?.[rid] ? { r: rid, ...state.places[rid] } : state.last?.r === rid ? state.last : null;
   const surahOfPage = p => { let s = 1; riw("hafs").surahs.forEach((x, i) => { if (x[2] <= p) s = i + 1; }); return s; };
-  function resumeInfo() {
-    const v = state.last && INDEX.riwayat.some(r => r.id === state.last.r) ? state.last : null; const p = state.lastPage;
-    if (p && (!v || (p.t || 0) >= (v.t || 0))) return { kind: "page", href: pageHref(p.ed, p.p), icon: "quran", text: `${t("quran.surah", { name: surahName(surahOfPage(p.p), riw("hafs")) })}${sep()}${t("quran.page", { n: p.p })}` };
+  // Where reading continues. In the Mushaf (Hafs, what the Mushaf tab and the Home page open): the printed page for a
+  // reader of the pages, otherwise the page or the verse, whichever was opened last. A place in another riwayah does
+  // not move it: that riwayah's own index (renderHome with its id) continues from its own verse.
+  function resumeInfo(rid = "hafs") {
+    const v = lastIn(rid); const p = rid === "hafs" ? state.lastPage : null;
+    if (p && (wantsPages() || !v || (p.t || 0) >= (v.t || 0))) return { kind: "page", href: pageHref(p.ed, p.p), icon: "quran", text: `${t("quran.surah", { name: surahName(surahOfPage(p.p), riw("hafs")) })}${sep()}${t("quran.page", { n: p.p })}` };
     if (v) return { kind: "aya", href: `#/quran/${v.r}/${v.s}?a=${v.a}`, icon: "book", text: t("quran.position", { surah: surahName(v.s, riw(v.r)), aya: v.a, riwayah: rShort(riw(v.r)) }) };
     return null;
   }
@@ -803,27 +808,29 @@ export function setupQuran(ctx) {
   }
 
   // ---------- Mushaf index ----------
-  // The Mushaf tab opens the Mushaf itself (entry, at the end of this file). This page is its index: where the reader
-  // stopped, then the search and the surahs. It is what the tab shows to verse-by-verse readers and to readers of a
-  // riwayah other than Hafs, and what a search started on the Home page opens.
-  let homeQuery = "";
-  async function renderHome() {
-    setNav("quran"); setHeader(t("quran.title"), { actions: `<button class="icon-btn" id="q-tr-pick" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><a class="icon-btn" href="#/offline" aria-label="${esc(t("offline.title"))}">${icon("download")}</a>` });
+  // The Mushaf tab opens the Mushaf itself (entry, at the end of this file). This page is an index: where the reader
+  // stopped, then the search and the surahs. Without rid it is the index of the Mushaf (Hafs): what the tab shows to
+  // verse-by-verse readers, and what a search started on the Home page opens. With rid (#/quran/<rid>) it is the index
+  // of that riwayah, opened from the readings section; the tab and the Home page do not follow the reader there.
+  const homeQuery = {}; // riwayah id → what was typed in its search
+  async function renderHome(rid) {
+    const own = !!rid; const actions = `<button class="icon-btn" id="q-tr-pick" aria-label="${esc(t("quran.chooseTranslation"))}">${icon("translate")}</button><a class="icon-btn" href="#/offline" aria-label="${esc(t("offline.title"))}">${icon("download")}</a>`;
+    setNav("quran"); setHeader(own ? t("quran.riwayahOf", { name: t("riwayahShort." + rid) }) : t("quran.title"), { back: own, actions });
     const hash = location.hash; view.innerHTML = loading();
-    try { await loadIndex(); } catch (e) { return failed(e, renderHome); }
-    const meta = riw(state.riwayah);
-    const A = meta.id === "hafs" ? await loadAyat().catch(() => null) : null;
+    try { await loadIndex(); } catch (e) { return failed(e, () => renderHome(rid)); }
+    const meta = riw(rid || "hafs"); const hafs = meta.id === "hafs";
+    if (own && meta.id !== rid) { location.replace("#/quran"); return; }
+    const A = hafs ? await loadAyat().catch(() => null) : null;
     if (stale(hash)) return;
-    $("#q-tr-pick").onclick = () => pickTranslation(renderHome);
+    $("#q-tr-pick").onclick = () => pickTranslation(() => renderHome(rid));
     const mode = homeMode(A);
-    const res = resumeInfo(); const lp = state.lastPage || { ed: state.mushafEd || DEFAULT_ED, p: 1 };
+    const res = resumeInfo(meta.id); const lp = state.lastPage || { ed: state.mushafEd || DEFAULT_ED, p: 1 };
+    const cards = (res ? `<a class="resume main" href="${res.href}">${icon(res.icon)}<div><b>${esc(t("quran.continue"))}</b><span>${esc(res.text)}</span></div></a>` : "")
+      + (hafs && res?.kind !== "page" ? `<a class="resume${res ? "" : " main"}" href="${pageHref(lp.ed, lp.p)}">${icon("quran")}<div><b>${esc(t("mushaf.pages"))}</b><span>${esc(t("mushaf.ed" + lp.ed))}${sep()}${esc(t("quran.page", { n: lp.p }))}</span></div></a>` : "")
+      + (hafs ? ulumCard() : "");
     view.innerHTML = `
-      <div class="resume-row">
-        ${res ? `<a class="resume main" href="${res.href}">${icon(res.icon)}<div><b>${esc(t("quran.continue"))}</b><span>${esc(res.text)}</span></div></a>` : ""}
-        ${res?.kind !== "page" ? `<a class="resume${res ? "" : " main"}" href="${pageHref(lp.ed, lp.p)}">${icon("quran")}<div><b>${esc(t("mushaf.pages"))}</b><span>${esc(t("mushaf.ed" + lp.ed))}${sep()}${esc(t("quran.page", { n: lp.p }))}</span></div></a>` : ""}
-        ${ulumCard()}
-      </div>
-      <p class="riwayah-note">${esc(t("quran.riwayahOf", { name: rName(meta) }))}${sep()}${esc(t("count.ayat", { n: meta.ayat }))}${sep()}<a class="link inline" href="#/ulum">${esc(t("quran.changeRiwayah"))}</a> <span id="cached"></span></p>
+      ${cards ? `<div class="resume-row">${cards}</div>` : ""}
+      <p class="riwayah-note">${esc(t("quran.riwayahOf", { name: rName(meta) }))}${sep()}${esc(t("count.ayat", { n: meta.ayat }))}${hafs ? `${sep()}<a class="link inline" href="#/ulum">${esc(t("quran.changeRiwayah"))}</a>` : ""} <span id="cached"></span></p>
       ${A ? openIn(mode) : ""}
       <div id="finder"></div>`;
     const showSaved = () => { const x = document.getElementById("cached"); if (x) x.innerHTML = `${sep()}${icon("check")} ${esc(t("quran.savedOffline"))}`; };
@@ -833,31 +840,29 @@ export function setupQuran(ctx) {
       x.innerHTML = ` <button class="link inline" id="save-riw">${icon("download")} ${esc(t("offline.save"))}</button>`;
       $("#save-riw").onclick = async () => { $("#save-riw").textContent = t("offline.saving"); try { await saveRiwayah(meta); showSaved(); toast(t("offline.done")); } catch { toast(t("offline.needOnce")); } };
     });
-    view.querySelectorAll("#q-view [data-v]").forEach(b => b.onclick = () => { state.view = b.dataset.v; save(); renderHome(); });
-    finder($("#finder"), { meta, mode, A, query: homeQuery, onQuery: q => { homeQuery = q; } });
+    view.querySelectorAll("#q-view [data-v]").forEach(b => b.onclick = () => { state.view = b.dataset.v; save(); renderHome(rid); });
+    finder($("#finder"), { meta, mode, A, query: homeQuery[meta.id] || "", onQuery: q => { homeQuery[meta.id] = q; } });
   }
 
   // ---------- the readings and the Quran sciences ----------
-  // What a reader does not need on the way to the pages of the Mushaf, in one section: the riwayah the Mushaf is read
-  // in (the printed pages are Hafs; the other riwayat are read verse by verse), then the tafsir books, the Tajweed
-  // rules, the ten readings and the matns.
+  // What a reader does not need on the way to the pages of the Mushaf, in one section: the Mushaf in each riwayah (the
+  // printed pages are Hafs; the other riwayat are read verse by verse, each from its own index), then the tafsir
+  // books, the Tajweed rules, the ten readings and the matns. Opening a riwayah here is a visit: the Mushaf tab and the
+  // Home page keep leading to the pages of the Mushaf.
   async function renderUlum() {
     setNav("quran"); setHeader(t("ulum.title"), { back: true });
     const hash = location.hash; view.innerHTML = loading();
     let A = null;
     try { await loadIndex(); A = await loadAyat().catch(() => null); } catch (e) { return failed(e, renderUlum); }
     if (stale(hash)) return;
-    const cur = riw(state.riwayah);
     const card = (href, ic, title, hint) => `<a class="resume" href="${href}">${icon(ic)}<div><b>${esc(t(title))}</b><span>${esc(t(hint))}</span></div></a>`;
     view.innerHTML = `
       <h2 class="section-title">${esc(t("ulum.riwayat"))}</h2>
       <p class="riwayah-note">${esc(t("ulum.riwayatHint"))}</p>
-      <div class="list" id="u-riw">${INDEX.riwayat.map((r, i) => `<button class="row${r.id === cur.id ? " on" : ""}" data-r="${r.id}" aria-pressed="${r.id === cur.id}"><div class="num">${r.id === cur.id ? icon("check") : esc(num(i + 1))}</div><div class="lbl">${esc(rName(r))}<span class="sub">${esc(t("count.ayat", { n: r.ayat }))}</span></div>${chev()}</button>`).join("")}</div>
-      ${cur.id === "hafs" && A ? openIn(homeMode(A)) : ""}
+      <div class="list">${INDEX.riwayat.map((r, i) => `<a href="${r.id === "hafs" ? "#/quran" : `#/quran/${r.id}`}"><div class="num">${esc(num(i + 1))}</div><div class="lbl">${esc(rName(r))}<span class="sub">${esc(t("count.ayat", { n: r.ayat }))}${r.id === "hafs" ? `${sep()}${esc(t("mushaf.pages"))}` : ""}</span></div>${chev()}</a>`).join("")}</div>
+      ${A ? openIn(homeMode(A)) : ""}
       <h2 class="section-title">${esc(t("ulum.sciences"))}</h2>
       <div class="resume-row">${card("#/tafsir", "tafsir", "tafsir.books", "tafsir.homeHint")}${card("#/tajweed", "palette", "tajweed.title", "tajweed.hint")}${card("#/qiraat", "layers", "qiraat.title", "qiraat.hint")}${card("#/mutun", "book", "mutun.title", "mutun.hint")}</div>`;
-    // Choosing a riwayah opens its Mushaf: the printed pages for Hafs, the index of its surahs for the others.
-    $("#u-riw").onclick = e => { const b = e.target.closest("[data-r]"); if (!b) return; state.riwayah = b.dataset.r; save(); location.hash = "#/quran"; };
     view.querySelectorAll("#q-view [data-v]").forEach(b => b.onclick = () => { state.view = b.dataset.v; save(); view.querySelectorAll("#q-view [data-v]").forEach(x => x.classList.toggle("on", x === b)); });
   }
 
@@ -873,10 +878,10 @@ export function setupQuran(ctx) {
     if (stale(hash)) return;
     if (meta.id !== rid) { location.replace(`#/quran/${meta.id}/${s}`); return; }
     timedServers().catch(() => {}); // known before a verse's "listen" is tapped
-    if (state.riwayah !== meta.id) { state.riwayah = meta.id; save(); }
+    if (state.riwayah !== meta.id) { state.riwayah = meta.id; save(); } // the riwayah last read verse by verse: where the memorisation page starts
     const ayat = data.s[s - 1]; const arName = meta.surahs[s - 1][0]; const name = surahName(s, meta);
     // The aya at the top of the screen (the saved reading place), for the index and the printed page.
-    const curAya = () => (state.last && state.last.r === meta.id && state.last.s === s) ? state.last.a : 1;
+    const curAya = () => { const l = lastIn(meta.id); return l && l.s === s ? l.a : 1; };
     const openIdx = async (search = false) => {
       const A = meta.id === "hafs" ? await loadAyat().catch(() => null) : null; const a = curAya();
       openFinder({ meta, mode: "text", A, cur: { surahs: new Set([s]), juz: juzOfMeta(meta, s, a), q: A ? quarterOf(A, s, a) : -1 } }, { search });
@@ -1023,7 +1028,7 @@ export function setupQuran(ctx) {
     observer = new IntersectionObserver(entries => {
       const vis = entries.filter(x => x.isIntersecting).map(x => Number(x.target.dataset.a));
       if (!vis.length) return; clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => { if (stale(hash)) return; state.last = { r: meta.id, s, a: Math.min(...vis), t: Date.now() }; save(); }, 600);
+      saveTimer = setTimeout(() => { if (stale(hash)) return; const a = Math.min(...vis), at = Date.now(); state.last = { r: meta.id, s, a, t: at }; (state.places ||= {})[meta.id] = { s, a, t: at }; save(); }, 600);
     }, { rootMargin: "-80px 0px -60% 0px" });
     mushaf.querySelectorAll(".aya").forEach(x => observer.observe(x));
 
@@ -1719,25 +1724,27 @@ export function setupQuran(ctx) {
 
   return {
     quran(parts, params) {
-      if (!parts.length && params?.get("q")) homeQuery = params.get("q"); // search started from the Home page
-      return parts.length ? renderReader(parts[0], Number(parts[1]), params) : renderHome();
+      if (!parts.length && params?.get("q")) homeQuery.hafs = params.get("q"); // search started from the Home page
+      // #/quran: the index of the Mushaf; #/quran/<rid>: the index of a riwayah; #/quran/<rid>/<surah>: its reader.
+      return parts.length > 1 ? renderReader(parts[0], Number(parts[1]), params) : renderHome(parts[0]);
     },
     // Where the Mushaf tab leads instead of the index page: the printed page last read (the first page for a new
-    // reader), for a reader of Hafs whose surahs open on printed pages; the index is one tap away there. Null when
-    // the index page itself is to be shown: a search, another riwayah, or a verse-by-verse reader.
+    // reader), whatever riwayah was opened last, for a reader whose surahs open on printed pages; the index is one tap
+    // away there. Null when the index page itself is to be shown: a search, or a verse-by-verse reader.
     entry(parts, params) {
-      if (parts.length || params?.get("q") || state.riwayah !== "hafs" || !wantsPages()) return null;
+      if (parts.length || params?.get("q") || !wantsPages()) return null;
       const lp = state.lastPage || { ed: state.mushafEd || DEFAULT_ED, p: 1 };
       return pageHref(lp.ed, lp.p);
     },
     ulum: renderUlum,
-    // Surah names matching a query (Arabic, transliterated, or a number), for the Home search.
+    // Surah names matching a query (Arabic, transliterated, or a number), for the Home search: in the Mushaf (Hafs).
     async searchSurahs(q) {
-      await loadIndex(); const meta = riw(state.riwayah); const A = meta.id === "hafs" ? await loadAyat().catch(() => null) : null; const mode = homeMode(A);
+      await loadIndex(); const meta = riw("hafs"); const A = await loadAyat().catch(() => null); const mode = homeMode(A);
       return surahMatches(meta, q).map(i => ({ n: i + 1, name: surahName(i + 1, meta), href: placeHref(mode, meta.id, i + 1, 1, { A, flash: false }) }));
     },
-    // The latest reading place (a printed page or a verse), for the Home page.
+    // The reading place in the Mushaf (a printed page or a Hafs verse), for the Home page, and whether there is one.
     async resume() { await loadIndex(); const r = resumeInfo(); return r && { href: r.href, text: r.text }; },
+    reading: () => !!(state.lastPage || lastIn("hafs")),
     listen: renderListen, radio: parts => renderRadio(parts), offline: renderOffline, mushaf: (ed, n, params) => renderPages(ed, n, params), player, sheet, closeSheet,
     pickTranslation, translationLabel: async () => trLabel(await trMeta(await currentTr())),
     // The chosen translation of surah s ({ rows: [{ aya, translation, footnotes }], meta }) or null when none is chosen

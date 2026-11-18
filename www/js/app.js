@@ -304,15 +304,16 @@ function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll("
 
 function route() {
   const h = location.hash || "#/"; const [path, qs] = h.slice(1).split("?"); const parts = path.split("/").filter(Boolean); const params = new URLSearchParams(qs || "");
-  // The Mushaf tab opens the Mushaf itself, at the page last read, not a list to choose from (Q.entry). The address is
-  // replaced in place, so Back leaves the Mushaf in one step. The site's own page of the surahs keeps showing them.
+  // The Mushaf tab opens the Mushaf itself, at the page last read, not a list to choose from (Q.entry), whatever
+  // riwayah was visited in between. The address is replaced in place, so Back leaves the Mushaf in one step. The
+  // site's own page of the surahs keeps showing them.
   if (parts[0] === "quran" && !(PAGE_ROUTE === "#/quran" && ownRoute())) {
     const to = Q.entry(parts.slice(1), params);
     if (to) { history.replaceState(history.state, "", to); return route(); }
   }
   // The printed Mushaf fills the screen: the app bars step aside there (see .mm-on in app.css).
   document.body.classList.toggle("mm-on", parts[0] === "mushaf");
-  stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 1) || (parts[0] === "tafsir" && parts.length > 2) || (parts[0] === "kutub" && parts.length > 2) || (parts[0] === "mutun" && parts.length > 2) || (parts[0] === "qiraat" && parts.length > 1) || (parts[0] === "qaida" && parts.length > 1) || (parts[0] === "hifz" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
+  stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 2) || (parts[0] === "tafsir" && parts.length > 2) || (parts[0] === "kutub" && parts.length > 2) || (parts[0] === "mutun" && parts.length > 2) || (parts[0] === "qiraat" && parts.length > 1) || (parts[0] === "qaida" && parts.length > 1) || (parts[0] === "hifz" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
   onHome = !parts.length || parts[0] === "search"; if (parts.length) noteTool(parts[0]);
   if (!parts.length) return renderHub(params.get("q") || "");
   switch (parts[0]) {
@@ -423,7 +424,7 @@ function renderHub(q = "") {
     : h >= 15 && h < 21 ? { id: 27, period: "evening", label: t("home.evening"), ic: "moon" }
     : { id: 28, label: t("home.sleep"), ic: "bed" };
   const p = catProgress(catById.get(now.id), now.period);
-  const qs = LS.get("quran", {}); const reading = qs.last || qs.lastPage;
+  const reading = Q.reading(); // a place in the Mushaf (Hafs); a visit to another riwayah does not change this card
   view.innerHTML = `
     <section class="hero">
       <h2>${esc(greet)}</h2>

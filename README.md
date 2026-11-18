@@ -210,7 +210,7 @@ npm run dev
 | `npm test` في `faqih/` | اختبار خادم الباحث الفقهي دون إنترنت: فحص الأسئلة والحدود، والتحقق الحرفي من كل اقتباس (يشغّله `npm run check` أيضًا) |
 | `npm run site` | بناء الموقع المنشور في `_site/`: التطبيق مع صفحة جاهزة لكل باب وكل سورة وخريطة الموقع |
 | `npm run site:preview` | بناء الموقع لعنوان محلي وتشغيله للمعاينة |
-| `npm run og` | رسم صورة المعاينة عند مشاركة الروابط (`icons/og-image.jpg`) بمتصفح Chrome أو Edge |
+| `npm run og` | رسم صورة المعاينة عند مشاركة الروابط (`icons/og-image.jpg`) بمتصفح Chrome أو Edge: فيها كل أقسام التطبيق بأيقوناتها وأسمائها من `TOOL_GROUPS` في `js/app.js`، فتُعاد بعد إضافة قسم |
 | `npm run store` | رسم لقطات Google Play وصورة العرض (`store/android/`) ولقطات الـ manifest (`www/screenshots/`) |
 
 ## مصدر نص المصحف
