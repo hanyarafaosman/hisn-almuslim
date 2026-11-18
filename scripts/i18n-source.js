@@ -575,6 +575,11 @@ const S = {
   "hijri.ev.tashriq": ["أيام التشريق", "Days of Tashriq"],
   "hijri.ev.tashriqNote": ["أيام أكل وشرب وذكر لله (مسلم)، لا يُصام فيها، ويستمر التكبير إلى آخرها.", "Days of eating, drinking and remembering Allah (Muslim); no fasting on them, and the takbir continues until their end."],
 
+  "mawasim.title": ["بشريات مواسم الخير", "Tidings of the blessed seasons"],
+  "mawasim.near": ["أيام فاضلة قريبة", "Virtuous days at hand"],
+  "mawasim.now": ["موسم قائم الآن", "In season now"],
+  "mawasim.dayOf": ["اليوم {n} من {total}", "Day {n} of {total}"],
+  "mawasim.shabanNote": ["كان النبي ﷺ يصوم من شعبان أكثر مما يصوم من غيره (متفق عليه)، ولا يُتقدَّم رمضان بصوم يوم أو يومين إلا لمن وافق صومًا كان يصومه.", "The Prophet ﷺ fasted more in Shaʿban than in any other month (al-Bukhari and Muslim); Ramadan is not preceded by fasting a day or two before it, except by one who was already used to fasting that day."],
   "ramadan.title": ["رمضان", "Ramadan"],
   "ramadan.left": ["باقٍ على رمضان", "Until Ramadan"],
   "ramadan.days": [
@@ -853,8 +858,7 @@ const S = {
   "about.prayerTitle": ["مواقيت الصلاة", "Prayer times"],
   "about.hijriTitle": ["التقويم الهجري", "Hijri calendar"],
   "about.hijriText": ["بتقويم أم القرى كما يحسبه المتصفح، مع إمكان تعديله يومًا أو يومين بحسب رؤية الهلال في بلدك؛ ومواسم الطاعة فيه هي الثابتة بالسنة.", "Follows the Umm al-Qura calendar as the browser computes it, adjustable by a day or two to match the moon sighting in your country; the seasons of worship shown are those established in the Sunnah."],
-  "about.ramadanTitle": ["رمضان", "Ramadan"],
-  "about.ramadanText": ["العدّ إلى رمضان بحساب تقويم أم القرى مع تعديلك للتاريخ. أحاديث فضل رمضان من «رياض الصالحين» للإمام النووي (تحقيق ماهر ياسين الفحل)، والدعاء ببلوغه وكلام ابن رجب من «لطائف المعارف» (تحقيق ياسين محمد السواس)، كما وردت في {link} دون تغيير.", "The countdown to Ramadan follows the Umm al-Qura calendar with your date adjustment. The hadith on the virtue of Ramadan are from Imam al-Nawawi’s Riyad as-Salihin (ed. Mahir Yasin al-Fahl), and the supplication to reach it with Ibn Rajab’s words from Lataʾif al-Maʿarif (ed. Yasin Muhammad al-Sawwas), word for word as on {link}."],
+  "about.mawasimText": ["يعلن عن أقرب مواسم الطاعة ويعدّ الأيام إليها بحساب تقويم أم القرى مع تعديلك للتاريخ. أحاديث المواسم والأيام الفاضلة من «رياض الصالحين» للإمام النووي (تحقيق ماهر ياسين الفحل)، والدعاء ببلوغ رمضان وكلام ابن رجب من «لطائف المعارف» (تحقيق ياسين محمد السواس)، كما وردت في {link} دون تغيير.", "Announces the nearest seasons of worship and counts the days to them by the Umm al-Qura calendar with your date adjustment. The hadith of the seasons and virtuous days are from Imam al-Nawawi’s Riyad as-Salihin (ed. Mahir Yasin al-Fahl), and the supplication to reach Ramadan with Ibn Rajab’s words from Lataʾif al-Maʿarif (ed. Yasin Muhammad al-Sawwas), word for word as on {link}."],
   "about.qiblaTitle": ["اتجاه القبلة", "Qibla direction"],
   "about.qiblaText": ["يُحسب على جهازك من مكان مواقيت الصلاة على الدائرة العظمى إلى الكعبة، وتُقرأ بوصلة الهاتف على الجهاز ولا تخرج قراءتها منه؛ ومع البوصلة أوقات تدلّ فيها الشمس على القبلة.", "Calculated on your device from the place of the prayer times, along the great circle to the Kaaba; the phone's compass is read on the device and its readings never leave it. With the compass come the times at which the sun shows the Qibla."],
   "about.prayerText": ["تُحسب على الجهاز بطرق الجهات المعتمدة في كل بلد. البحث عن المدن من {geo}، وأسماء الأماكن من {osm}، وتنبيهات التطبيق المغلق يرسلها خادم التطبيق على {cf}.", "Calculated on the device with the methods of each country's authorities. City search by {geo}; place names from {osm}; alerts while the app is closed are sent by the app's server on {cf}."],

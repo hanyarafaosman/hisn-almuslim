@@ -237,7 +237,7 @@ export function setupHijri(ctx) {
   // ---------- Home: today's date, a way to the calendar ----------
   const hubLine = () => { const now = today(); return `<a class="hub-date" href="#/hijri">${icon("calendar")}<span>${esc(hijriText(now, { weekday: "long", day: "numeric", month: "long", year: "numeric" }))}</span><small>${esc(gregText(now, { day: "numeric", month: "long", year: "numeric" }))}</small></a>`; };
 
-  // The calendar itself is also what the Ramadan page counts with (js/ramadan.js).
+  // The calendar itself is also what the seasons page counts with (js/mawasim.js).
   return { render, hubLine, hijriText, todayDate: () => hijriText(today(), { day: "numeric", month: "long", year: "numeric" }),
     today, hijriOf, dayOf, lengthOf, nextMonth, gregText, monthName, inDays };
 }

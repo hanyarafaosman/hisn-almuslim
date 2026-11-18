@@ -14,7 +14,7 @@ import { setupQiraat } from "./qiraat.js?v=1.44.0";
 import { setupQaida } from "./qaida.js?v=1.44.0";
 import { setupArabic } from "./arabic.js?v=1.44.0";
 import { setupHijri } from "./hijri.js?v=1.44.0";
-import { setupRamadan } from "./ramadan.js?v=1.44.0";
+import { setupMawasim } from "./mawasim.js?v=1.44.0";
 import { setupQibla } from "./qibla.js?v=1.44.0";
 import { setupHifz } from "./hifz.js?v=1.44.0";
 import { setupGuide } from "./guide.js?v=1.44.0";
@@ -274,8 +274,8 @@ function pickLanguage() {
 
 // ---------- the Hijri calendar: today's date, the month grid, the converter and the seasons of worship ----------
 const HJ = setupHijri({ view, $, esc, icon, t, num, sep, getLang, share, SITE, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), prayer: PR });
-// ---------- Ramadan: the days left to it, asking to reach it, and its virtue ----------
-const RM = setupRamadan({ view, $, esc, icon, t, num, sep, getLang, share, copy: copyText, SITE, version: VERSION, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hijri: HJ, Q, adhkar: ADHKAR, catTitle: c => catTitle(c), catById });
+// ---------- the seasons of worship: the nearest one announced, the virtuous days at hand, and Ramadan's own page ----------
+const MW = setupMawasim({ view, $, esc, icon, t, num, sep, getLang, share, copy: copyText, SITE, version: VERSION, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hijri: HJ, Q, adhkar: ADHKAR, catTitle: c => catTitle(c), catById });
 // ---------- the Qibla: its direction from the place of the prayer times, a compass, and the sun's help ----------
 const QB = setupQibla({ view, $, esc, icon, t, num, sep, getLang, toast, share, SITE, vibrate, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), prayer: PR });
 
@@ -299,7 +299,7 @@ function setHeader(title, { back = false, actions = "", onTitle = null } = {}) {
 titleEl.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && titleEl.onclick) { e.preventDefault(); titleEl.onclick(); } });
 backBtn.addEventListener("click", () => { if (depth > 0) history.back(); else location.hash = "#/"; });
 // Bottom bar: Home, Quran, Adhkar, Prayer, Tools. Pages reached from Tools highlight that tab.
-const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more", videos: "more", hijri: "more", ramadan: "more", qibla: "more", hadith: "more", kids: "more", muslim: "more" };
+const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more", videos: "more", hijri: "more", mawasim: "more", qibla: "more", hadith: "more", kids: "more", muslim: "more" };
 function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll(".bottom-nav a").forEach(a => a.classList.toggle("on", a.dataset.nav === name)); }
 
 function route() {
@@ -346,7 +346,9 @@ function route() {
     case "faqih": return FQ.render(parts.slice(1), params);
     case "prayer": return PR.render(parts.slice(1), params);
     case "hijri": return HJ.render(parts.slice(1), params);
-    case "ramadan": return RM.render();
+    case "mawasim": return MW.render(parts.slice(1));
+    // The page of Ramadan had this address before the seasons got a page of their own.
+    case "ramadan": history.replaceState(history.state, "", "#/mawasim/ramadan"); return route();
     case "qibla": return QB.render();
     case "more": return renderTools();
     // Unknown address (for example a link to a newer version's page): show Home but keep the address,
@@ -385,7 +387,7 @@ function adhkarSearch(query, limit = 60) {
 // ---------- every part of the app, grouped and ordered by how often it is used (Home and the Tools tab) ----------
 const TOOL_GROUPS = [
   ["tools.daily", [["#/adhkar", "sun", "nav.adhkar"], ["#/quran", "quran", "nav.quran"], ["#/hifz", "repeat", "hifz.title"], ["#/prayer", "prayer", "prayer.title"],
-    ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/hijri", "calendar", "hijri.title"], ["#/ramadan", "moon", "ramadan.title"]]],
+    ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/hijri", "calendar", "hijri.title"], ["#/mawasim", "moon", "mawasim.title"]]],
   ["tools.learn", [["#/muslim", "journal", "muslim.title"], ["#/kids", "kids", "kids.title"], ["#/hadith", "books", "hadith.books"], ["#/asma", "asma", "asma.title"],
     ["#/qaida", "school", "qaida.title"], ["#/arabic", "translate", "arabic.title"], ["#/kutub", "kutub", "kutub.title"], ["#/faqih", "fiqh", "faqih.title"]]],
   // The readings and the Quran sciences, apart from what every reader uses (the same section as the #/ulum page).
@@ -428,7 +430,7 @@ function renderHub(q = "") {
       <p class="verse" lang="ar" dir="rtl">«فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ»</p>
       <p class="verse-ref">${T("home.verseRef")}</p>
       ${HJ.hubLine()}
-      ${RM.hubLine()}
+      ${MW.hubLine()}
       ${PR.hubRow()}
       <a class="now" href="#/cat/${now.id}">${icon(now.ic)}<div><small>${T("hub.now")}</small><b>${esc(now.label)}</b><div class="progress light"><div style="width:${p.pct}%"></div></div></div><span class="pct">${T("common.percent", { n: p.pct })}</span></a>
       <a class="now" id="hub-quran" href="#/quran">${icon("quran")}<div><small>${T(reading ? "quran.continue" : "nav.quran")}</small><b id="hub-last">${reading ? "…" : T(Q.entry([], null) ? "mushaf.pages" : "quran.surahs")}</b></div>${icon("back", "chev")}</a>
@@ -815,7 +817,7 @@ function renderSettings() {
       </div><div class="about">
         <b>${T("about.hijriTitle")}</b><br>${T("about.hijriText")}
       </div><div class="about">
-        <b>${T("about.ramadanTitle")}</b><br>${th("about.ramadanText", {}, { link: link("https://app.turath.io", "turath.io") }, esc)}
+        <b>${T("mawasim.title")}</b><br>${th("about.mawasimText", {}, { link: link("https://app.turath.io", "turath.io") }, esc)}
       </div><div class="about">
         <b>${T("about.qiblaTitle")}</b><br>${T("about.qiblaText")}
       </div><div class="about">

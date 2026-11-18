@@ -1,23 +1,27 @@
-// Builds www/data/ramadan.json, the texts of the Ramadan page (#/ramadan): asking Allah to reach Ramadan, and the
-// virtue of the month. Nothing is written from memory; every text is copied word for word from its source:
+// Builds www/data/mawasim.json, the texts of «بشريات مواسم الخير» (#/mawasim): the seasons of worship of the Hijri
+// year and the virtuous days, with the page of Ramadan (asking Allah to reach it, and its virtue). Nothing is written
+// from memory; every text is copied word for word from its source:
 //  - «لطائف المعارف» by Ibn Rajab (turath.io book 1152, the edition of Yasin al-Sawwas): what he wrote on the glad
 //    tidings of Ramadan's coming, on asking to reach it (with his judgement on the chain of the well-known narration
 //    «اللهم بارك لنا في رجب وشعبان وبلغنا رمضان»), and on reaching Ramadan being a great favour;
 //  - «رياض الصالحين» by al-Nawawi (turath.io book 2348, the edition of Mahir al-Fahl): the hadith on the virtue of
-//    Ramadan, each with its narrator and al-Nawawi's own «متفق عليه / رواه …»;
+//    Ramadan and of each other season and day (Shaʿban, the six days of Shawwal, the ten days of Dhul-Hijjah, ʿArafah,
+//    ʿAshura, the white days, Monday and Thursday, Friday), each with its narrator and al-Nawawi's own «متفق عليه / رواه …»;
 //  - the verses from Quran.com's imlaei text (as scripts/build-guide.js);
 //  - each hadith is also found by its words in the hadith books the app reads (fawazahmed0/hadith-api, the pinned
 //    commit of scripts/build-hadith-index.js), so that it opens in the hadith reader, where its translations are.
 // The only changes to the text: footnote marks and page-break marks are dropped, the honorific ligatures (ﷺ ﵁ …) are
 // written out in words as in data/hisn.json, and straight quotation marks become «».
-// Usage: node scripts/build-ramadan.js
+// When each season comes is not here: js/mawasim.js computes it from the Hijri calendar, so nothing needs editing as
+// the years pass.
+// Usage: node scripts/build-mawasim.js
 const fs = require("fs"), path = require("path");
 const ROOT = path.join(__dirname, "..");
 const WWW = path.join(ROOT, "www");
-const CACHE = path.join(ROOT, ".cache", "ramadan");
+const CACHE = path.join(ROOT, ".cache", "mawasim");
 const HCACHE = path.join(ROOT, ".cache", "hadith");
 const QCACHE = path.join(ROOT, ".cache", "guide", "q");
-const OUT = path.join(WWW, "data", "ramadan.json");
+const OUT = path.join(WWW, "data", "mawasim.json");
 const API = "https://api.turath.io";
 const API_SHA = "df57907be35291c91ad6a6691180e22ca9920784"; // as in scripts/build-hadith-index.js
 const HADITH = `https://cdn.jsdelivr.net/gh/fawazahmed0/hadith-api@${API_SHA}`;
@@ -54,10 +58,42 @@ const VIRTUES = [
 ];
 // The supplication of Laylat al-Qadr, from the same book.
 const QADR_DUA = { id: "qadrDua", n: 1195, pg: 1326, from: "اللهم إنك عفو", to: "فاعف عني", find: ["tirmidhi", "تحب العفو فاعف عني"] };
-// The verses of fasting and of Laylat al-Qadr.
-const VERSES = ["2:183", "2:185", "97:1-5"];
-// Adhkar of Hisn al-Muslim the page shows or leads to (their numbers in data/hisn.json).
-const HILAL = 175, FASTING_CHAPTERS = [68, 74, 75];
+// The other seasons and virtuous days (their ids are those of js/mawasim.js): h = their hadith of «رياض الصالحين»,
+// taken as above; q = the verses about them; d = adhkar of Hisn al-Muslim shown with them and c = chapters of it they
+// lead to (numbers in data/hisn.json). Ramadan's own: the verses of fasting and of Laylat al-Qadr, the supplication
+// on sighting the crescent, and the chapters of the fasting person's adhkar.
+const SEASONS = {
+  ramadan: { q: ["2:183", "2:185", "97:1-5"], d: [175], c: [68, 74, 75] },
+  shaban: { h: [
+    { n: 1247, pg: 1382, from: "لم يكن النبي - صلى الله عليه وسلم - يصوم من شهر أكثر من شعبان", to: "كان يصوم شعبان كله", find: ["bukhari", "يصوم شعبان كله"] }] },
+  fitr: { q: ["2:185"] },
+  sixShawwal: { h: [
+    { n: 1254, pg: 1389, from: "من صام رمضان ثم أتبعه", to: "كان كصيام الدهر", find: ["muslim", "ثم أتبعه ستا من شوال"] }] },
+  tenDhulHijjah: { q: ["89:1-2"], h: [
+    { n: 1249, pg: 1384, from: "ما من أيام، العمل الصالح فيها", to: "فلم يرجع من ذلك بشيء", find: ["bukhari", "خرج يخاطر بنفسه وماله"] }] },
+  arafah: { d: [237], h: [
+    { n: 1250, pg: 1385, from: "سئل رسول الله - صلى الله عليه وسلم - عن صوم يوم عرفة", to: "يكفر السنة الماضية والباقية", find: ["muslim", "يكفر السنة الماضية والباقية"] }] },
+  adha: { q: ["108:1-3"], c: [127] },
+  tashriq: { q: ["2:203"] },
+  ashura: { h: [
+    { n: 1252, pg: 1387, from: "سئل عن صيام يوم عاشوراء", to: "يكفر السنة الماضية", find: ["muslim", "عاشوراء فقال يكفر السنة الماضية"] },
+    { n: 1251, pg: 1386, from: "أن رسول الله - صلى الله عليه وسلم - صام يوم عاشوراء", to: "وأمر بصيامه", find: ["bukhari", "فصامه وأمر بصيامه"] },
+    { n: 1253, pg: 1388, from: "لئن بقيت إلى قابل", to: "لأصومن التاسع", find: ["muslim", "لئن بقيت إلى قابل لأصومن التاسع"] },
+    { n: 1246, pg: 1381, from: "أفضل الصيام بعد رمضان", to: "صلاة الليل", find: ["muslim", "أفضل الصيام بعد رمضان شهر الله المحرم"] }] },
+  white: { h: [
+    { n: 1260, pg: 1396, from: "صوم ثلاثة أيام من كل شهر", to: "صوم الدهر كله", find: ["bukhari", "صوم ثلاثة أيام صوم الدهر كله"] },
+    { n: 1262, pg: 1398, from: "إذا صمت من الشهر ثلاثا", to: "وخمس عشرة", find: ["tirmidhi", "فصم ثلاث عشرة وأربع عشرة وخمس عشرة"] },
+    { n: 1258, pg: 1394, from: "أوصاني خليلي - صلى الله عليه وسلم - بثلاث", to: "وأن أوتر قبل أن أنام", find: ["bukhari", "أوصاني خليلي"] }] },
+  monThu: { h: [
+    { n: 1256, pg: 1391, from: "تعرض الأعمال يوم الإثنين والخميس", to: "وأنا صائم", find: ["tirmidhi", "تعرض الأعمال يوم الاثنين والخميس"] },
+    { n: 1257, pg: 1392, from: "كان رسول الله - صلى الله عليه وسلم - يتحرى", to: "صوم الإثنين والخميس", find: ["tirmidhi", "يتحرى صوم الاثنين والخميس"] },
+    { n: 1255, pg: 1390, from: "سئل عن صوم يوم الإثنين", to: "أو أنزل علي فيه", find: ["muslim", "ذاك يوم ولدت فيه"] }] },
+  friday: { q: ["62:9-10"], h: [
+    { n: 1147, pg: 1276, from: "خير يوم طلعت عليه الشمس", to: "وفيه أخرج منها", find: ["muslim", "خير يوم طلعت عليه الشمس يوم الجمعة"] },
+    { n: 1156, pg: 1285, from: "فيها ساعة لا يوافقها عبد مسلم", to: "إلا أعطاه إياه", find: ["bukhari", "ساعة لا يوافقها عبد مسلم"] },
+    { n: 1158, pg: 1287, from: "إن من أفضل أيامكم يوم الجمعة", to: "فإن صلاتكم معروضة علي", find: ["abudawud", "إن من أفضل أيامكم يوم الجمعة"] },
+    { n: 1148, pg: 1277, from: "من توضأ فأحسن الوضوء ثم أتى الجمعة", to: "فقد لغا", find: ["muslim", "من توضأ فأحسن الوضوء ثم أتى الجمعة"] }] },
+};
 
 // ---------- tools ----------
 const problems = [];
@@ -106,6 +142,8 @@ function excerpt(text, from, to, where) {
   while (end < text.length && MARK.test(text[end])) end++;
   // A full stop or a closing mark written in «to» is kept when the text has it there.
   const tail = /[.؟!:]$/.exec(to.trim()); if (tail && text[end] === tail[0]) end++;
+  // A quotation opened inside the part is closed with it.
+  const part = text.slice(at[i], end); if (text[end] === "»" && part.split("«").length > part.split("»").length) end++;
   return { t: text.slice(at[i], end), start: at[i], end };
 }
 // A turath page: its text above the footnotes, without footnote marks and page-break marks.
@@ -125,7 +163,7 @@ async function bookInfo(id) {
 }
 
 // ---------- verses (as scripts/build-guide.js) ----------
-const AYAT = { 2: 286, 97: 5 };
+const AYAT = { 2: 286, 62: 11, 89: 30, 97: 5, 108: 3 };
 const PAUSE = new RegExp("[" + cp(0x6D6) + "-" + cp(0x6DC) + cp(0x6DE) + cp(0x6E9) + cp(0x200F) + "]", "g");
 async function verses(ref) {
   const m = /^(\d+):(\d+)(?:-(\d+))?$/.exec(ref), s = +m[1], from = +m[2], to = +(m[3] || m[2]);
@@ -172,7 +210,7 @@ const HONOR = [cp(0xFD41), cp(0xFD42), cp(0xFD43), cp(0xFD44)];
 // The hadith a page starts: its number and its text (a page of this edition holds one hadith, after a chapter heading if any).
 async function hadithOf(pg) {
   const p = await page(RIYAD, pg);
-  const pick = s => { const lines = s.split("\n"), i = lines.findIndex(l => /^[٠-٩]+ - /.test(l.trim())); return i < 0 ? null : lines.slice(i).join("\n").trim(); };
+  const pick = s => { const lines = s.split("\n"), i = lines.findIndex(l => /^[٠-٩]+ - (?!باب)/.test(l.trim())); return i < 0 ? null : lines.slice(i).join("\n").trim(); };
   const body = pick(p.text), raw = pick(p.raw); if (!body) return null;
   return { n: arDigits(/^[٠-٩]+/.exec(body)[0]), body, lead: raw.replace(/^[٠-٩]+ - /, ""), printed: p.printed };
 }
@@ -193,17 +231,18 @@ async function virtue(v) {
   const where = `riyad ${v.n}`, h = await hadithOf(v.pg);
   if (!h || h.n !== v.n) { bad(`${where}: page ${v.pg} holds hadith ${h?.n}`); return null; }
   const body = words(h.body), x = excerpt(body, v.from, v.to, where); if (!x) return null;
-  // What al-Nawawi says of it after its text, to the end of that line: «متفق عليه», «رواه مسلم»…
+  // What al-Nawawi says of it after its text, from «متفق عليه» or «رواه …» to the end of that line.
   const quoted = body[x.start - 1] === "«" && body[x.end] === "»";
-  const src = body.slice(x.end).split("\n")[0].replace(/^[»".\s]+/, "").replace(/\s+/g, " ").trim();
-  if (!/^(متفق|رواه)/.test(plain(src))) bad(`${where}: no source after the text («${src.slice(0, 40)}»)`);
+  const rest = body.slice(x.end), L = letters(rest), k = L.out.search(/(^| )(متفق|رواه) /);
+  const src = k < 0 ? "" : rest.slice(L.at[k + (L.out[k] === " " ? 1 : 0)]).split("\n")[0].replace(/\s+/g, " ").trim();
+  if (!/^(متفق|رواه)/.test(plain(src))) bad(`${where}: no source after the text`);
   const by = await narrator(v.pg, where), ref = await find(v.find, where);
   table.push(`    ${by} | ${src}`);
-  return { id: v.id, n: v.n, p: h.printed, t: tidy(x.t), q: quoted, by, src: tidy(src), h: ref };
+  return { ...(v.id ? { id: v.id } : {}), n: v.n, p: h.printed, t: tidy(x.t), q: quoted, by, src: tidy(src), h: ref };
 }
 
 async function main() {
-  const out = { source: "scripts/build-ramadan.js", books: { lataif: await bookInfo(LATAIF), riyad: await bookInfo(RIYAD) }, quotes: {}, virtues: [], verses: {} };
+  const out = { source: "scripts/build-mawasim.js", books: { lataif: await bookInfo(LATAIF), riyad: await bookInfo(RIYAD) }, quotes: {}, virtues: [], verses: {}, seasons: {} };
   for (const [id, q] of Object.entries(QUOTES)) {
     const pages = []; for (const pg of q.pg) pages.push(await page(LATAIF, pg));
     const x = excerpt(tidy(pages.map(p => p.text.trim()).join(" ")), q.from, q.to, `lataif ${id}`); if (!x) continue;
@@ -212,18 +251,23 @@ async function main() {
   }
   for (const v of VIRTUES) { const x = await virtue(v); if (x) out.virtues.push(x); }
   out.qadrDua = await virtue(QADR_DUA);
-  for (const ref of VERSES) { const v = await verses(ref); if (v) out.verses[ref] = v; }
-  out.hbooks = hbooks;
-  // The adhkar the page shows must be in the book's data.
+  // The adhkar a season shows or leads to must be in the book's data.
   const hisn = readJson(path.join(WWW, "data", "hisn.json"));
-  if (!hisn.categories.some(c => c.items.some(i => i.id === HILAL))) bad(`no dhikr ${HILAL} in data/hisn.json`);
-  for (const c of FASTING_CHAPTERS) if (!hisn.categories.some(x => x.id === c)) bad(`no chapter ${c} in data/hisn.json`);
-  out.hilal = HILAL; out.chapters = FASTING_CHAPTERS;
+  for (const [id, s] of Object.entries(SEASONS)) {
+    const h = []; for (const v of s.h || []) { const x = await virtue(v); if (x) h.push(x); }
+    for (const ref of s.q || []) { const v = await verses(ref); if (v) out.verses[ref] = v; }
+    for (const d of s.d || []) if (!hisn.categories.some(c => c.items.some(i => i.id === d))) bad(`${id}: no dhikr ${d} in data/hisn.json`);
+    for (const c of s.c || []) if (!hisn.categories.some(x => x.id === c)) bad(`${id}: no chapter ${c} in data/hisn.json`);
+    out.seasons[id] = Object.fromEntries(Object.entries({ h, q: s.q, d: s.d, c: s.c }).filter(([, v]) => v?.length));
+  }
+  out.hbooks = hbooks;
   if (problems.length) { console.error(problems.map(p => "✗ " + p).join("\n")); process.exit(1); }
   fs.writeFileSync(OUT, JSON.stringify(out));
-  console.log(`✓ ${Object.keys(out.quotes).length} passages of «${out.books.lataif.t}», ${out.virtues.length + 1} hadith of «${out.books.riyad.t}», ${Object.keys(out.verses).length} verse references`);
+  const others = Object.values(out.seasons).flatMap(x => x.h || []);
+  console.log(`✓ ${Object.keys(out.quotes).length} passages of «${out.books.lataif.t}», ${out.virtues.length + 1 + others.length} hadith of «${out.books.riyad.t}» (${others.length} of the other seasons), ${Object.keys(out.verses).length} verse references, ${Object.keys(out.seasons).length} seasons`);
   console.log(table.join("\n"));
   for (const [id, q] of Object.entries(out.quotes)) console.log(`\n[${id}] p. ${q.p.join("–")}\n${q.t}`);
   for (const v of [...out.virtues, out.qadrDua]) console.log(`\n[${v.id}] ${toAr(v.n)} — ${v.by}\n${v.q ? "«" + v.t + "»" : v.t}\n${v.src}`);
+  for (const [id, x] of Object.entries(out.seasons)) for (const v of x.h || []) console.log(`\n[${id}] ${toAr(v.n)} — ${v.by}\n${v.q ? "«" + v.t + "»" : v.t}\n${v.src}`);
 }
 main().catch(e => { console.error(e); process.exit(1); });
