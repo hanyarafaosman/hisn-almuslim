@@ -133,6 +133,8 @@
  "qaida.nextTajweed": "Selepas pelajaran ini: hukum tajwid",
  "qaida.audioLink": "Siri audio: {group}",
  "arabic.title": "Belajar bahasa Arab",
+ "kids.title": "Sudut Kanak-kanak",
+ "muslim.title": "Diari Seorang Muslim",
  "arabic.full": "Bahasa Arab untuk penutur bukan Arab",
  "arabic.intro": "Al-Quran mengandungi {total} perkataan, namun hanya {n} perkataan yang begitu kerap berulang sehingga membentuk {pct} daripadanya. Pelajarinya pelajaran demi pelajaran: setiap perkataan dengan maknanya dalam bahasa anda, sebutannya dalam huruf Rumi, suaranya daripada bacaan qari, dan satu ayat yang mengandunginya. Kemudian berlatih dan ulang kaji hingga melekat dalam ingatan.",
  "arabic.meaningsIn": "Makna perkataan dalam bahasa:",
@@ -310,6 +312,12 @@
  "asma.pages": "hlm. {from}–{to}",
  "asma.together": "Pengarang menghuraikan nama-nama ini secara bersama.",
  "asma.source": "Teks kitab “{book}” seperti yang dicetak, daripada salinan turath.io yang mengikut edisi bercetak (Percetakan Safir, Riyadh).",
+ "dua.title": "Doa daripada Al-Quran dan Sunnah",
+ "dua.short": "Doa",
+ "dua.hint": "Doa-doa Al-Quran dan Sunnah beserta sumbernya, adab berdoa dan waktu-waktu mustajab",
+ "dua.intro": "Doa-doa daripada Al-Quran Al-Karim dan Sunnah Nabi, di bawah setiap doa dinyatakan sumber dan takhrijnya. Sebelum itu: kelebihan doa, adab-adabnya dan sebab-sebab doa dimakbulkan, serta waktu, keadaan dan tempat doa dimakbulkan. Pengarang meringkaskannya daripada kitabnya “Zikir, Doa dan Rawatan dengan Ruqyah daripada Al-Quran dan Sunnah”, yang sebahagian daripadanya ialah Hisnul Muslim.",
+ "dua.arabicOnly": "Kitab ini dalam bahasa Arab, seperti yang dicetak.",
+ "dua.search": "Cari doa atau nombor doa…",
  "faqih.title": "Carian fiqh",
  "faqih.intro": "Tanyakan sesuatu masalah fiqh: kitab-kitab perpustakaan (Al-Mausu'ah Al-Fiqhiyyah Al-Kuwaitiyyah, Al-Mughni, Al-Muhalla, matan-matan mazhab dan lain-lain) akan dicari, dan apa yang dinyatakan di dalamnya dipaparkan seperti asalnya, berserta jilid, halaman dan pautan ke tempatnya dalam kitab.",
  "faqih.disclaimer": "Ini carian dalam kitab, bukan fatwa: ia memaparkan apa yang ditulis para ulama, tidak mentarjihkan antara pendapat mereka dan tidak menjawab kes peribadi. Untuk hukum bagi kes anda sendiri, tanyalah ulama.",
@@ -766,6 +774,7 @@
  "about.tafsirText": "Tafsir Al-Muyassar dan Al-Mukhtasar diperoleh daripada {qe}; tafsir As-Sa'di, Al-Baghawi, Ibn Kathir, Al-Qurtubi dan At-Tabari diperoleh daripada perpustakaan terbuka {qul}. Semuanya dipaparkan seperti yang diterbitkan.",
  "about.tajweedTitle": "Hukum tajwid",
  "about.tajweedText": "Ringkasan hukum riwayat Hafs daripada ʿAsim melalui jalan al-Syatibiyyah, dengan contoh dan warna daripada halaman Mushaf tajwid berwarna, serta bait «Tuhfat al-Atfal» dan «al-Muqaddimah al-Jazariyyah» suntingan Dr. ʿAbd al-Muhsin al-Qasim, daripada {link}.",
+ "about.duaText": "Kitab lengkap “Doa daripada Al-Quran dan Sunnah” karya Al-Qahtani, seperti yang dicetak (Kementerian Hal Ehwal Islam Arab Saudi, cetakan ke-21), daripada salinan {link}.",
  "about.asmaTitle": "Asmaul Husna",
  "about.asmaText": "Kitab lengkap “Huraian Asmaul Husna berdasarkan Al-Quran dan Sunnah” karya Al-Qahtani, seperti yang dicetak, daripada salinan {link}.",
  "about.kutubTitle": "Akidah dan fiqh",
@@ -1173,7 +1182,5 @@
  "ch.129": "Istighfar dan taubat",
  "ch.130": "Kelebihan tasbih, tahmid, tahlil dan takbir",
  "ch.131": "Cara Nabi bertasbih",
- "ch.132": "Pelbagai jenis kebaikan dan adab yang menyeluruh",
- "kids.title": "Sudut Kanak-kanak",
- "muslim.title": "Diari Seorang Muslim"
+ "ch.132": "Pelbagai jenis kebaikan dan adab yang menyeluruh"
 }

@@ -331,6 +331,13 @@ const S = {
   "asma.together": ["شرح المؤلف هذه الأسماء معًا.", "The author explains these names together."],
   "asma.source": ["النص من كتاب «{book}» كما هو، عن نسخة turath.io الموافقة للمطبوع (مطبعة سفير، الرياض).", "The text of “{book}” as printed, from the turath.io copy that follows the printed edition (Safir Press, Riyadh)."],
 
+  "dua.title": ["الدعاء من الكتاب والسنة", "Duʿa from the Quran and Sunnah"],
+  "dua.short": ["الأدعية", "Duʿas"],
+  "dua.hint": ["أدعية القرآن والسنة بتخريجها، وآداب الدعاء وأوقات الإجابة", "Supplications of the Quran and Sunnah with their sources, the etiquette of duʿa and the times it is answered"],
+  "dua.intro": ["أدعية من القرآن الكريم والسنة النبوية، تحت كل دعاء مصدره وتخريجه، وقبلها فضل الدعاء وآدابه وأسباب الإجابة، والأوقات والأحوال والأماكن التي يُستجاب فيها الدعاء. اختصره المؤلف من كتابه «الذكر والدعاء والعلاج بالرقى من الكتاب والسنة» الذي منه «حصن المسلم».", "Supplications from the Quran and the Sunnah, each with its source folded under it. Before them: the virtue of duʿa, its etiquette and what brings an answer, and the times, states and places in which duʿa is answered. The author abridged it from his book “Dhikr, Duʿa and Healing with Ruqyah from the Quran and Sunnah”, of which Hisn al-Muslim is a part."],
+  "dua.arabicOnly": ["الكتاب باللغة العربية كما طُبع.", "The book is in Arabic, as printed."],
+  "dua.search": ["ابحث في الأدعية أو برقم الدعاء…", "Search the duʿas, or type a number…"],
+
   "faqih.title": ["الباحث الفقهي", "Fiqh Research"],
   "faqih.intro": ["اسأل عن مسألة فقهية، فيبحث الباحث في كتب المكتبة (الموسوعة الفقهية الكويتية، والمغني، والمحلى، ومتون المذاهب، وغيرها) ويعرض ما قالته نصًّا، مع الجزء والصفحة ورابط الموضع في الكتاب.", "Ask about a matter of fiqh: the books of the library (the Kuwaiti Encyclopedia of Fiqh, al-Mughni, al-Muhalla, the primers of the schools and more) are searched, and what they say is shown word for word, with the volume, the page and a link to the place in the book."],
   "faqih.disclaimer": ["هذا بحث في الكتب لا فتوى: يعرض أقوال أهل العلم كما كُتبت، ولا يرجّح بينها، ولا يجيب عن الحالات الشخصية. للفتوى في حالتك اسأل أهل العلم.", "This is a search of the books, not a fatwa: it shows what the scholars wrote, does not choose between their views and does not answer personal cases. For a ruling on your own case, ask a scholar."],
@@ -801,6 +808,7 @@ const S = {
   "about.tafsirText": ["التفسير الميسر والمختصر في تفسير القرآن الكريم من {qe}، وتفاسير السعدي والبغوي وابن كثير والقرطبي والطبري من مكتبة {qul} المفتوحة. تُعرض كما هي.", "Al-Muyassar and al-Mukhtasar come from {qe}; the tafsirs of as-Saʿdi, al-Baghawi, Ibn Kathir, al-Qurtubi and at-Tabari come from the open {qul} library. They are shown as published."],
   "about.tajweedTitle": ["أحكام التجويد", "Tajweed rules"],
   "about.tajweedText": ["خلاصة أحكام رواية حفص عن عاصم من طريق الشاطبية، بأمثلة وألوان من صفحات مصحف التجويد الملوّن، مع أبيات «تحفة الأطفال» و«المقدمة الجزرية» بتحقيق د. عبد المحسن القاسم عن {link}.", "A summary of the rules of Ḥafṣ from ʿĀṣim by way of al-Shāṭibiyyah, with examples and colours from the pages of the colour-coded Tajweed Mushaf, and the verses of «Tuḥfat al-Aṭfāl» and «al-Muqaddimah al-Jazariyyah» edited by Dr ʿAbd al-Muḥsin al-Qāsim, from {link}."],
+  "about.duaText": ["كتاب «الدعاء من الكتاب والسنة» للقحطاني كاملًا كما طُبع (وزارة الشؤون الإسلامية بالسعودية، الطبعة الحادية والعشرون)، عن نسخة {link}.", "The complete book “Duʿa from the Quran and Sunnah” by al-Qahtani as printed (Saudi Ministry of Islamic Affairs, 21st edition), from the {link} copy."],
   "about.asmaTitle": ["أسماء الله الحسنى", "The Names of Allah"],
   "about.asmaText": ["كتاب «شرح أسماء الله الحسنى في ضوء الكتاب والسنة» للقحطاني كاملًا كما طُبع، عن نسخة {link}.", "The complete book “Explanation of the Beautiful Names of Allah in the light of the Quran and Sunnah” by al-Qahtani, as printed, from the {link} copy."],
   "about.kutubTitle": ["العقيدة والفقه", "Creed and Fiqh"],

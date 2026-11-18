@@ -133,6 +133,8 @@
  "qaida.nextTajweed": "学完这些课程后：泰吉威德规则",
  "qaida.audioLink": "音频系列：{group}",
  "arabic.title": "学阿拉伯语",
+ "kids.title": "儿童园地",
+ "muslim.title": "穆斯林的一天",
  "arabic.full": "面向非母语者的阿拉伯语",
  "arabic.intro": "古兰经共有 {total} 个词，而仅仅 {n} 个词就因反复出现而占到全部词语的 {pct}。一课一课地学习它们：每个词都附有您的语言的词义、拉丁字母读音、诵读中的发音，以及出现该词的一节经文。然后反复练习和复习，直到牢牢记住。",
  "arabic.meaningsIn": "词义语言：",
@@ -310,6 +312,12 @@
  "asma.pages": "第{from}–{to}页",
  "asma.together": "作者将这些美名合并阐释。",
  "asma.source": "《{book}》原文，按印刷版照录，取自与印刷版（利雅得 Safir 出版社）一致的 turath.io 版本。",
+ "dua.title": "源自古兰经与圣训的祈祷词",
+ "dua.short": "祈祷词",
+ "dua.hint": "古兰经与圣训中的祈祷词及其出处，祈祷的礼仪与被应答的时刻",
+ "dua.intro": "出自《古兰经》与先知圣训的祈祷词，每条之下附有其来源与出处考证。正文之前，是祈祷的功德、礼仪与获得应答的因由，以及祈祷被应答的时刻、状态与场所。作者将本书节录自其著作《源自古兰经与圣训的记念、祈祷与鲁格亚治疗》，Hisn al-Muslim 即为该书的一部分。",
+ "dua.arabicOnly": "本书为阿拉伯语，按印刷版照录。",
+ "dua.search": "搜索祈祷词，或输入祈祷词编号…",
  "faqih.title": "教法检索",
  "faqih.intro": "提出一个教法问题：系统会在书库的典籍（科威特教法百科全书、al-Mughni、al-Muhalla、各学派的基础文本等）中检索，并逐字呈现其中的原文，附有卷数、页码以及指向书中该处的链接。",
  "faqih.disclaimer": "这是对典籍的检索，而非法特瓦：它只呈现学者所写的内容，不在各家观点之间做取舍，也不回答个人具体情况。关于您自身情况的裁决，请咨询学者。",
@@ -766,6 +774,7 @@
  "about.tafsirText": "Al-Muyassar 和 al-Mukhtasar 来自 {qe}；as-Saʿdi、al-Baghawi、Ibn Kathir、al-Qurtubi 和 at-Tabari 的经注来自开放的 {qul} 图书馆。均按出版原样显示。",
  "about.tajweedTitle": "泰吉威德规则",
  "about.tajweedText": "经沙提比耶传系、哈夫斯传自阿绥姆的诵读规则摘要，例子与颜色取自彩色泰吉威德古兰经的页面；诗句取自阿卜杜勒·穆赫辛·卡西姆博士校订的《Tuhfat al-Atfal》与《al-Muqaddima al-Jazariyya》，来自 {link}。",
+ "about.duaText": "格哈塔尼所著《源自古兰经与圣训的祈祷词》全书，按印刷版照录（沙特伊斯兰事务部，第21版），取自 {link} 版本。",
  "about.asmaTitle": "安拉的美名",
  "about.asmaText": "格哈塔尼所著《依据古兰经与圣训阐释安拉的美名》全书，按印刷版照录，取自 {link} 版本。",
  "about.kutubTitle": "信仰与教法",
@@ -1173,7 +1182,5 @@
  "ch.129": "求饶恕与悔罪",
  "ch.130": "赞主清净、感赞安拉、认主独一与赞主至大的功德",
  "ch.131": "先知如何赞主清净？",
- "ch.132": "各类善行与综合礼仪",
- "kids.title": "儿童园地",
- "muslim.title": "穆斯林的一天"
+ "ch.132": "各类善行与综合礼仪"
 }

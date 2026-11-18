@@ -1,26 +1,27 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.43.0";
-import { setupHadith } from "./hadith.js?v=1.43.0";
-import { setupTafsir } from "./tafsir.js?v=1.43.0";
-import { setupAsma } from "./asma.js?v=1.43.0";
-import { setupKutub } from "./kutub.js?v=1.43.0";
-import { setupFaqih } from "./faqih.js?v=1.43.0";
-import { setupPrayer } from "./prayer.js?v=1.43.0";
-import { setupVideos } from "./videos.js?v=1.43.0";
-import { setupInstall } from "./install.js?v=1.43.0";
-import { setupTajweed } from "./tajweed.js?v=1.43.0";
-import { setupMutun } from "./mutun.js?v=1.43.0";
-import { setupQiraat } from "./qiraat.js?v=1.43.0";
-import { setupQaida } from "./qaida.js?v=1.43.0";
-import { setupArabic } from "./arabic.js?v=1.43.0";
-import { setupHijri } from "./hijri.js?v=1.43.0";
-import { setupQibla } from "./qibla.js?v=1.43.0";
-import { setupHifz } from "./hifz.js?v=1.43.0";
-import { setupGuide } from "./guide.js?v=1.43.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.43.0";
-import { mirrorOf } from "./mirror.js?v=1.43.0";
+import { setupQuran } from "./quran.js?v=1.45.0";
+import { setupHadith } from "./hadith.js?v=1.45.0";
+import { setupTafsir } from "./tafsir.js?v=1.45.0";
+import { setupAsma } from "./asma.js?v=1.45.0";
+import { setupDua } from "./dua.js?v=1.45.0";
+import { setupKutub } from "./kutub.js?v=1.45.0";
+import { setupFaqih } from "./faqih.js?v=1.45.0";
+import { setupPrayer } from "./prayer.js?v=1.45.0";
+import { setupVideos } from "./videos.js?v=1.45.0";
+import { setupInstall } from "./install.js?v=1.45.0";
+import { setupTajweed } from "./tajweed.js?v=1.45.0";
+import { setupMutun } from "./mutun.js?v=1.45.0";
+import { setupQiraat } from "./qiraat.js?v=1.45.0";
+import { setupQaida } from "./qaida.js?v=1.45.0";
+import { setupArabic } from "./arabic.js?v=1.45.0";
+import { setupHijri } from "./hijri.js?v=1.45.0";
+import { setupQibla } from "./qibla.js?v=1.45.0";
+import { setupHifz } from "./hifz.js?v=1.45.0";
+import { setupGuide } from "./guide.js?v=1.45.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.45.0";
+import { mirrorOf } from "./mirror.js?v=1.45.0";
 
-const VERSION = "1.43.0";
+const VERSION = "1.45.0";
 const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
@@ -139,7 +140,7 @@ async function updateWakeLock(wanted) {
     else if (!wanted && wakeLock) { await wakeLock.release(); wakeLock = null; }
   } catch { wakeLock = null; }
 }
-document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && /^#\/(cat|quran\/|hifz\/)/.test(location.hash)) updateWakeLock(true); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && /^#\/(cat|dua|quran\/|hifz\/)/.test(location.hash)) updateWakeLock(true); });
 
 // ---------- audio (short Hisn al-Muslim clips) ----------
 let playingBtn = null;
@@ -229,6 +230,14 @@ const AS = setupAsma({
   view, $, esc, icon, t, num, sep, getLang, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel,
   setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
 });
+// ---------- «الدعاء من الكتاب والسنة»: the supplications of the Quran and the Sunnah, beside the adhkar ----------
+const DU = setupDua({
+  view, $, esc, icon, t, th, num, sep, getLang, copyText, toast, SITE, stripTashkeel, tashkeel: () => settings.tashkeel,
+  shareText: (...a) => shareText(...a), normalize: s => normalizeSearch(s),
+  // A saved supplication is kept with the saved adhkar, as "dua:<number>".
+  fav: { has: k => favorites.has(k), toggle(k) { if (!favorites.delete(k)) favorites.add(k); saveFav(); return favorites.has(k); } },
+  setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
+});
 // ---------- creed and fiqh: the books of ʿaqida and the primer of each of the four schools ----------
 const KT = setupKutub({
   view, $, esc, icon, t, num, sep, getLang, LS, copyText, share, SITE, stripTashkeel, tashkeel: () => settings.tashkeel, Q,
@@ -309,7 +318,7 @@ function route() {
   }
   // The printed Mushaf fills the screen: the app bars step aside there (see .mm-on in app.css).
   document.body.classList.toggle("mm-on", parts[0] === "mushaf");
-  stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 2) || (parts[0] === "tafsir" && parts.length > 2) || (parts[0] === "kutub" && parts.length > 2) || (parts[0] === "mutun" && parts.length > 2) || (parts[0] === "qiraat" && parts.length > 1) || (parts[0] === "qaida" && parts.length > 1) || (parts[0] === "hifz" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
+  stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "dua" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 2) || (parts[0] === "tafsir" && parts.length > 2) || (parts[0] === "kutub" && parts.length > 2) || (parts[0] === "mutun" && parts.length > 2) || (parts[0] === "qiraat" && parts.length > 1) || (parts[0] === "qaida" && parts.length > 1) || (parts[0] === "hifz" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
   onHome = !parts.length || parts[0] === "search"; if (parts.length) noteTool(parts[0]);
   if (!parts.length) return renderHub(params.get("q") || "");
   switch (parts[0]) {
@@ -339,6 +348,7 @@ function route() {
     case "kids": return GD.kids(parts.slice(1));
     case "muslim": return GD.muslim(parts.slice(1));
     case "asma": return AS.render(parts.slice(1));
+    case "dua": return DU.render(parts.slice(1), params);
     case "kutub": return KT.render(parts.slice(1), params);
     case "faqih": return FQ.render(parts.slice(1), params);
     case "prayer": return PR.render(parts.slice(1), params);
@@ -377,11 +387,14 @@ function adhkarSearch(query, limit = 60) {
     `<a href="#/cat/${c.id}${i ? "?item=" + i.id : ""}"><div class="num">${icon("book")}</div><div class="lbl">${esc(catTitle(c))}${i ? `<span class="sub" lang="ar" dir="rtl">${esc(stripTashkeel(plainText(i.text))).slice(0, 90)}…</span>` : ""}</div>${icon("back", "chev")}</a>`).join("") + `</div>`;
   return { count: hits.length, html };
 }
+// Supplications of «الدعاء من الكتاب والسنة» found by the same searches (DU.search), each opening the book at its number.
+const duaHits = (list, limit = 20) => !list.length ? "" : `<h2 class="section-title">${T("dua.title")}</h2><div class="list">` + list.slice(0, limit).map(x =>
+  `<a href="${x.href}"><div class="num">${num(x.n)}</div><div class="lbl"><span class="dua-snip" lang="ar" dir="rtl">${esc(x.text)}…</span></div>${icon("back", "chev")}</a>`).join("") + `</div>`;
 
 // ---------- every part of the app, grouped and ordered by how often it is used (Home and the Tools tab) ----------
 const TOOL_GROUPS = [
   ["tools.daily", [["#/adhkar", "sun", "nav.adhkar"], ["#/quran", "quran", "nav.quran"], ["#/hifz", "repeat", "hifz.title"], ["#/prayer", "prayer", "prayer.title"],
-    ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/hijri", "calendar", "hijri.title"]]],
+    ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/dua", "dua", "dua.short"], ["#/hijri", "calendar", "hijri.title"]]],
   ["tools.learn", [["#/muslim", "journal", "muslim.title"], ["#/kids", "kids", "kids.title"], ["#/hadith", "books", "hadith.books"], ["#/asma", "asma", "asma.title"],
     ["#/qaida", "school", "qaida.title"], ["#/arabic", "translate", "arabic.title"], ["#/kutub", "kutub", "kutub.title"], ["#/faqih", "fiqh", "faqih.title"]]],
   // The readings and the Quran sciences, apart from what every reader uses (the same section as the #/ulum page).
@@ -442,14 +455,14 @@ function renderHub(q = "") {
   const doSearch = async () => {
     const query = input.value.trim(); const r = adhkarSearch(query, 20); if (!r) return tiles();
     const mine = ++seq;
-    const [surahs, names, books, series] = await Promise.all([Q.searchSurahs(query).catch(() => []), AS.search(query).catch(() => []), KT.search(query).catch(() => []), V.search(query).catch(() => [])]); if (mine !== seq) return;
+    const [surahs, names, books, series, duas] = await Promise.all([Q.searchSurahs(query).catch(() => []), AS.search(query).catch(() => []), KT.search(query).catch(() => []), V.search(query).catch(() => []), DU.search(query).catch(() => [])]); if (mine !== seq) return;
     results.innerHTML =
       (surahs.length ? `<h2 class="section-title">${T("quran.surahs")}</h2><div class="list">${surahs.slice(0, 8).map(x => `<a href="${x.href}"><div class="num">${num(x.n)}</div><div class="lbl">${esc(x.name)}</div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
       + (names.length ? `<h2 class="section-title">${T("asma.title")}</h2><div class="list">${names.slice(0, 6).map(x => `<a href="${x.href}"><div class="num">${num(x.n)}</div><div class="lbl" lang="ar" dir="rtl">${esc(x.name)}</div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
       + (books.length ? `<h2 class="section-title">${T("kutub.title")}</h2><div class="list">${books.slice(0, 6).map(x => `<a href="${x.href}"><div class="num">${icon(x.icon)}</div><div class="lbl">${esc(x.name)}<span class="sub">${esc(x.sub)}</span></div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
       + (series.length ? `<h2 class="section-title">${T("videos.title")}</h2><div class="list">${series.slice(0, 6).map(x => `<a href="${x.href}"><div class="num">${icon("video")}</div><div class="lbl">${esc(x.name)}<span class="sub">${esc(x.sub)}</span></div>${icon("back", "chev")}</a>`).join("")}</div>` : "")
       + `<div class="list" style="margin-top:12px"><a href="#/quran?q=${encodeURIComponent(query)}"><div class="num">${icon("quran")}</div><div class="lbl">${T("hub.searchQuran", { q: query })}</div>${icon("back", "chev")}</a></div>`
-      + (r.count ? r.html : "");
+      + (r.count ? r.html : "") + duaHits(duas, 8);
   };
   input.addEventListener("input", doSearch); doSearch();
   $("#a-search").onclick = () => { input.focus(); input.scrollIntoView({ behavior: "smooth", block: "start" }); };
@@ -484,13 +497,19 @@ function renderHome(q = "") {
     <div id="results"></div>`;
   const input = $("#q"), results = $("#results");
   const renderSections = () => {
-    results.innerHTML = `<h2 class="section-title">${T("home.sections")}</h2><div class="grid">` + DB.sections.map(s =>
+    // The dua book of the same author opens from the top of the page; the chapters of Hisn al-Muslim follow.
+    results.innerHTML = `<a class="extra-link dua-link" href="#/dua">${icon("dua")}<div><b>${T("dua.title")}</b><span>${T("dua.hint")}</span></div>${icon("back", "chev")}</a>`
+      + `<h2 class="section-title">${T("home.sections")}</h2><div class="grid">` + DB.sections.map(s =>
       `<a class="tile" href="#/section/${s.id}"><div class="ic">${icon(s.icon)}</div><div class="t">${esc(sectionTitle(s))}</div><div class="c">${T("count.chapters", { n: s.cats.length })}</div></a>`).join("") + `</div>`
       + (EXTRAS.length ? `<a class="extra-link" href="#/extras">${icon("book")}<div><b>${T("extra.section")}</b><span>${T("extra.sectionHint")}</span></div>${icon("back", "chev")}</a>` : "");
   };
-  const doSearch = () => {
-    const r = adhkarSearch(input.value); if (!r) return renderSections();
-    results.innerHTML = r.count ? r.html : `<div class="empty">${icon("search")}<div>${T("search.noResultsFor", { q: input.value })}</div></div>`;
+  // The adhkar found are shown at once; the supplications of the dua book follow as soon as the book is read.
+  let seq = 0;
+  const doSearch = async () => {
+    const mine = ++seq, query = input.value, r = adhkarSearch(query); if (!r) return renderSections();
+    const show = duas => { results.innerHTML = r.count || duas ? (r.count ? r.html : "") + duas : `<div class="empty">${icon("search")}<div>${T("search.noResultsFor", { q: query })}</div></div>`; };
+    show("");
+    const duas = duaHits(await DU.search(query).catch(() => [])); if (mine === seq && duas) show(duas);
   };
   input.addEventListener("input", doSearch); doSearch();
   $("#a-search").onclick = () => { input.focus(); input.scrollIntoView({ behavior: "smooth", block: "start" }); };
@@ -657,9 +676,16 @@ function renderExtras() {
 function renderFavorites() {
   setNav("adhkar"); setHeader(t("common.favorites"), { back: true });
   const keys = [...favorites].map(k => k.split(":").map(Number)).map(([c, i]) => ({ cat: catById.get(c), item: catById.get(c)?.items.find(x => x.id === i) })).filter(x => x.cat && x.item);
-  if (!keys.length) { view.innerHTML = `<div class="empty">${icon("star")}<div>${T("fav.empty")}<br>${T("fav.emptyHint")}</div></div>`; return; }
-  view.innerHTML = `<div id="cards">${keys.map(({ cat, item }) => dhikrCard(cat, item, { showWhere: true })).join("")}</div>`;
+  // Saved supplications of «الدعاء من الكتاب والسنة» ("dua:<number>") follow the saved adhkar, under the book's name.
+  const duas = [...favorites].filter(k => /^dua:\d+$/.test(k)).map(k => Number(k.slice(4))).sort((a, b) => a - b);
+  if (!keys.length && !duas.length) { view.innerHTML = `<div class="empty">${icon("star")}<div>${T("fav.empty")}<br>${T("fav.emptyHint")}</div></div>`; return; }
+  view.innerHTML = `<div id="cards">${keys.map(({ cat, item }) => dhikrCard(cat, item, { showWhere: true })).join("")}</div><div id="dua-cards"></div>`;
   bindCards($("#cards"));
+  const hash = location.hash;
+  if (duas.length) DU.cards(duas).then(html => {
+    const box = $("#dua-cards"); if (location.hash !== hash || !box || !html) return;
+    box.innerHTML = `<h2 class="section-title">${T("dua.title")}</h2>${html}`; DU.bind(box);
+  }).catch(() => {});
 }
 
 const PHRASES = ["سُبْحَانَ اللَّهِ", "الْحَمْدُ لِلَّهِ", "اللَّهُ أَكْبَرُ", "لَا إِلَهَ إِلَّا اللَّهُ", "أَسْتَغْفِرُ اللَّهَ", "سُبْحَانَ اللَّهِ وَبِحَمْدِهِ", "لَا حَوْلَ وَلَا قُوَّةَ إِلَّا بِاللَّهِ", "اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ"];
@@ -792,6 +818,8 @@ function renderSettings() {
         ${T("about.offline")}
       </div><div class="about">
         <b>${T("fadl.chapter")}</b><br>${th("about.fadlText", {}, { link: link("https://app.turath.io", "turath.io") }, esc)}
+      </div><div class="about">
+        <b>${T("dua.title")}</b><br>${th("about.duaText", {}, { link: link("https://app.turath.io/book/30900", "turath.io") }, esc)}
       </div><div class="about">
         <b>${T("about.mushafTitle")}</b><br>${T("about.mushafText", { source: t("kfgqpc.name") })}<br>${T("about.mushafOffline")}
       </div><div class="about">

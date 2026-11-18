@@ -133,6 +133,8 @@
  "qaida.nextTajweed": "Casharradan kadib: xukunnada Tajwiidka",
  "qaida.audioLink": "Taxanayaal cod ah: {group}",
  "arabic.title": "Baro Carabiga",
+ "kids.title": "Geeska carruurta",
+ "muslim.title": "Maalinta Muslimka",
  "arabic.full": "Carabiga kuwa aan Carab ahayn",
  "arabic.intro": "Qur’aanku wuxuu leeyahay {total} eray, haddana {n} eray oo keliya ayaa inta badan soo noqnoqda oo ay noqdaan {pct} erayadiisa oo dhan. Baro cashar cashar: eray kasta waxaa la socda macnihiisa oo luqaddaada ah, sida loogu dhawaaqo oo far Laatiin ah, codkiisa tilaawada, iyo aayad uu ku jiro. Kadib ku layli oo dib u eeg ilaa ay maskaxdaada ku dhegaan.",
  "arabic.meaningsIn": "Luqadda macnaha erayada:",
@@ -317,6 +319,12 @@
  "asma.pages": "bog {from}–{to}",
  "asma.together": "Qoraagu magacyadan si wadajir ah ayuu u sharxay.",
  "asma.source": "Qoraalka “{book}” sida uu u daabacan yahay, laga soo qaaday nuqulka turath.io ee waafaqsan daabacaadda (Safir Press, Riyadh).",
+ "dua.title": "Ducada laga soo qaatay Qur'aanka iyo Sunnada",
+ "dua.short": "Ducooyin",
+ "dua.hint": "Ducooyinka Qur'aanka iyo Sunnada oo ilahooda wata, aadaabta ducada iyo waqtiyada la aqbalo",
+ "dua.intro": "Ducooyin laga soo qaatay Qur'aanka Kariimka ah iyo Sunnada Nabiga, duco kasta hoosteeda waxaa ku qoran isheeda iyo tixraaceeda. Ka hor waxaa ku yaal fadliga ducada, aadaabteeda iyo sababaha lagu aqbalo, iyo waqtiyada, xaaladaha iyo meelaha ducada la aqbalo. Qoraagu wuxuu ka soo koobay kitaabkiisa “Dhikriga, Ducada iyo ku Daaweynta Ruqyada ee laga soo qaatay Qur'aanka iyo Sunnada”, kaas oo Xisnul Muslim qayb ka yahay.",
+ "dua.arabicOnly": "Kitaabku waa Carabi, sida loo daabacay.",
+ "dua.search": "Ka raadi ducooyinka ama qor lambarka ducada…",
  "faqih.title": "Baaritaanka fiqiga",
  "faqih.intro": "Weydii arrin fiqi ah: waxaa la baaraa kutubta maktabadda (Mawsuucada Fiqiga ee Kuwayt, al-Mughni, al-Muhalla, kutubta aasaasiga ah ee madhabyada iyo kuwo kale), waxaana lagu tusaa waxay yiraahdeen eray eray, oo ay la socdaan mujalladka, bogga iyo xiriirin u tagta meesha kitaabka.",
  "faqih.disclaimer": "Kani waa baaritaan kutubta lagu sameeyo, ma aha fatwo: wuxuu tusaa waxay culimadu qoreen, kama dooranayo aragtiyahooda, kamana jawaabayo xaaladaha shakhsiga ah. Si aad xukun ugu hesho xaaladdaada, weydii caalim.",
@@ -787,6 +795,7 @@
  "about.tafsirText": "Al-Muyassar iyo al-Mukhtasar waxay ka yimaadeen {qe}; tafsiirrada as-Saʿdi, al-Baghawi, Ibn Kathir, al-Qurtubi iyo at-Tabari waxay ka yimaadeen maktabadda furan ee {qul}. Waxaa loo soo bandhigaa sida ay u daabacan yihiin.",
  "about.tajweedTitle": "Xukunnada Tajwiidka",
  "about.tajweedText": "Soo koobid xukunnada riwaayadda Xafs ee Caasim ee jidka Shaadibiyada, oo leh tusaalooyin iyo midabbo laga soo qaatay bogagga Mushafka Tajwiidka ee midabaysan, iyo baydadka «Tuxfatul Atfaal» iyo «al-Muqaddima al-Jazariyya» ee uu hubiyay Dr. Cabdulmuxsin al-Qaasim, laga soo qaatay {link}.",
+ "about.duaText": "Kitaabka oo dhammaystiran “Ducada laga soo qaatay Qur'aanka iyo Sunnada” ee Al-Qaxdaani, sida loo daabacay (Wasaaradda Arrimaha Islaamka ee Sacuudiga, daabacaadda 21-aad), laga soo qaaday nuqulka {link}.",
  "about.asmaTitle": "Magacyada Allah",
  "about.asmaText": "Kitaabka oo dhammaystiran “Sharaxa Magacyada Wanaagsan ee Allah ee ku salaysan Qur'aanka iyo Sunnada” ee Al-Qaxdaani, sida loo daabacay, laga soo qaaday nuqulka {link}.",
  "about.kutubTitle": "Caqiidada iyo fiqiga",
@@ -1194,7 +1203,5 @@
  "ch.129": "Istighfaarka iyo toobadda",
  "ch.130": "Fadliga tasbiixa, taxmiidka, tahliilka iyo takbiirka",
  "ch.131": "Sida Nabigu u tasbiixsan jiray",
- "ch.132": "Noocyada khayrka iyo anshaxa guud",
- "kids.title": "Geeska carruurta",
- "muslim.title": "Maalinta Muslimka"
+ "ch.132": "Noocyada khayrka iyo anshaxa guud"
 }

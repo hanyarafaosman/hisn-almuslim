@@ -133,6 +133,8 @@
  "qaida.nextTajweed": "Bu dərslərdən sonra: təcvid qaydaları",
  "qaida.audioLink": "Səsli silsilələr: {group}",
  "arabic.title": "Ərəb dilini öyrən",
+ "kids.title": "Uşaq guşəsi",
+ "muslim.title": "Müsəlmanın gündəliyi",
  "arabic.full": "Ana dili ərəbcə olmayanlar üçün ərəb dili",
  "arabic.intro": "Quranda {total} söz var, lakin cəmi {n} söz o qədər tez-tez işlənir ki, bütün sözlərin {pct} qədərini təşkil edir. Onları dərs-dərs öyrənin: hər sözün öz dilinizdəki mənası, latın hərfləri ilə oxunuşu, tilavətdəki səsi və keçdiyi bir ayə verilir. Sonra yadda qalana qədər məşq edin və təkrarlayın.",
  "arabic.meaningsIn": "Söz mənalarının dili:",
@@ -317,6 +319,12 @@
  "asma.pages": "səh. {from}–{to}",
  "asma.together": "Müəllif bu adları birlikdə şərh edib.",
  "asma.source": "“{book}” kitabının mətni çap olunduğu kimidir; çap nəşrinə (Safir mətbəəsi, Ər-Riyad) uyğun gələn turath.io nüsxəsindən götürülüb.",
+ "dua.title": "Quran və Sünnədən dualar",
+ "dua.short": "Dualar",
+ "dua.hint": "Quran və Sünnə duaları mənbələri ilə, dua ədəbləri və duanın qəbul olunduğu vaxtlar",
+ "dua.intro": "Qurani-Kərimdən və Peyğəmbərin Sünnəsindən dualar; hər duanın altında onun mənbəyi və istinadları göstərilir. Onlardan əvvəl duanın fəziləti, ədəbləri və qəbul olunma səbəbləri, həmçinin duanın qəbul olunduğu vaxtlar, hallar və yerlər verilir. Müəllif bu kitabı “Quran və Sünnədən zikr, dua və rüqyə ilə müalicə” adlı kitabından ixtisar edib; Hisnul-Müslim də həmin kitabın bir hissəsidir.",
+ "dua.arabicOnly": "Kitab çap olunduğu kimi, ərəb dilindədir.",
+ "dua.search": "Dualarda və ya dua nömrəsi ilə axtar…",
  "faqih.title": "Fiqh araşdırması",
  "faqih.intro": "Fiqhə aid bir məsələ barədə soruşun: kitabxananın kitabları (Küveyt Fiqh Ensiklopediyası, əl-Muğni, əl-Muhəlla, məzhəblərin əsas mətnləri və başqaları) axtarılır və onlarda deyilənlər cild, səhifə və kitabdakı yerə keçid ilə birlikdə sözbəsöz göstərilir.",
  "faqih.disclaimer": "Bu, kitablarda axtarışdır, fətva deyil: alimlərin yazdıqlarını göstərir, onların rəyləri arasında seçim etmir və şəxsi hallara cavab vermir. Öz halınız barədə hökm üçün bir alimdən soruşun.",
@@ -787,6 +795,7 @@
  "about.tafsirText": "Əl-Müyəssər və əl-Müxtəsər {qe} saytından, əs-Sədi, əl-Bəğəvi, İbn Kəsir, əl-Qurtubi və ət-Təbərinin təfsirləri isə açıq {qul} kitabxanasından götürülüb. Dərc olunduğu kimi göstərilir.",
  "about.tajweedTitle": "Təcvid qaydaları",
  "about.tajweedText": "Həfsin Asimdən Şatibiyyə yolu ilə rəvayətinin qaydalarının xülasəsi; nümunələr və rənglər rəngli Təcvid Mushafının səhifələrindən, «Tuhfətul-ətfal» və «əl-Müqəddimə əl-Cəzəriyyə» beytləri isə Dr. Abdulmuhsin əl-Qasimin təhqiqi ilə, {link} saytından.",
+ "about.duaText": "Əl-Qəhtaninin “Quran və Sünnədən dualar” kitabı tam şəkildə, çap olunduğu kimi (Səudiyyə Ərəbistanının İslam İşləri Nazirliyi, 21-ci nəşr), {link} nüsxəsindən.",
  "about.asmaTitle": "Allahın gözəl adları",
  "about.asmaText": "Əl-Qəhtaninin “Quran və Sünnə işığında Allahın gözəl adlarının şərhi” kitabı tam şəkildə, çap olunduğu kimi, {link} nüsxəsindən.",
  "about.kutubTitle": "Əqidə və fiqh",
@@ -1194,7 +1203,5 @@
  "ch.129": "İstiğfar və tövbə",
  "ch.130": "Təsbeh, təhmid, təhlil və təkbirin fəziləti",
  "ch.131": "Peyğəmbər necə təsbeh edirdi?",
- "ch.132": "Xeyir növləri və ümumi ədəb qaydaları",
- "kids.title": "Uşaq guşəsi",
- "muslim.title": "Müsəlmanın gündəliyi"
+ "ch.132": "Xeyir növləri və ümumi ədəb qaydaları"
 }

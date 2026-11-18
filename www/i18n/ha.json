@@ -133,6 +133,8 @@
  "qaida.nextTajweed": "Bayan waɗannan darussa: dokokin Tajweed",
  "qaida.audioLink": "Jerin sauti: {group}",
  "arabic.title": "Koyi Larabci",
+ "kids.title": "Filin yara",
+ "muslim.title": "Yinin Musulmi",
  "arabic.full": "Larabci ga waɗanda ba Larabawa ba",
  "arabic.intro": "Alƙur’ani yana da kalmomi {total}, amma kalmomi {n} kaɗai suna yawan maimaituwa har su kai {pct} na dukkan kalmominsa. Koye su darasi bayan darasi: kowace kalma da ma’anarta a harshenka, yadda ake faɗinta a haruffan Latin, muryarta daga karatu, da ayar da ta zo a ciki. Sannan ka yi atisaye da su ka kuma yi bitarsu har su zauna a zuciyarka.",
  "arabic.meaningsIn": "Ma’anonin kalmomi da harshen:",
@@ -317,6 +319,12 @@
  "asma.pages": "sh. {from}–{to}",
  "asma.together": "Marubucin ya yi sharhin waɗannan sunaye tare.",
  "asma.source": "Rubutun “{book}” kamar yadda aka buga shi, daga kwafin turath.io da ya yi daidai da bugun (Safir Press, Riyadh).",
+ "dua.title": "Addu'a daga Alƙur'ani da Sunna",
+ "dua.short": "Addu'o'i",
+ "dua.hint": "Addu'o'in Alƙur'ani da Sunna tare da tushensu, ladubban addu'a da lokutan karɓarta",
+ "dua.intro": "Addu'o'i daga Alƙur'ani Mai Girma da Sunnar Annabi; a ƙarƙashin kowace addu'a akwai tushenta da inda aka ruwaito ta. Kafin su akwai falalar addu'a, ladubbanta da sabubban karɓarta, da lokuta, halaye da wuraren da ake karɓar addu'a a cikinsu. Marubucin ya taƙaito wannan littafi daga littafinsa “Zikiri, Addu'a da Magani da Ruƙiyya daga Alƙur'ani da Sunna”, wanda Hisnul Muslim ɓangare ne daga cikinsa.",
+ "dua.arabicOnly": "Littafin da Larabci yake, kamar yadda aka buga shi.",
+ "dua.search": "Bincika addu'o'i ko da lambar addu'a…",
  "faqih.title": "Binciken fiƙihu",
  "faqih.intro": "Yi tambaya kan wata mas'ala ta fiƙihu: za a bincika littattafan ɗakin karatu (Mausu'ar Fiƙihu ta Kuwait, al-Mughni, al-Muhalla, matanonin mazhabobi da sauransu), a nuna abin da suka faɗa kalma da kalma, tare da juzu'i, shafi da hanyar zuwa wurin a cikin littafin.",
  "faqih.disclaimer": "Wannan bincike ne a cikin littattafai, ba fatawa ba: yana nuna abin da malamai suka rubuta, ba ya zaɓi tsakanin ra'ayoyinsu, kuma ba ya amsa al'amura na mutum. Don hukunci kan al'amarinka, tambayi malami.",
@@ -787,6 +795,7 @@
  "about.tafsirText": "Al-Muyassar da al-Mukhtasar sun fito ne daga {qe}; tafsirin as-Saʿdi, al-Baghawi, Ibn Kathir, al-Qurtubi da at-Tabari kuma daga buɗaɗɗen ɗakin karatu na {qul}. Ana nuna su yadda aka wallafa su.",
  "about.tajweedTitle": "Dokokin Tajweed",
  "about.tajweedText": "Taƙaitaccen bayanin dokokin ruwayar Hafs daga Asim ta hanyar Shatibiyya, tare da misalai da launuka daga shafukan Mushafin Tajweed mai launuka, da baitocin «Tuhfat al-Atfal» da «al-Muqaddima al-Jazariyya» da Dr. Abdulmuhsin al-Qasim ya tantance, daga {link}.",
+ "about.duaText": "Cikakken littafin “Addu'a daga Alƙur'ani da Sunna” na Al-Qahtani, kamar yadda aka buga shi (Ma'aikatar Harkokin Musulunci ta Saudiyya, bugu na ashirin da ɗaya), daga kwafin {link}.",
  "about.asmaTitle": "Sunayen Allah",
  "about.asmaText": "Cikakken littafin “Sharhin Kyawawan Sunayen Allah a hasken Alƙur'ani da Sunna” na Al-Qahtani, kamar yadda aka buga shi, daga kwafin {link}.",
  "about.kutubTitle": "Aƙida da fiƙihu",
@@ -1194,7 +1203,5 @@
  "ch.129": "Istigfari da tuba",
  "ch.130": "Falalar tasbihi, tahmidi, tahlili da kabbara",
  "ch.131": "Yadda Annabi ke yin tasbihi",
- "ch.132": "Nau'o'in alheri da ladubba na gaba ɗaya",
- "kids.title": "Filin yara",
- "muslim.title": "Yinin Musulmi"
+ "ch.132": "Nau'o'in alheri da ladubba na gaba ɗaya"
 }

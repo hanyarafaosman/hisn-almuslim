@@ -609,6 +609,24 @@ body.has-player .ayabar { bottom: calc(var(--nav-h) + var(--sab) + 72px); }
 .sheet .tf-ayat { font-size: calc(1.25rem * var(--scale)); line-height: 2; max-height: 30vh; overflow-y: auto; }
 .asma-hero + .riwayah-note { margin-top: 10px; }
 
+/* «الدعاء من الكتاب والسنة» (js/dua.js): its link on the Adhkar page, the supplication cards, the book's front page */
+.extra-link.dua-link { border-style: solid; border-color: var(--border); box-shadow: var(--shadow); }
+.extra-link.dua-link > svg:first-child { color: var(--primary); }
+#dua-cards { display: grid; gap: 14px; }
+#dua-cards:empty { display: none; }
+#dua-cards > h2.section-title { margin-bottom: -6px; }
+.dhikr.dua .dhikr-text { cursor: auto; }
+.dua-no { display: inline-grid; place-items: center; min-width: 44px; height: 32px; padding-inline: 12px; border-radius: 99px; background: var(--surface-2); color: var(--primary); font-weight: 700; font-size: .9rem; font-variant-numeric: tabular-nums; }
+.dua-note { margin: 0 0 6px; border-radius: 8px; transition: background .4s; }
+.dua-note:last-child { margin-bottom: 0; }
+.dua-note.flash { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.dua-note b { color: var(--gold); }
+.dua-line { margin: 12px 8px; text-align: center; font-family: var(--font-text); font-size: calc(1.15rem * var(--scale)); line-height: 1.9; }
+.asma-text.dua-front { text-align: center; text-align-last: center; }
+.dua-front .fadl-see { margin: 0; }
+.list .dua-ch { font-family: var(--font-text); font-size: calc(1.1rem * var(--scale)); line-height: 1.8; }
+.list .dua-snip { display: block; font-family: var(--font-text); font-size: calc(1.05rem * var(--scale)); line-height: 1.8; font-weight: 400; }
+
 /* creed and fiqh */
 .kt-intro { margin: -4px 4px 8px; color: var(--muted); font-size: .88rem; }
 .kt-hero h2 { font-family: var(--font-text); font-size: 1.35rem; line-height: 1.7; }

@@ -133,6 +133,8 @@
  "qaida.nextTajweed": "Dopo queste lezioni: le regole del tajwid",
  "qaida.audioLink": "Serie audio: {group}",
  "arabic.title": "Imparare l’arabo",
+ "kids.title": "Angolo dei bambini",
+ "muslim.title": "Diario del musulmano",
  "arabic.full": "Arabo per non madrelingua",
  "arabic.intro": "Il Corano conta {total} parole, ma solo {n} parole ricorrono così spesso da costituirne il {pct}. Imparale lezione dopo lezione: ogni parola con il suo significato nella tua lingua, la pronuncia in lettere latine, la recitazione e un versetto in cui compare. Poi esercitati e ripassale finché non ti restano in mente.",
  "arabic.meaningsIn": "Significati delle parole in:",
@@ -324,6 +326,12 @@
  "asma.pages": "pp. {from}–{to}",
  "asma.together": "L’autore spiega questi nomi insieme.",
  "asma.source": "Il testo di «{book}» così come stampato, dalla copia di turath.io conforme all’edizione a stampa (Tipografia Safir, Riad).",
+ "dua.title": "Suppliche dal Corano e dalla Sunna",
+ "dua.short": "Suppliche",
+ "dua.hint": "Suppliche del Corano e della Sunna con le loro fonti, l’etichetta della supplica e i momenti in cui è esaudita",
+ "dua.intro": "Suppliche dal Nobile Corano e dalla Sunna del Profeta; sotto ciascuna, la sua fonte e i suoi riferimenti. Prima di esse: il merito della supplica, la sua etichetta e le cause dell’esaudimento, e i momenti, gli stati e i luoghi in cui la supplica è esaudita. L’autore lo ha compendiato dal suo libro «Il dhikr, la supplica e la cura con la ruqya dal Corano e dalla Sunna», di cui fa parte Hisn al-Muslim.",
+ "dua.arabicOnly": "Il libro è in arabo, così come stampato.",
+ "dua.search": "Cerca nelle suppliche o per numero…",
  "faqih.title": "Ricerca di fiqh",
  "faqih.intro": "Poni una domanda su una questione di fiqh: si cerca nei libri della biblioteca (l’Enciclopedia kuwaitiana del fiqh, al-Mughni, al-Muhalla, i testi di base delle scuole e altri) e ciò che dicono viene mostrato parola per parola, con il volume, la pagina e un collegamento al punto del libro.",
  "faqih.disclaimer": "È una ricerca nei libri, non una fatwa: mostra ciò che gli studiosi hanno scritto, non sceglie tra le loro opinioni e non risponde a casi personali. Per un giudizio sul tuo caso, rivolgiti a uno studioso.",
@@ -808,6 +816,7 @@
  "about.tafsirText": "Al-Muyassar e al-Mukhtasar provengono da {qe}; i tafsir di as-Saʿdi, al-Baghawi, Ibn Kathir, al-Qurtubi e at-Tabari dalla biblioteca aperta {qul}. Sono mostrati così come pubblicati.",
  "about.tajweedTitle": "Regole del tajwid",
  "about.tajweedText": "Un riassunto delle regole di Hafs da ʿAsim per la via di al-Shatibiyya, con esempi e colori dalle pagine del Mushaf del tajwid a colori, e i versi di «Tuhfat al-Atfal» e di «al-Muqaddima al-Jazariyya» curati dal Dr. ʿAbd al-Muhsin al-Qasim, da {link}.",
+ "about.duaText": "Il libro completo «Suppliche dal Corano e dalla Sunna» di al-Qahtani, così come stampato (Ministero degli Affari islamici dell’Arabia Saudita, 21ª edizione), dalla copia di {link}.",
  "about.asmaTitle": "I nomi di Allah",
  "about.asmaText": "Il libro completo «Spiegazione dei bellissimi nomi di Allah alla luce del Corano e della Sunna» di al-Qahtani, così come stampato, dalla copia di {link}.",
  "about.kutubTitle": "Credo e fiqh",
@@ -1215,7 +1224,5 @@
  "ch.129": "Chiedere perdono e pentirsi",
  "ch.130": "Il merito del tasbih, del tahmid, del tahlil e del takbir",
  "ch.131": "Come faceva il tasbih il Profeta?",
- "ch.132": "Forme di bene e regole di buona condotta",
- "kids.title": "Angolo dei bambini",
- "muslim.title": "Diario del musulmano"
+ "ch.132": "Forme di bene e regole di buona condotta"
 }
