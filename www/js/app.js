@@ -1,26 +1,26 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.41.0";
-import { setupHadith } from "./hadith.js?v=1.41.0";
-import { setupTafsir } from "./tafsir.js?v=1.41.0";
-import { setupAsma } from "./asma.js?v=1.41.0";
-import { setupKutub } from "./kutub.js?v=1.41.0";
-import { setupFaqih } from "./faqih.js?v=1.41.0";
-import { setupPrayer } from "./prayer.js?v=1.41.0";
-import { setupVideos } from "./videos.js?v=1.41.0";
-import { setupInstall } from "./install.js?v=1.41.0";
-import { setupTajweed } from "./tajweed.js?v=1.41.0";
-import { setupMutun } from "./mutun.js?v=1.41.0";
-import { setupQiraat } from "./qiraat.js?v=1.41.0";
-import { setupQaida } from "./qaida.js?v=1.41.0";
-import { setupArabic } from "./arabic.js?v=1.41.0";
-import { setupHijri } from "./hijri.js?v=1.41.0";
-import { setupQibla } from "./qibla.js?v=1.41.0";
-import { setupHifz } from "./hifz.js?v=1.41.0";
-import { setupGuide } from "./guide.js?v=1.41.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.41.0";
-import { mirrorOf } from "./mirror.js?v=1.41.0";
+import { setupQuran } from "./quran.js?v=1.42.0";
+import { setupHadith } from "./hadith.js?v=1.42.0";
+import { setupTafsir } from "./tafsir.js?v=1.42.0";
+import { setupAsma } from "./asma.js?v=1.42.0";
+import { setupKutub } from "./kutub.js?v=1.42.0";
+import { setupFaqih } from "./faqih.js?v=1.42.0";
+import { setupPrayer } from "./prayer.js?v=1.42.0";
+import { setupVideos } from "./videos.js?v=1.42.0";
+import { setupInstall } from "./install.js?v=1.42.0";
+import { setupTajweed } from "./tajweed.js?v=1.42.0";
+import { setupMutun } from "./mutun.js?v=1.42.0";
+import { setupQiraat } from "./qiraat.js?v=1.42.0";
+import { setupQaida } from "./qaida.js?v=1.42.0";
+import { setupArabic } from "./arabic.js?v=1.42.0";
+import { setupHijri } from "./hijri.js?v=1.42.0";
+import { setupQibla } from "./qibla.js?v=1.42.0";
+import { setupHifz } from "./hifz.js?v=1.42.0";
+import { setupGuide } from "./guide.js?v=1.42.0";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.42.0";
+import { mirrorOf } from "./mirror.js?v=1.42.0";
 
-const VERSION = "1.41.0";
+const VERSION = "1.42.0";
 const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
@@ -300,6 +300,12 @@ function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll("
 
 function route() {
   const h = location.hash || "#/"; const [path, qs] = h.slice(1).split("?"); const parts = path.split("/").filter(Boolean); const params = new URLSearchParams(qs || "");
+  // The Mushaf tab opens the Mushaf itself, at the page last read, not a list to choose from (Q.entry). The address is
+  // replaced in place, so Back leaves the Mushaf in one step. The site's own page of the surahs keeps showing them.
+  if (parts[0] === "quran" && !(PAGE_ROUTE === "#/quran" && ownRoute())) {
+    const to = Q.entry(parts.slice(1), params);
+    if (to) { history.replaceState(history.state, "", to); return route(); }
+  }
   // The printed Mushaf fills the screen: the app bars step aside there (see .mm-on in app.css).
   document.body.classList.toggle("mm-on", parts[0] === "mushaf");
   stopAudio(); updateWakeLock(parts[0] === "cat" || parts[0] === "mushaf" || (parts[0] === "quran" && parts.length > 1) || (parts[0] === "tafsir" && parts.length > 2) || (parts[0] === "kutub" && parts.length > 2) || (parts[0] === "mutun" && parts.length > 2) || (parts[0] === "qiraat" && parts.length > 1) || (parts[0] === "qaida" && parts.length > 1) || (parts[0] === "hifz" && parts.length > 1)); view.scrollTop = 0; window.scrollTo(0, 0);
@@ -318,6 +324,7 @@ function route() {
     case "videos": return V.render(parts.slice(1), params);
     case "offline": return Q.offline();
     case "mushaf": return Q.mushaf(parts[1], Number(parts[2]), params);
+    case "ulum": return Q.ulum();
     case "search": return renderHub(params.get("q") || "");
     case "adhkar": return renderHome(params.get("q") || "");
     case "hadith": return H.render(parts.slice(1), params);
@@ -374,8 +381,10 @@ function adhkarSearch(query, limit = 60) {
 const TOOL_GROUPS = [
   ["tools.daily", [["#/adhkar", "sun", "nav.adhkar"], ["#/quran", "quran", "nav.quran"], ["#/hifz", "repeat", "hifz.title"], ["#/prayer", "prayer", "prayer.title"],
     ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/hijri", "calendar", "hijri.title"]]],
-  ["tools.learn", [["#/muslim", "journal", "muslim.title"], ["#/kids", "kids", "kids.title"], ["#/hadith", "books", "hadith.books"], ["#/tafsir", "tafsir", "tafsir.books"], ["#/asma", "asma", "asma.title"],
-    ["#/qaida", "school", "qaida.title"], ["#/arabic", "translate", "arabic.title"], ["#/tajweed", "palette", "tajweed.title"], ["#/qiraat", "layers", "qiraat.title"], ["#/mutun", "book", "mutun.title"], ["#/kutub", "kutub", "kutub.title"], ["#/faqih", "fiqh", "faqih.title"]]],
+  ["tools.learn", [["#/muslim", "journal", "muslim.title"], ["#/kids", "kids", "kids.title"], ["#/hadith", "books", "hadith.books"], ["#/asma", "asma", "asma.title"],
+    ["#/qaida", "school", "qaida.title"], ["#/arabic", "translate", "arabic.title"], ["#/kutub", "kutub", "kutub.title"], ["#/faqih", "fiqh", "faqih.title"]]],
+  // The readings and the Quran sciences, apart from what every reader uses (the same section as the #/ulum page).
+  ["ulum.title", [["#/tafsir", "tafsir", "tafsir.books"], ["#/tajweed", "palette", "tajweed.title"], ["#/ulum", "riwayat", "ulum.riwayat"], ["#/qiraat", "layers", "qiraat.title"], ["#/mutun", "book", "mutun.title"]]],
   ["tools.listen", [["#/listen", "headphones", "listen.recitations"], ["#/radio", "radio", "listen.radios"], ["#/videos", "video", "videos.title"]]],
   ["tools.mine", [["#/fav", "star", "common.favorites"], ["#/extras", "book", "extra.section"], ["#/offline", "download", "offline.title"], ["#/settings", "settings", "nav.settings"]]],
 ];
@@ -416,7 +425,7 @@ function renderHub(q = "") {
       ${HJ.hubLine()}
       ${PR.hubRow()}
       <a class="now" href="#/cat/${now.id}">${icon(now.ic)}<div><small>${T("hub.now")}</small><b>${esc(now.label)}</b><div class="progress light"><div style="width:${p.pct}%"></div></div></div><span class="pct">${T("common.percent", { n: p.pct })}</span></a>
-      ${reading ? `<a class="now" id="hub-quran" href="#/quran">${icon("quran")}<div><small>${T("quran.continue")}</small><b id="hub-last">…</b></div>${icon("back", "chev")}</a>` : ""}
+      <a class="now" id="hub-quran" href="#/quran">${icon("quran")}<div><small>${T(reading ? "quran.continue" : "nav.quran")}</small><b id="hub-last">${reading ? "…" : T(Q.entry([], null) ? "mushaf.pages" : "quran.surahs")}</b></div>${icon("back", "chev")}</a>
       ${HF.hubCard()}
       ${GD.hubCard()}
     </section>

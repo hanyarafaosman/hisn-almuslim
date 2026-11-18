@@ -52,6 +52,11 @@ const S = {
   "tools.learn": ["تعلَّم", "Learn"],
   "tools.listen": ["استمع وشاهد", "Listen and watch"],
   "tools.mine": ["المفضلة والإعدادات", "Favorites and settings"],
+  "ulum.title": ["القراءات وعلوم القرآن", "Readings and Quran sciences"],
+  "ulum.hint": ["روايات المصحف، والتفسير، والتجويد، والقراءات العشر، والمتون", "The riwayat of the Mushaf, tafsir, tajweed, the ten readings and the matns"],
+  "ulum.riwayat": ["روايات المصحف", "Riwayat of the Mushaf"],
+  "ulum.riwayatHint": ["المصحف المعتاد برواية حفص عن عاصم، وبها صفحات المصحف المطبوعة. من يقرأ برواية أخرى يختارها هنا، ونصّها يُعرض آية آية.", "The usual Mushaf is in the riwayah (reading) of Hafs from ʿAsim, and the printed pages are in it. If you read in another riwayah, choose it here; its text is shown verse by verse."],
+  "ulum.sciences": ["علوم القرآن", "Quran sciences"],
 
   "hadith.books": ["كتب السنة", "Hadith books"],
   "hadith.sahihBook": ["من الصحيحين", "One of the two Sahihs"],
