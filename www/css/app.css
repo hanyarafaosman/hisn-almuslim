@@ -1331,3 +1331,52 @@ html[lang="ar"] .g-answer p, html[lang="ar"] .g-sec p, html[lang="ar"] .g-list l
 /* long words of a language (Tamil, German) wrap inside a menu tile instead of pushing it wider */
 .hub-tile { min-width: 0; }
 .hub-tile .t { max-width: 100%; overflow-wrap: anywhere; }
+
+/* ===== بشريات مواسم الخير: إعلان أقرب المواسم، والأيام الفاضلة، وصفحة رمضان ===== */
+.hero .now.mw-hub { margin-top: 0; background: color-mix(in srgb, var(--accent) 24%, transparent); border-color: color-mix(in srgb, var(--accent) 60%, transparent); }
+.hero .now.mw-hub > svg:first-child { color: var(--accent); }
+.hero .now.mw-hub b { white-space: normal; }
+.hero .now.mw-hub span { display: block; font-size: .8rem; opacity: .85; }
+.rm-count > svg { width: 44px; height: 44px; color: var(--accent); }
+.rm-dhikr { margin-top: 10px; }
+.rm-top { display: flex; align-items: center; gap: 16px; }
+.rm-ring { position: relative; width: 116px; height: 116px; flex: none; }
+.rm-ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.rm-ring circle { fill: none; stroke: rgba(255,255,255,.2); stroke-width: 8; }
+.rm-ring circle.p { stroke: var(--accent); stroke-linecap: round; }
+.rm-count { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+.rm-count b { font-size: 2.2rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.rm-count span { font-size: .85rem; opacity: .9; }
+.rm-info { min-width: 0; }
+.rm-info small { display: block; opacity: .85; font-size: .85rem; }
+.rm-info h2 { font-size: 1.35rem; line-height: 1.45; margin: 2px 0; }
+.rm-path { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 2px; margin-top: 12px; font-size: .82rem; }
+.rm-path div { display: inline-flex; align-items: center; gap: 2px; }
+.rm-path span { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; white-space: nowrap; border-radius: 99px; border: 1px solid rgba(255,255,255,.26); opacity: .85; }
+.rm-path span.cur { background: rgba(255,255,255,.16); opacity: 1; font-weight: 700; }
+.rm-path span.goal { background: var(--accent); border-color: var(--accent); color: #1d1a05; opacity: 1; font-weight: 700; }
+.rm-path svg { width: 14px; height: 14px; flex: none; opacity: .7; }
+.rm-path span svg { opacity: 1; }
+.rm-note { display: block; margin-top: 12px; color: #fff; font-size: .76rem; line-height: 1.6; opacity: .8; }
+.rm-lead { margin: 0 4px 10px; color: var(--muted); font-size: .92rem; line-height: 1.8; }
+.rm-card { margin-top: 10px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); box-shadow: var(--shadow); }
+.rm-h { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+.rm-h svg { width: 20px; height: 20px; flex: none; color: var(--accent); }
+.rm-h b { flex: 1; min-width: 0; }
+.rm-dua { margin: 6px 0; font-family: var(--font-text); font-size: calc(1.5rem * var(--scale)); line-height: 2.1; font-weight: 700; color: var(--primary-2); text-align: center; }
+.rm-dua.sm { font-size: calc(1.2rem * var(--scale)); font-weight: 400; color: var(--text); }
+.rm-hadith { margin: 4px 0; font-family: var(--font-text); font-size: calc(1.3rem * var(--scale)); line-height: 2.05; }
+.rm-by { margin: 0 0 4px; font-family: var(--font-text); font-size: calc(1rem * var(--scale)); color: var(--muted); }
+.rm-q { margin: 6px 0; font-family: var(--font-text); font-size: calc(1.15rem * var(--scale)); line-height: 2; }
+.rm-p { margin: 4px 0 6px; font-size: calc(.98rem * var(--scale)); line-height: 1.75; }
+.rm-bar { display: flex; align-items: center; gap: 4px; }
+.rm-bar .spacer { flex: 1; }
+.rm-bar .icon-btn { width: 40px; height: 40px; flex: none; color: var(--primary); }
+.rm-card .fadl-cite { margin: 0 0 4px; }
+.rm-card .g-ref { margin-top: 6px; }
+.fadl.rm-src { margin: 8px 0 0; }
+.rm-verses .g-ev, .rm-dhikr { padding: 12px 16px; background: var(--surface); border: 1px solid var(--border); box-shadow: var(--shadow); }
+.rm-links { margin-top: 10px; }
+:root[data-theme="dark"] .rm-dua:not(.sm) { color: var(--primary); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rm-dua:not(.sm) { color: var(--primary); } }
+@media (max-width: 359px) { .rm-ring { width: 96px; height: 96px; } .rm-count b { font-size: 1.8rem; } }

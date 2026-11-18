@@ -1,26 +1,27 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.43.1";
-import { setupHadith } from "./hadith.js?v=1.43.1";
-import { setupTafsir } from "./tafsir.js?v=1.43.1";
-import { setupAsma } from "./asma.js?v=1.43.1";
-import { setupKutub } from "./kutub.js?v=1.43.1";
-import { setupFaqih } from "./faqih.js?v=1.43.1";
-import { setupPrayer } from "./prayer.js?v=1.43.1";
-import { setupVideos } from "./videos.js?v=1.43.1";
-import { setupInstall } from "./install.js?v=1.43.1";
-import { setupTajweed } from "./tajweed.js?v=1.43.1";
-import { setupMutun } from "./mutun.js?v=1.43.1";
-import { setupQiraat } from "./qiraat.js?v=1.43.1";
-import { setupQaida } from "./qaida.js?v=1.43.1";
-import { setupArabic } from "./arabic.js?v=1.43.1";
-import { setupHijri } from "./hijri.js?v=1.43.1";
-import { setupQibla } from "./qibla.js?v=1.43.1";
-import { setupHifz } from "./hifz.js?v=1.43.1";
-import { setupGuide } from "./guide.js?v=1.43.1";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.43.1";
-import { mirrorOf } from "./mirror.js?v=1.43.1";
+import { setupQuran } from "./quran.js?v=1.44.1";
+import { setupHadith } from "./hadith.js?v=1.44.1";
+import { setupTafsir } from "./tafsir.js?v=1.44.1";
+import { setupAsma } from "./asma.js?v=1.44.1";
+import { setupKutub } from "./kutub.js?v=1.44.1";
+import { setupFaqih } from "./faqih.js?v=1.44.1";
+import { setupPrayer } from "./prayer.js?v=1.44.1";
+import { setupVideos } from "./videos.js?v=1.44.1";
+import { setupInstall } from "./install.js?v=1.44.1";
+import { setupTajweed } from "./tajweed.js?v=1.44.1";
+import { setupMutun } from "./mutun.js?v=1.44.1";
+import { setupQiraat } from "./qiraat.js?v=1.44.1";
+import { setupQaida } from "./qaida.js?v=1.44.1";
+import { setupArabic } from "./arabic.js?v=1.44.1";
+import { setupHijri } from "./hijri.js?v=1.44.1";
+import { setupMawasim } from "./mawasim.js?v=1.44.1";
+import { setupQibla } from "./qibla.js?v=1.44.1";
+import { setupHifz } from "./hifz.js?v=1.44.1";
+import { setupGuide } from "./guide.js?v=1.44.1";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.44.1";
+import { mirrorOf } from "./mirror.js?v=1.44.1";
 
-const VERSION = "1.43.1";
+const VERSION = "1.44.1";
 const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
@@ -218,11 +219,12 @@ const HF = setupHifz({ view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, s
 const QD = setupQaida({ view, $, esc, icon, t, num, sep, getLang, LS, Q, toast, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n) });
 // ---------- Arabic for non-native speakers: the Quran's most frequent words, and the short surahs word by word ----------
 const AR = setupArabic({ view, $, esc, icon, t, num, sep, getLang, languageName, LS, Q, toast, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n) });
+// The adhkar other pages quote: the dhikr and its chapter by number, its text as the adhkar pages draw it, its recording, and the official English.
+const ADHKAR = { item: id => { const cat = catOfItem.get(id), item = cat?.items.find(i => i.id === id); return item ? { item, cat } : null; }, format: s => formatText(s), toggle: (url, btn) => togglePlay(url, btn), en: () => loadEN(), showTr: () => showAdhkarTr() };
 // ---------- the kids' corner, and the new Muslim's first steps and day ----------
 const GD = setupGuide({
   view, $, esc, icon, t, num, sep, getLang, languageName, LS, Q, toast, version: VERSION, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n),
-  // The adhkar the lessons quote: the dhikr and its chapter by number, its text as the adhkar pages draw it, its recording, and the official English.
-  adhkar: { item: id => { const cat = catOfItem.get(id), item = cat?.items.find(i => i.id === id); return item ? { item, cat } : null; }, format: s => formatText(s), toggle: (url, btn) => togglePlay(url, btn), en: () => loadEN(), showTr: () => showAdhkarTr() },
+  adhkar: ADHKAR,
 });
 // ---------- the Beautiful Names of Allah ----------
 const AS = setupAsma({
@@ -272,6 +274,8 @@ function pickLanguage() {
 
 // ---------- the Hijri calendar: today's date, the month grid, the converter and the seasons of worship ----------
 const HJ = setupHijri({ view, $, esc, icon, t, num, sep, getLang, share, SITE, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), prayer: PR });
+// ---------- the seasons of worship: the nearest one announced, the virtuous days at hand, and Ramadan's own page ----------
+const MW = setupMawasim({ view, $, esc, icon, t, num, sep, getLang, share, copy: copyText, SITE, version: VERSION, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), hijri: HJ, Q, adhkar: ADHKAR, catTitle: c => catTitle(c), catById });
 // ---------- the Qibla: its direction from the place of the prayer times, a compass, and the sun's help ----------
 const QB = setupQibla({ view, $, esc, icon, t, num, sep, getLang, toast, share, SITE, vibrate, setHeader: (...a) => setHeader(...a), setNav: n => setNav(n), prayer: PR });
 
@@ -295,7 +299,7 @@ function setHeader(title, { back = false, actions = "", onTitle = null } = {}) {
 titleEl.addEventListener("keydown", e => { if ((e.key === "Enter" || e.key === " ") && titleEl.onclick) { e.preventDefault(); titleEl.onclick(); } });
 backBtn.addEventListener("click", () => { if (depth > 0) history.back(); else location.hash = "#/"; });
 // Bottom bar: Home, Quran, Adhkar, Prayer, Tools. Pages reached from Tools highlight that tab.
-const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more", videos: "more", hijri: "more", qibla: "more", hadith: "more", kids: "more", muslim: "more" };
+const NAV_OF = { listen: "more", tasbih: "more", settings: "more", offline: "more", videos: "more", hijri: "more", mawasim: "more", qibla: "more", hadith: "more", kids: "more", muslim: "more" };
 function setNav(name) { name = NAV_OF[name] || name; document.querySelectorAll(".bottom-nav a").forEach(a => a.classList.toggle("on", a.dataset.nav === name)); }
 
 function route() {
@@ -343,6 +347,9 @@ function route() {
     case "faqih": return FQ.render(parts.slice(1), params);
     case "prayer": return PR.render(parts.slice(1), params);
     case "hijri": return HJ.render(parts.slice(1), params);
+    case "mawasim": return MW.render(parts.slice(1));
+    // The page of Ramadan had this address before the seasons got a page of their own.
+    case "ramadan": history.replaceState(history.state, "", "#/mawasim/ramadan"); return route();
     case "qibla": return QB.render();
     case "more": return renderTools();
     // Unknown address (for example a link to a newer version's page): show Home but keep the address,
@@ -381,7 +388,7 @@ function adhkarSearch(query, limit = 60) {
 // ---------- every part of the app, grouped and ordered by how often it is used (Home and the Tools tab) ----------
 const TOOL_GROUPS = [
   ["tools.daily", [["#/adhkar", "sun", "nav.adhkar"], ["#/quran", "quran", "nav.quran"], ["#/hifz", "repeat", "hifz.title"], ["#/prayer", "prayer", "prayer.title"],
-    ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/hijri", "calendar", "hijri.title"]]],
+    ["#/qibla", "kaaba", "qibla.title"], ["#/tasbih", "beads", "nav.tasbih"], ["#/hijri", "calendar", "hijri.title"], ["#/mawasim", "moon", "mawasim.title"]]],
   ["tools.learn", [["#/muslim", "journal", "muslim.title"], ["#/kids", "kids", "kids.title"], ["#/hadith", "books", "hadith.books"], ["#/asma", "asma", "asma.title"],
     ["#/qaida", "school", "qaida.title"], ["#/arabic", "translate", "arabic.title"], ["#/kutub", "kutub", "kutub.title"], ["#/faqih", "fiqh", "faqih.title"]]],
   // The readings and the Quran sciences, apart from what every reader uses (the same section as the #/ulum page).
@@ -424,6 +431,7 @@ function renderHub(q = "") {
       <p class="verse" lang="ar" dir="rtl">«فَاذْكُرُونِي أَذْكُرْكُمْ وَاشْكُرُوا لِي وَلَا تَكْفُرُونِ»</p>
       <p class="verse-ref">${T("home.verseRef")}</p>
       ${HJ.hubLine()}
+      ${MW.hubLine()}
       ${PR.hubRow()}
       <a class="now" href="#/cat/${now.id}">${icon(now.ic)}<div><small>${T("hub.now")}</small><b>${esc(now.label)}</b><div class="progress light"><div style="width:${p.pct}%"></div></div></div><span class="pct">${T("common.percent", { n: p.pct })}</span></a>
       <a class="now" id="hub-quran" href="#/quran">${icon("quran")}<div><small>${T(reading ? "quran.continue" : "nav.quran")}</small><b id="hub-last">${reading ? "…" : T(Q.entry([], null) ? "mushaf.pages" : "quran.surahs")}</b></div>${icon("back", "chev")}</a>
@@ -809,6 +817,8 @@ function renderSettings() {
         <br>${T("about.adhanText")}<br><span id="adhan-credits"></span>
       </div><div class="about">
         <b>${T("about.hijriTitle")}</b><br>${T("about.hijriText")}
+      </div><div class="about">
+        <b>${T("mawasim.title")}</b><br>${th("about.mawasimText", {}, { link: link("https://app.turath.io", "turath.io") }, esc)}
       </div><div class="about">
         <b>${T("about.qiblaTitle")}</b><br>${T("about.qiblaText")}
       </div><div class="about">
