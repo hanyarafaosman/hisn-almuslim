@@ -32,8 +32,10 @@ const API = "https://api.turath.io", FILES = "https://files.turath.io";
 // as they should be]. Only where the copy cannot be read as it stands, and only with the words of another printed
 // edition of the same text. The words must be on that page exactly once, or the build fails (so a copy that turath.io
 // corrects later is noticed).
+// join: the copy cut a printed page in two at a heading and left the footnotes of both halves under the second: the
+// halves are read as the one page they are in print (joinPages).
 // group: the shelf of the library (GROUPS); author: a key of AUTHORS, for browsing the books of one author.
-const GROUPS = ["aqida", "hadith", "fiqh", "usul", "tafsir", "sira", "suluk", "fatawa"];
+const GROUPS = ["aqida", "shabab", "hadith", "fiqh", "usul", "tafsir", "sira", "suluk", "fatawa"];
 const AUTHORS = {
   "ahmad": { ar: "الإمام أحمد", en: "Imam Ahmad" },
   "tahawi": { ar: "الطحاوي", en: "At-Tahawi" },
@@ -48,12 +50,24 @@ const AUTHORS = {
   "hajjawi": { ar: "الحجاوي", en: "Al-Hajjawi" },
   "ibn-abd-al-wahhab": { ar: "محمد بن عبد الوهاب", en: "Muhammad ibn ʿAbd al-Wahhab" },
   "qahtani": { ar: "سعيد بن وهف القحطاني", en: "Saʿid ibn Wahf al-Qahtani" },
+  "ibn-baz": { ar: "ابن باز", en: "Ibn Baz" },
+  "ibn-uthaymin": { ar: "ابن عثيمين", en: "Ibn ʿUthaymin" },
+  "albani": { ar: "الألباني", en: "Al-Albani" },
+  "abbad": { ar: "عبد المحسن العباد", en: "ʿAbd al-Muhsin al-ʿAbbad" }, // living: died is 0
+  "ghunayman": { ar: "عبد الله الغنيمان", en: "ʿAbdullah al-Ghunayman" },
+  "ibn-burjis": { ar: "عبد السلام بن برجس", en: "ʿAbd as-Salam ibn Burjis" },
+  "kibar-ulama": { ar: "هيئة كبار العلماء", en: "Council of Senior Scholars" }, // an institution: died is 0
   "kuwait-awqaf": { ar: "وزارة الأوقاف الكويتية", en: "Kuwait Ministry of Awqaf" }, // an institution: died is 0
 };
 const QUDAMAH = { author: "ibn-qudamah", died: 620, by: "موفق الدين ابن قدامة المقدسي", byEn: "Muwaffaq ad-Din Ibn Qudamah al-Maqdisi" };
 const HAZM = { author: "ibn-hazm", died: 456, by: "ابن حزم الأندلسي", byEn: "Ibn Hazm al-Andalusi" };
 const TAYMIYYAH = { author: "ibn-taymiyyah", died: 728, by: "شيخ الإسلام ابن تيمية", byEn: "Shaykh al-Islam Ibn Taymiyyah" };
 const QAYYIM = { author: "ibn-qayyim", died: 751, by: "ابن قيم الجوزية", byEn: "Ibn Qayyim al-Jawziyyah" };
+// The authors of the shelf «رسائل إلى الشباب» (#/shabab): short treatises of the scholars of our time.
+const BAZ = { author: "ibn-baz", died: 1420, by: "الشيخ عبد العزيز بن عبد الله بن باز", byEn: "Shaykh ʿAbd al-ʿAziz ibn ʿAbdullah ibn Baz" };
+const UTHAYMIN = { author: "ibn-uthaymin", died: 1421, by: "الشيخ محمد بن صالح العثيمين", byEn: "Shaykh Muhammad ibn Salih al-ʿUthaymin" };
+const ABBAD = { author: "abbad", died: 0, by: "الشيخ عبد المحسن بن حمد العباد البدر", byEn: "Shaykh ʿAbd al-Muhsin ibn Hamad al-ʿAbbad al-Badr" };
+const QAHTANI = { author: "qahtani", died: 1440, by: "د. سعيد بن علي بن وهف القحطاني", byEn: "Dr. Saʿid ibn ʿAli ibn Wahf al-Qahtani" };
 const BOOKS = [
   {
     id: "usul-sunnah", turath: 6418, group: "aqida", author: "ahmad", died: 241, unit: 0,
@@ -339,6 +353,91 @@ const BOOKS = [
     ar: "مجموع الفتاوى", en: "Majmuʿ al-Fatawa",
     about: "فتاوى شيخ الإسلام ورسائله في العقيدة والتفسير والحديث والفقه والسلوك، جمعها عبد الرحمن بن قاسم في خمسة وثلاثين مجلدًا. طبعة مجمع الملك فهد.",
     aboutEn: "Shaykh al-Islam's fatwas and treatises on creed, tafsir, hadith, fiqh and the spiritual path, gathered by ʿAbd ar-Rahman ibn Qasim in thirty-five volumes. The King Fahd Complex edition.",
+  },
+  // ---------- رسائل إلى الشباب: the creed of the saved group, the danger of takfir and of extremism, unity and the Sunnah ----------
+  // (js/shabab.js and scripts/build-shabab.js lead to these by subject; they are added after the other books so that the
+  // place of every earlier book in the index stays as it was)
+  {
+    id: "aqidat-ahl-sunnah", turath: 5143, group: "shabab", ...UTHAYMIN, join: true,
+    ar: "عقيدة أهل السنة والجماعة", en: "The Creed of Ahl as-Sunnah wal-Jamaʿah",
+    about: "رسالة مختصرة جامعة في أركان الإيمان الستة: الإيمان بالله وملائكته وكتبه ورسله واليوم الآخر والقدر، ثم ثمرات هذه العقيدة. قدّم لها الشيخ عبد العزيز بن باز.",
+    aboutEn: "A short, comprehensive treatise on the six pillars of faith: belief in Allah, His angels, His books, His messengers, the Last Day and the divine decree, then the fruits of this creed. With a foreword by Shaykh ʿAbd al-ʿAziz ibn Baz.",
+  },
+  {
+    // The copy writes two footnotes in another way than the rest of the book (bare numbers): the notice under the
+    // first page as «١- » with no mark in the text (loose: it goes after the page's text), and the note of page 18 in
+    // brackets. Only the way the number is written is changed, not a word of the text.
+    id: "minhaj-ahl-sunnah", turath: 12097, group: "shabab", ...UTHAYMIN, loose: true,
+    fix: [[1, "١- تنبيه:", "١ تنبيه:"], [18, "القيامة\" (١) .", "القيامة\" ١."], [18, "(١) جزء من حديث", "١ جزء من حديث"]],
+    ar: "منهاج أهل السنة والجماعة في العقيدة والعمل", en: "The Way of Ahl as-Sunnah wal-Jamaʿah in Creed and Deed",
+    about: "من هم أهل السنة والجماعة، وما طريقهم في أسماء الله وصفاته، وفي العبادة، وفي حق الرسول ﷺ والصحابة والأولياء والأئمة، وفي إصلاح المجتمع، وقولهم في الإيمان.",
+    aboutEn: "Who Ahl as-Sunnah wal-Jamaʿah are, and their way regarding Allah's names and attributes, worship, the rights of the Messenger ﷺ, the Companions, the righteous and the rulers, reforming society, and what they say about faith.",
+  },
+  {
+    id: "aqida-sahiha", turath: 8820, group: "shabab", ...BAZ, unit: 0,
+    ar: "العقيدة الصحيحة وما يضادها", en: "The Correct Creed and What Opposes It",
+    about: "بيان العقيدة الصحيحة التي بعث الله بها رسله: أصول الإيمان الستة بأدلتها، ثم ذكر المنحرفين عنها. نُشرت في مجلة الجامعة الإسلامية بالمدينة المنورة.",
+    aboutEn: "The correct creed with which Allah sent His messengers: the six foundations of faith with their proofs, then those who went astray from it. Published in the journal of the Islamic University of Madinah.",
+  },
+  {
+    id: "usul-iman", turath: 11179, group: "shabab", ...BAZ, unit: 0,
+    ar: "أصول الإيمان", en: "The Foundations of Faith",
+    about: "محاضرة في أصول الإيمان الستة كما جاءت في القرآن والسنة، وما يدخل في كل أصل منها. نُشرت في مجلة الجامعة الإسلامية بالمدينة المنورة.",
+    aboutEn: "A lecture on the six foundations of faith as they came in the Quran and the Sunnah, and what each of them includes. Published in the journal of the Islamic University of Madinah.",
+  },
+  {
+    id: "itisam", turath: 96458, group: "shabab", ...QAHTANI, from: 2,
+    ar: "الاعتصام بالكتاب والسنة", en: "Holding Fast to the Quran and the Sunnah",
+    about: "لمؤلف حصن المسلم: الاعتصام بالكتاب والسنة أصل السعادة في الدنيا والآخرة ونجاة من مضلات الفتن؛ وجوب الأخذ بهما، والأمر بالاجتماع على الحق والنهي عن الاختلاف.",
+    aboutEn: "By the author of Hisn al-Muslim: holding fast to the Quran and the Sunnah is the root of happiness in this life and the next and safety from misleading trials; the duty to follow them, the command to unite upon the truth and the prohibition of division.",
+  },
+  {
+    id: "bayan-takfir", turath: 546, group: "shabab", author: "kibar-ulama", died: 0, by: "هيئة كبار العلماء، برئاسة الشيخ عبد العزيز بن باز", byEn: "The Council of Senior Scholars, headed by Shaykh ʿAbd al-ʿAziz ibn Baz",
+    ar: "خطورة التسرع في التكفير والقيام بالتفجير", en: "The Danger of Hasty Takfir and of Bombings",
+    about: "بيان هيئة كبار العلماء (١٤١٩هـ): التكفير حكم شرعي مردّه إلى الله ورسوله، واستباحة الدماء والتفجير والتخريب محرّمة بإجماع المسلمين، والإسلام بريء من هذا المعتقد.",
+    aboutEn: "The statement of the Council of Senior Scholars (1419 AH): declaring someone a disbeliever is a ruling that belongs to Allah and His Messenger; shedding blood, bombings and destruction are forbidden by the consensus of the Muslims; and Islam is innocent of this belief.",
+  },
+  {
+    id: "fitnat-takfir", turath: 707, group: "shabab", author: "albani", died: 1420, unit: 0, by: "الشيخ محمد ناصر الدين الألباني", byEn: "Shaykh Muhammad Nasir ad-Din al-Albani",
+    ar: "فتنة التكفير", en: "The Trial of Takfir",
+    about: "كلمة الشيخ الألباني في مسألة التكفير وأنها فتنة الخوارج قديمًا وحديثًا، وسببها قلة العلم وترك فهم السلف. بتقريظ الشيخ ابن باز وتعليق الشيخ ابن عثيمين.",
+    aboutEn: "Shaykh al-Albani's words on takfir: the old and new trial of the Khawarij, caused by little knowledge and by leaving the understanding of the Salaf. Commended by Shaykh Ibn Baz, with comments by Shaykh Ibn ʿUthaymin.",
+  },
+  {
+    id: "afiqu-ya-shabab", turath: 11066, group: "shabab", ...ABBAD, unit: "auto",
+    ar: "بأي عقل ودين يكون التفجير والتدمير جهادًا؟! ويحكم… أفيقوا يا شباب!!", en: "By What Reason or Religion Are Bombings Jihad? Wake Up, O Youth!",
+    about: "رسالة إلى الشباب: مدخل الشيطان على أهل الطاعة بالغلو، وحرمة قتل النفس وقتل المسلمين والمعاهدين بالأدلة، والوصية بالرجوع إلى أهل العلم.",
+    aboutEn: "A letter to the youth: how Satan reaches the devout through extremism, the prohibition of suicide and of killing Muslims and those under covenant, with the proofs, and the advice to return to the people of knowledge.",
+  },
+  {
+    id: "munasaha-wahb", turath: 6556, group: "shabab", author: "ibn-burjis", died: 1425, unit: 0, by: "وهب بن منبه؛ اعتنى بنشرها عبد السلام بن برجس آل عبد الكريم", byEn: "Wahb ibn Munabbih; published by ʿAbd as-Salam ibn Burjis Al ʿAbd al-Karim",
+    ar: "مناصحة الإمام وهب بن منبه لرجل تأثر بمذهب الخوارج", en: "Imam Wahb ibn Munabbih's Advice to a Man Influenced by the Khawarij",
+    about: "نصيحة التابعي وهب بن منبه لشاب كاد يدخل في رأي الخوارج، فرجع عنه؛ رواها علي بن المديني بإسناده.",
+    aboutEn: "The advice of the Follower Wahb ibn Munabbih to a young man who had almost adopted the view of the Khawarij, and who then gave it up; narrated by ʿAli ibn al-Madini with its chain.",
+  },
+  {
+    id: "qadiyyat-takfir", turath: 96514, group: "shabab", ...QAHTANI, unit: "auto", from: 3,
+    ar: "قضية التكفير بين أهل السنة وفرق الضلال", en: "The Question of Takfir between Ahl as-Sunnah and the Deviant Sects",
+    about: "لمؤلف حصن المسلم: تحريم الخروج على أئمة المسلمين، وأصول التكفير وضوابطه وموانعه عند أهل السنة، ثم مواقف الفرق من التكفير ومناقشتها بالأدلة.",
+    aboutEn: "By the author of Hisn al-Muslim: the prohibition of rebelling against the Muslims' rulers; the principles, conditions and impediments of takfir with Ahl as-Sunnah; then the positions of the sects on takfir, discussed with the proofs.",
+  },
+  {
+    id: "dhamm-furqa", turath: 10252, group: "shabab", author: "ghunayman", died: 0, unit: "auto", by: "الشيخ عبد الله بن محمد الغنيمان", byEn: "Shaykh ʿAbdullah ibn Muhammad al-Ghunayman",
+    ar: "ذم الفرقة والاختلاف في الكتاب والسنة", en: "The Censure of Division and Disagreement in the Quran and the Sunnah",
+    about: "الآيات والأحاديث في الأمر بالجماعة والائتلاف، وذم التفرق والاختلاف في الدين وبيان أسبابه. نُشرت في مجلة الجامعة الإسلامية بالمدينة المنورة.",
+    aboutEn: "The verses and hadith that command unity and harmony and censure division and disagreement in religion, with its causes. Published in the journal of the Islamic University of Madinah.",
+  },
+  {
+    id: "hathth-sunnah", turath: 7605, group: "shabab", ...ABBAD,
+    ar: "الحث على اتباع السنة والتحذير من البدع وبيان خطرها", en: "Urging Adherence to the Sunnah and Warning against Innovations",
+    about: "كمال الشريعة، والآيات والأحاديث والآثار في اتباع السنة والتحذير من البدع، وأن البدع كلها ضلال، وخطرها، ثم التحذير من فتنة التجريح والتبديع بين أهل السنة.",
+    aboutEn: "The perfection of the Shariʿah; verses, hadith and reports on following the Sunnah and warning against innovations; that every innovation is misguidance, and its danger; then a warning against the trial of discrediting and declaring one another innovators among Ahl as-Sunnah.",
+  },
+  {
+    id: "nur-sunnah", turath: 96539, group: "shabab", ...QAHTANI, unit: "auto", from: 2,
+    ar: "نور السنة وظلمات البدعة", en: "The Light of the Sunnah and the Darkness of Innovation",
+    about: "لمؤلف حصن المسلم: مفهوم السنة وأسماء أهلها وصفاتهم (أهل السنة والجماعة، الفرقة الناجية، الطائفة المنصورة)، ثم البدعة: مفهومها وأسبابها وأنواعها وآثارها، بالأدلة.",
+    aboutEn: "By the author of Hisn al-Muslim: what the Sunnah is and the names and marks of its people (Ahl as-Sunnah wal-Jamaʿah, the saved group, the victorious party); then innovation: its meaning, causes, kinds and effects, with the proofs.",
   },
 ];
 
@@ -736,6 +835,20 @@ function build(cfg, info, whole, problems, infos) {
   return { sections: out, toc: list };
 }
 
+// join: pages of the copy that are one printed page become one page again (a page that already ends in footnotes is
+// left alone); the headings and the page index follow.
+function joinPages(info, whole) {
+  const pages = [], at = [], kept = [];
+  for (const p of whole.pages) {
+    const prev = pages.at(-1), same = prev && prev.page === p.page && prev.vol === p.vol && !/^_{5,}\s*$/m.test(prev.text);
+    if (same) prev.text += "\n" + p.text; else pages.push({ ...p });
+    kept.push(!same); at.push(pages.length);
+  }
+  for (const h of info.indexes.headings) h.page = at[h.page - 1];
+  info.indexes.page_map = info.indexes.page_map.filter((x, i) => kept[i]);
+  whole.pages = pages;
+}
+
 (async () => {
   const problems = [], infos = [];
   const index = { built: new Date().toISOString().slice(0, 10), source: { name: "turath.io", url: "https://app.turath.io" }, groups: GROUPS, authors: AUTHORS, books: [] };
@@ -746,6 +859,7 @@ function build(cfg, info, whole, problems, infos) {
     if (ONLY && !ONLY.includes(cfg.id)) continue;
     const info = await getText(`${cfg.turath}.info.json`, `${API}/book?id=${cfg.turath}&include=indexes&ver=3`);
     const whole = await getText(`${cfg.turath}.json`, `${FILES}/books-v3/${cfg.turath}.json`);
+    if (cfg.join) joinPages(info, whole);
     if (whole.pages.length !== info.indexes.page_map.length) problems.push(`${cfg.id}: ${whole.pages.length} pages in the book file, ${info.indexes.page_map.length} in its index`);
     const book = build(cfg, info, whole, problems, infos);
 
@@ -782,7 +896,7 @@ function build(cfg, info, whole, problems, infos) {
     const file = `${cfg.id}.${hashOf(data)}.json`; keep.add(file);
     if (!DRY) fs.writeFileSync(path.join(OUT, file), data + "\n");
     const m = info.meta;
-    const { turath, unit, from, to, skip, items, known, loose, marks, fix, ...meta } = cfg;
+    const { turath, unit, from, to, skip, items, known, loose, marks, fix, join, ...meta } = cfg;
     index.books.push({
       ...meta, file, chunks, bytes: total, title: m.name,
       edition: m.info.split("\n").map(x => x.trim()).filter(x => x && !/^\[/.test(x)).join("\n"),
@@ -811,12 +925,15 @@ function build(cfg, info, whole, problems, infos) {
     const old = JSON.parse(fs.readFileSync(path.join(OUT, "index.json"), "utf8"));
     for (const b of index.books) {
       const at = old.books.findIndex(x => x.id === b.id);
-      if (at < 0) { console.error(`✗ ${b.id} is not in www/kutub/index.json yet: run the whole build`); process.exitCode = 1; return; }
+      if (at < 0) { // a new book: it takes its place in the order of BOOKS
+        const later = new Set(BOOKS.slice(BOOKS.findIndex(x => x.id === b.id) + 1).map(x => x.id)), before = old.books.findIndex(x => later.has(x.id));
+        old.books.splice(before < 0 ? old.books.length : before, 0, b); continue;
+      }
       const was = old.books[at];
       for (const f of [was.file, ...was.chunks.map((h, k) => `${b.id}/${k}.${h}.json`)]) if (!keep.has(f)) fs.rmSync(path.join(OUT, f), { force: true });
       old.books[at] = b;
     }
-    old.built = index.built;
+    old.built = index.built; old.groups = GROUPS; old.authors = AUTHORS;
     fs.writeFileSync(path.join(OUT, "index.json"), JSON.stringify(old, null, 1) + "\n");
     console.log(`✓ www/kutub: ${index.books.length} of ${old.books.length} books rebuilt`);
     return;
