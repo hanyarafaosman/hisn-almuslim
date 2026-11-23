@@ -1398,3 +1398,16 @@ html[lang="ar"] .g-answer p, html[lang="ar"] .g-sec p, html[lang="ar"] .g-list l
 :root[data-theme="dark"] .rm-dua:not(.sm) { color: var(--primary); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .rm-dua:not(.sm) { color: var(--primary); } }
 @media (max-width: 359px) { .rm-ring { width: 96px; height: 96px; } .rm-count b { font-size: 1.8rem; } }
+
+/* ----- رسائل إلى الشباب (#/shabab): the messages, their evidence and the scholars' treatises (cards as the seasons' pages) ----- */
+.sh-hero p { margin: 6px 0 0; line-height: 1.8; }
+.sh-hero + .info { margin-top: 10px; }
+.sh-group { margin: 14px 4px 6px; font-size: .92rem; font-weight: 700; color: var(--muted); }
+.sh-hadith .rm-by { margin: 0; }
+.sh-hadith .badge { display: inline-block; margin: 2px 0 4px; }
+.sh-quote .rm-q, .sh-lead .rm-q { margin-inline: 0; padding-inline-start: 12px; border-inline-start: 3px solid var(--accent); }
+.sh-quote .rm-src .rm-q { border: 0; padding: 0; }
+.sh-clamp .rm-q { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 5; line-clamp: 5; overflow: hidden; }
+.sh-more { margin: 2px 0 6px; padding: 6px 14px; font-size: .85rem; }
+.g-ref .sh-by { display: block; font-size: .92em; font-weight: 400; color: var(--muted); }
+.kt-intro a { color: var(--primary); font-weight: 700; white-space: nowrap; }

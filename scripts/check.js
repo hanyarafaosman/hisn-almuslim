@@ -4,7 +4,7 @@ const root = path.join(__dirname, "..", "www"); let ok = true;
 const fail = m => { ok = false; console.error("✗", m); };
 const readJson = f => JSON.parse(fs.readFileSync(path.join(root, f), "utf8"));
 
-for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/dua.js", "js/kutub.js", "js/faqih.js", "js/fihris-words.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/mawasim.js", "js/qibla.js", "js/clip.js", "js/glyphs.js", "js/qaida.js", "js/arabic.js", "js/guide.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "js/hifz.js", "audio/silence.mp3", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "fihris/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/fadl.json", "data/dua.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "data/qaida.json", "data/guide.json", "data/mawasim.json", "guide/ar.json", "guide/en.json", "data/mutun.json", "data/qiraat.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
+for (const f of ["index.html", "manifest.webmanifest", "sw.js", "css/fonts.css", "css/app.css", "js/app.js", "js/quran.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/dua.js", "js/kutub.js", "js/faqih.js", "js/fihris-words.js", "js/prayer.js", "js/prayer-calc.js", "js/videos.js", "js/install.js", "js/tajweed.js", "js/hijri.js", "js/mawasim.js", "js/shabab.js", "js/qibla.js", "js/clip.js", "js/glyphs.js", "js/qaida.js", "js/arabic.js", "js/guide.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "js/hifz.js", "audio/silence.mp3", "js/vendor/hls.light.min.js", "adhan/index.json", "tafsir/index.json", "asma/book.json", "kutub/index.json", "fihris/index.json", "data/audio-sizes.json", "data/hisn.json", "data/hisn.en.json", "data/extras.json", "data/fadl.json", "data/dua.json", "data/radios.json", "data/lessons.json", "data/videos.json", "data/tajweed.json", "data/qaida.json", "data/guide.json", "data/mawasim.json", "data/shabab.json", "guide/ar.json", "guide/en.json", "data/mutun.json", "data/qiraat.json", "quran/index.json", "mushaf/madinah.json", "mushaf/ayat.json", "mushaf/jalala.json", "mushaf/tajweed.json", "i18n/ar.json", "i18n/en.json",
   "icons/icon-192.png", "icons/icon-512.png", "icons/maskable-512.png", "icons/favicon.svg", "icons/og-image.jpg",
   "google1c71f2e57f82590c.html"]) // Google Search Console ownership: removing it loses the verification
   if (!fs.existsSync(path.join(root, f))) fail("missing " + f);
@@ -537,6 +537,53 @@ for (const b of kt.books) {
   if (!mw.seasons?.ramadan?.d?.length || !mw.seasons.ramadan.q?.length) fail(`${where}: Ramadan needs its verses and the supplication on sighting the crescent`);
 }
 
+// «رسائل إلى الشباب» (data/shabab.json, scripts/build-shabab.js): every message has its name and note among the
+// interface strings and its evidence here; each hadith has its narrator and a place in the hadith reader, and one of
+// the Sunan carries al-Albani's grading; the verses are whole; each of the scholars' passages is still in the book of
+// the library it names, at the reading page and paragraph it opens at; the treatises listed are those of the
+// library's shelf.
+{
+  const sh = readJson("data/shabab.json"), en = readJson("i18n/en.json"), where = "data/shabab.json — run npm run shabab";
+  const arabic = x => typeof x === "string" && /[ء-ي]/.test(x) && !/[<>]|&[a-z]+;|[⟦⟧]/.test(x);
+  const bare = s => String(s).replace(/[^ء-ي]/g, "").replace(/[إأآٱ]/g, "ا").replace(/ى/g, "ي");
+  // The honorific ligatures of the books are written out in the passages (as scripts/build-shabab.js does).
+  const LIG = [[0xFD40, "رحمه الله"], [0xFD41, "رضي الله عنه"], [0xFD42, "رضي الله عنها"], [0xFD43, "رضي الله عنهم"], [0xFD44, "رضي الله عنهما"], [0xFD47, "عليه السلام"], [0xFD4A, "عليه الصلاة والسلام"], [0xFDFA, "صلى الله عليه وسلم"], [0xFDFE, "سبحانه وتعالى"], [0xFDFF, "عز وجل"]];
+  const words = t => LIG.reduce((x, [c, w]) => x.split(String.fromCodePoint(c)).join(w), t);
+  const pages = {};
+  const paragraph = x => {
+    const b = kt.books.find(k => k.id === x.k); if (!b) return null;
+    const p = (pages[x.k] ||= { head: readJson("kutub/" + b.file), parts: {} }), s = p.head.sections[x.s]; if (!s || s.c == null) return null;
+    const part = (p.parts[s.c] ||= readJson(`kutub/${b.id}/${s.c}.${b.chunks[s.c]}.json`));
+    return part[x.s]?.body?.[x.p]?.p ?? null;
+  };
+  // The passage starts in the paragraph it opens at: its first words (up to the first line break) are there.
+  const passage = (x, what) => {
+    const text = x && arabic(x.t) ? paragraph(x) : null;
+    if (text == null || !bare(words(text)).includes(bare(x.t.split("\n")[0]).slice(0, 40)) || !sh.books[x.k]) fail(`${where}: passage ${what}`);
+  };
+  passage(sh.lead, "lead");
+  if ((sh.themes || []).length < 9) fail(`${where}: messages missing`);
+  for (const th of sh.themes || []) {
+    for (const k of ["shabab.t." + th.id, "shabab.n." + th.id]) if (!en[k]) fail(`i18n: the message ${th.id} needs the string ${k} — run npm run i18n`);
+    if (!th.icon || !(th.h.length + th.q.length) || !th.x.length || !th.r.length) fail(`${where}: ${th.id} lacks its evidence or its books`);
+    for (const ref of th.q) { const v = sh.verses[ref]; if (!v || v.text.length !== v.to - v.from + 1 || v.text.some(x => !arabic(x))) fail(`${where}: ${th.id}: verse ${ref}`); }
+    th.h.forEach((h, i) => {
+      const b = h && hx.books.find(k => k.id === h.ref?.[0]), sahih = ["bukhari", "muslim"].includes(h?.ref?.[0]);
+      if (!b || !arabic(h.t) || !/^عن /.test(h.by || "") || !Number.isInteger(h.ref[1]) || !b.sections.some(sec => sec[0] === h.ref[2]) || !sh.hbooks[h.ref[0]]) fail(`${where}: ${th.id}: hadith ${i + 1}`);
+      else if (sahih ? h.g : !["sahih", "hasan"].includes(h.g)) fail(`${where}: ${th.id}: hadith ${i + 1} of ${h.ref[0]} needs its grading (and one of the two Sahihs none)`);
+      if (h?.g && !en["shabab." + h.g]) fail(`i18n: no string shabab.${h.g}`);
+    });
+    th.x.forEach((x, i) => passage(x, `${th.id} ${i + 1}`));
+    for (const id of th.r) if (!sh.books[id] || !kt.books.some(b => b.id === id)) fail(`${where}: ${th.id}: no book ${id}`);
+  }
+  const shelved = (sh.shelf || []).flatMap(([g, list]) => { if (!en["shabab.g." + g]) fail(`i18n: no string shabab.g.${g}`); return list; });
+  for (const id of shelved) if (kt.books.find(b => b.id === id)?.group !== "shabab" || !sh.books[id]) fail(`${where}: ${id} is not a book of the library's shelf`);
+  for (const b of kt.books) {
+    if (b.group === "shabab" && !shelved.includes(b.id)) fail(`${where}: the library's ${b.id} is not listed`);
+    const x = sh.books[b.id]; if (x && (x[0] !== b.ar || x[1] !== b.en || x[2] !== b.by || x[3] !== b.byEn)) fail(`${where}: ${b.id} is named otherwise in the library`);
+  }
+}
+
 // Interface languages: every language listed in js/i18n.js has a strings file that passes check-i18n.js
 // LANGS entries look like ["fr", "Français"]; other arrays in the file do not end right after the second string.
 const langs = [...new Set([...fs.readFileSync(path.join(root, "js/i18n.js"), "utf8").matchAll(/\["([a-z]{2,3})", "[^"]+"\]/g)].map(m => m[1]))];
@@ -545,7 +592,7 @@ const i18nCheck = spawnSync(process.execPath, [path.join(__dirname, "check-i18n.
 if (i18nCheck.status !== 0) fail("i18n: " + i18nCheck.stdout.split("\n").filter(l => l.startsWith("✗")).join("; "));
 
 // JS syntax (Node detects ES module syntax automatically)
-for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/dua.js", "../scripts/build-dua.js", "js/kutub.js", "js/videos.js", "js/tajweed.js", "js/clip.js", "js/glyphs.js", "js/qaida.js", "js/arabic.js", "js/guide.js", "../scripts/build-guide.js", "../scripts/guide-source.js", "js/mawasim.js", "../scripts/build-mawasim.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "js/hifz.js", "../scripts/build-tajweed.js", "../scripts/tajweed-source.js", "../scripts/lib/glyphs.js", "../scripts/build-qaida.js", "../scripts/qaida-source.js", "../scripts/build-mutun.js", "../scripts/build-qiraat.js", "../scripts/qiraat-source.js", "../scripts/check-qiraat.mjs", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
+for (const f of ["js/app.js", "js/prayer.js", "js/prayer-calc.js", "../scripts/build-adhan.js", "../scripts/check-prayer.js", "js/quran.js", "js/hadith.js", "js/tafsir.js", "js/asma.js", "js/dua.js", "../scripts/build-dua.js", "js/kutub.js", "js/videos.js", "js/tajweed.js", "js/clip.js", "js/glyphs.js", "js/qaida.js", "js/arabic.js", "js/guide.js", "../scripts/build-guide.js", "../scripts/guide-source.js", "js/mawasim.js", "../scripts/build-mawasim.js", "js/shabab.js", "../scripts/build-shabab.js", "js/mutun.js", "js/qiraat.js", "js/qdiff.js", "js/hifz.js", "../scripts/build-tajweed.js", "../scripts/tajweed-source.js", "../scripts/lib/glyphs.js", "../scripts/build-qaida.js", "../scripts/qaida-source.js", "../scripts/build-mutun.js", "../scripts/build-qiraat.js", "../scripts/qiraat-source.js", "../scripts/check-qiraat.mjs", "../scripts/build-series.js", "../scripts/build-tafsir-index.js", "../scripts/build-asma.js", "../scripts/build-kutub.js", "js/i18n.js", "js/offline.js", "js/mirror.js", "sw.js", "../scripts/build-hadith-index.js", "../scripts/build-mushaf-pages.js", "../scripts/build-mushaf-ayat.js", "../scripts/build-mushaf-colors.js", "../scripts/serve.js", "../scripts/build-quran.js", "../scripts/check-radios.js", "../scripts/check-i18n.js", "../scripts/build-hisn-en.js", "../scripts/i18n-source.js", "../scripts/measure-audio.js", "../scripts/fetch-fonts.js", "../scripts/check-sources.js", "../scripts/build-mirror.js", "../scripts/build-site.js", "../scripts/make-og.js", "../scripts/headless.js", "../scripts/make-store.js",
   "../push/src/index.js", "../push/src/webpush.js", "../push/src/schedule.js", "../push/keys.js", "../push/test.js",
   "js/faqih.js", "js/fihris-words.js", "../scripts/build-fihris.mjs", "../scripts/fihris-test.mjs", "../scripts/faqih-chunk.mjs", "../scripts/faqih-test.mjs", "../scripts/build-faqih.mjs", "../faqih/src/index.js", "../faqih/src/prompt.js", "../faqih/src/verify.js", "../faqih/src/llm.js", "../faqih/test.js"]) {
   const r = spawnSync(process.execPath, ["--check", path.join(root, f)], { encoding: "utf8" });

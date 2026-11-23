@@ -121,7 +121,8 @@ export function setupKutub(ctx) {
       const books = IX.books.filter(b => (!state.author || b.author === state.author) && want.every(w => bookKey(b).includes(w)));
       $("#kshelves").innerHTML = IX.groups.map(g => {
         const list = books.filter(b => b.group === g); if (!list.length) return "";
-        const intro = !state.author && !want.length && (g === "aqida" || g === "fiqh") ? `<p class="kt-intro">${esc(t(`kutub.${g}Intro`))}</p>` : "";
+        // The shelf of treatises for the youth also leads to their page, where they are set out by subject.
+        const intro = !state.author && !want.length && (g === "aqida" || g === "fiqh" || g === "shabab") ? `<p class="kt-intro">${esc(t(`kutub.${g}Intro`))}${g === "shabab" ? ` <a href="#/shabab">${esc(t("shabab.byTopic"))}</a>` : ""}</p>` : "";
         return `<h2 class="section-title">${esc(t("kutub." + g))}</h2>${intro}<div class="list">${list.map(bookRow).join("")}</div>`;
       }).join("") || `<div class="empty">${esc(t("common.noResults"))}</div>`;
     };

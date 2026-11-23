@@ -1,11 +1,12 @@
 {
- "built": "2026-11-18",
+ "built": "2026-11-20",
  "source": {
   "name": "turath.io",
   "url": "https://app.turath.io"
  },
  "groups": [
   "aqida",
+  "shabab",
   "hadith",
   "fiqh",
   "usul",
@@ -66,6 +67,34 @@
   "qahtani": {
    "ar": "سعيد بن وهف القحطاني",
    "en": "Saʿid ibn Wahf al-Qahtani"
+  },
+  "ibn-baz": {
+   "ar": "ابن باز",
+   "en": "Ibn Baz"
+  },
+  "ibn-uthaymin": {
+   "ar": "ابن عثيمين",
+   "en": "Ibn ʿUthaymin"
+  },
+  "albani": {
+   "ar": "الألباني",
+   "en": "Al-Albani"
+  },
+  "abbad": {
+   "ar": "عبد المحسن العباد",
+   "en": "ʿAbd al-Muhsin al-ʿAbbad"
+  },
+  "ghunayman": {
+   "ar": "عبد الله الغنيمان",
+   "en": "ʿAbdullah al-Ghunayman"
+  },
+  "ibn-burjis": {
+   "ar": "عبد السلام بن برجس",
+   "en": "ʿAbd as-Salam ibn Burjis"
+  },
+  "kibar-ulama": {
+   "ar": "هيئة كبار العلماء",
+   "en": "Council of Senior Scholars"
   },
   "kuwait-awqaf": {
    "ar": "وزارة الأوقاف الكويتية",
@@ -2078,6 +2107,293 @@
    "turath": 7289,
    "url": "https://app.turath.io/book/7289",
    "pages": 5845
+  },
+  {
+   "id": "aqidat-ahl-sunnah",
+   "group": "shabab",
+   "author": "ibn-uthaymin",
+   "died": 1421,
+   "by": "الشيخ محمد بن صالح العثيمين",
+   "byEn": "Shaykh Muhammad ibn Salih al-ʿUthaymin",
+   "ar": "عقيدة أهل السنة والجماعة",
+   "en": "The Creed of Ahl as-Sunnah wal-Jamaʿah",
+   "about": "رسالة مختصرة جامعة في أركان الإيمان الستة: الإيمان بالله وملائكته وكتبه ورسله واليوم الآخر والقدر، ثم ثمرات هذه العقيدة. قدّم لها الشيخ عبد العزيز بن باز.",
+   "aboutEn": "A short, comprehensive treatise on the six pillars of faith: belief in Allah, His angels, His books, His messengers, the Last Day and the divine decree, then the fruits of this creed. With a foreword by Shaykh ʿAbd al-ʿAziz ibn Baz.",
+   "file": "aqidat-ahl-sunnah.9e905146bc.json",
+   "chunks": [
+    "94200b6365"
+   ],
+   "bytes": 73764,
+   "title": "عقيدة أهل السنة والجماعة للعثيمين",
+   "edition": "الكتاب: عقيدة أهل السنة والجماعة\nالمؤلف: محمد بن صالح بن محمد العثيمين (ت ١٤٢١هـ)\nالناشر: الجامعة الأسلامية المدينة المنورة\nعدد الصفحات: ٣٤\nالطبعة: الرابعة، ١٤٢٢ هـ",
+   "turath": 5143,
+   "url": "https://app.turath.io/book/5143",
+   "pages": 8
+  },
+  {
+   "id": "minhaj-ahl-sunnah",
+   "group": "shabab",
+   "author": "ibn-uthaymin",
+   "died": 1421,
+   "by": "الشيخ محمد بن صالح العثيمين",
+   "byEn": "Shaykh Muhammad ibn Salih al-ʿUthaymin",
+   "ar": "منهاج أهل السنة والجماعة في العقيدة والعمل",
+   "en": "The Way of Ahl as-Sunnah wal-Jamaʿah in Creed and Deed",
+   "about": "من هم أهل السنة والجماعة، وما طريقهم في أسماء الله وصفاته، وفي العبادة، وفي حق الرسول ﷺ والصحابة والأولياء والأئمة، وفي إصلاح المجتمع، وقولهم في الإيمان.",
+   "aboutEn": "Who Ahl as-Sunnah wal-Jamaʿah are, and their way regarding Allah's names and attributes, worship, the rights of the Messenger ﷺ, the Companions, the righteous and the rulers, reforming society, and what they say about faith.",
+   "file": "minhaj-ahl-sunnah.e36429fd2d.json",
+   "chunks": [
+    "28ea7f2fe8"
+   ],
+   "bytes": 63472,
+   "title": "منهاج أهل السنة والجماعة في العقيدة والعمل",
+   "edition": "الكتاب: منهاج أهل السنة والجماعة في العقيدة والعمل\nالمؤلف: محمد بن صالح بن محمد العثيمين (ت ١٤٢١هـ)\nالناشر: دار الشريعة\nالطبعة: الأولى ١٤٢٤هـ-٢٠٠٣م\nعدد الصفحات: ٤٩",
+   "turath": 12097,
+   "url": "https://app.turath.io/book/12097",
+   "pages": 9
+  },
+  {
+   "id": "aqida-sahiha",
+   "group": "shabab",
+   "author": "ibn-baz",
+   "died": 1420,
+   "by": "الشيخ عبد العزيز بن عبد الله بن باز",
+   "byEn": "Shaykh ʿAbd al-ʿAziz ibn ʿAbdullah ibn Baz",
+   "ar": "العقيدة الصحيحة وما يضادها",
+   "en": "The Correct Creed and What Opposes It",
+   "about": "بيان العقيدة الصحيحة التي بعث الله بها رسله: أصول الإيمان الستة بأدلتها، ثم ذكر المنحرفين عنها. نُشرت في مجلة الجامعة الإسلامية بالمدينة المنورة.",
+   "aboutEn": "The correct creed with which Allah sent His messengers: the six foundations of faith with their proofs, then those who went astray from it. Published in the journal of the Islamic University of Madinah.",
+   "file": "aqida-sahiha.94d9f60cba.json",
+   "chunks": [
+    "3b24a63a91"
+   ],
+   "bytes": 39443,
+   "title": "العقيدة الصحيحة وما يضادها",
+   "edition": "الكتاب: العقيدة الصحيحة وما يضادها\nالمؤلف: عبد العزيز بن عبد الله بن باز (ت ١٤٢٠هـ)\nالناشر: الجامعة الإسلامية بالمدينة المنورة\nالطبعة: السنة السابعة العدد الثالث محرم ١٣٩٥ هـ/ يناير ١٩٧٥ م\nعدد الصفحات: ١٤",
+   "turath": 8820,
+   "url": "https://app.turath.io/book/8820",
+   "pages": 1
+  },
+  {
+   "id": "usul-iman",
+   "group": "shabab",
+   "author": "ibn-baz",
+   "died": 1420,
+   "by": "الشيخ عبد العزيز بن عبد الله بن باز",
+   "byEn": "Shaykh ʿAbd al-ʿAziz ibn ʿAbdullah ibn Baz",
+   "ar": "أصول الإيمان",
+   "en": "The Foundations of Faith",
+   "about": "محاضرة في أصول الإيمان الستة كما جاءت في القرآن والسنة، وما يدخل في كل أصل منها. نُشرت في مجلة الجامعة الإسلامية بالمدينة المنورة.",
+   "aboutEn": "A lecture on the six foundations of faith as they came in the Quran and the Sunnah, and what each of them includes. Published in the journal of the Islamic University of Madinah.",
+   "file": "usul-iman.5ef3656b2f.json",
+   "chunks": [
+    "69f34a40f8"
+   ],
+   "bytes": 31366,
+   "title": "أصول الإيمان لابن باز",
+   "edition": "الكتاب: أصول الإيمان\nالمؤلف: عبد العزيز بن عبد الله بن باز (ت ١٤٢٠هـ)\nالناشر: الجامعة الإسلامية، المدينة المنورة\nالطبعة: السنة الحادية عشرة - العدد الثالث - ربيع الأول ١٣٩٩هـ/١٩٧٩م\nعدد الصفحات: ٥٩",
+   "turath": 11179,
+   "url": "https://app.turath.io/book/11179",
+   "pages": 1
+  },
+  {
+   "id": "itisam",
+   "group": "shabab",
+   "author": "qahtani",
+   "died": 1440,
+   "by": "د. سعيد بن علي بن وهف القحطاني",
+   "byEn": "Dr. Saʿid ibn ʿAli ibn Wahf al-Qahtani",
+   "ar": "الاعتصام بالكتاب والسنة",
+   "en": "Holding Fast to the Quran and the Sunnah",
+   "about": "لمؤلف حصن المسلم: الاعتصام بالكتاب والسنة أصل السعادة في الدنيا والآخرة ونجاة من مضلات الفتن؛ وجوب الأخذ بهما، والأمر بالاجتماع على الحق والنهي عن الاختلاف.",
+   "aboutEn": "By the author of Hisn al-Muslim: holding fast to the Quran and the Sunnah is the root of happiness in this life and the next and safety from misleading trials; the duty to follow them, the command to unite upon the truth and the prohibition of division.",
+   "file": "itisam.bb13fbe861.json",
+   "chunks": [
+    "bd8e256eef"
+   ],
+   "bytes": 49976,
+   "title": "الاعتصام بالكتاب والسنة أصل السعادة في الدنيا والآخرة ونجاة من مضلات الفتن",
+   "edition": "الكتاب: الاعتصام بالكتاب والسنة أصل السعادة في الدنيا والآخرة ونجاة من مضلات الفتن\nالمؤلف: د. سعيد بن علي بن وهف القحطاني\nالناشر: مطبعة سفير، الرياض\nتوزيع: مؤسسة الجريسي للتوزيع والإعلان، الرياض\nعدد الصفحات: ٢٥",
+   "turath": 96458,
+   "url": "https://app.turath.io/book/96458",
+   "pages": 11
+  },
+  {
+   "id": "bayan-takfir",
+   "group": "shabab",
+   "author": "kibar-ulama",
+   "died": 0,
+   "by": "هيئة كبار العلماء، برئاسة الشيخ عبد العزيز بن باز",
+   "byEn": "The Council of Senior Scholars, headed by Shaykh ʿAbd al-ʿAziz ibn Baz",
+   "ar": "خطورة التسرع في التكفير والقيام بالتفجير",
+   "en": "The Danger of Hasty Takfir and of Bombings",
+   "about": "بيان هيئة كبار العلماء (١٤١٩هـ): التكفير حكم شرعي مردّه إلى الله ورسوله، واستباحة الدماء والتفجير والتخريب محرّمة بإجماع المسلمين، والإسلام بريء من هذا المعتقد.",
+   "aboutEn": "The statement of the Council of Senior Scholars (1419 AH): declaring someone a disbeliever is a ruling that belongs to Allah and His Messenger; shedding blood, bombings and destruction are forbidden by the consensus of the Muslims; and Islam is innocent of this belief.",
+   "file": "bayan-takfir.bac8c97b53.json",
+   "chunks": [
+    "8551f2b2e1"
+   ],
+   "bytes": 14642,
+   "title": "خطورة التسرع في التكفير والقيام بالتفجير وما ينشأ عنهما من سفك للدماء وتخريب للمنشآت",
+   "edition": "الكتاب: خطورة التسرع في التكفير والقيام بالتفجير وما ينشأ عنهما من سفك للدماء وتخريب للمنشآت\nالمؤلف: جماعة من العلماء\nالناشر: الكتاب منشور على موقع وزارة الأوقاف السعودية بدون بيانات\nعدد الصفحات: ١٠",
+   "turath": 546,
+   "url": "https://app.turath.io/book/546",
+   "pages": 3
+  },
+  {
+   "id": "fitnat-takfir",
+   "group": "shabab",
+   "author": "albani",
+   "died": 1420,
+   "by": "الشيخ محمد ناصر الدين الألباني",
+   "byEn": "Shaykh Muhammad Nasir ad-Din al-Albani",
+   "ar": "فتنة التكفير",
+   "en": "The Trial of Takfir",
+   "about": "كلمة الشيخ الألباني في مسألة التكفير وأنها فتنة الخوارج قديمًا وحديثًا، وسببها قلة العلم وترك فهم السلف. بتقريظ الشيخ ابن باز وتعليق الشيخ ابن عثيمين.",
+   "aboutEn": "Shaykh al-Albani's words on takfir: the old and new trial of the Khawarij, caused by little knowledge and by leaving the understanding of the Salaf. Commended by Shaykh Ibn Baz, with comments by Shaykh Ibn ʿUthaymin.",
+   "file": "fitnat-takfir.6421d41adc.json",
+   "chunks": [
+    "142bb1466d"
+   ],
+   "bytes": 43614,
+   "title": "فتنة التكفير",
+   "edition": "الكتاب: فتنة التكفير\nالمؤلف: محمد ناصر الدين الألباني (ت ١٤٢٠هـ)\nعدد الصفحات: ١٧",
+   "turath": 707,
+   "url": "https://app.turath.io/book/707",
+   "pages": 1
+  },
+  {
+   "id": "afiqu-ya-shabab",
+   "group": "shabab",
+   "author": "abbad",
+   "died": 0,
+   "by": "الشيخ عبد المحسن بن حمد العباد البدر",
+   "byEn": "Shaykh ʿAbd al-Muhsin ibn Hamad al-ʿAbbad al-Badr",
+   "ar": "بأي عقل ودين يكون التفجير والتدمير جهادًا؟! ويحكم… أفيقوا يا شباب!!",
+   "en": "By What Reason or Religion Are Bombings Jihad? Wake Up, O Youth!",
+   "about": "رسالة إلى الشباب: مدخل الشيطان على أهل الطاعة بالغلو، وحرمة قتل النفس وقتل المسلمين والمعاهدين بالأدلة، والوصية بالرجوع إلى أهل العلم.",
+   "aboutEn": "A letter to the youth: how Satan reaches the devout through extremism, the prohibition of suicide and of killing Muslims and those under covenant, with the proofs, and the advice to return to the people of knowledge.",
+   "file": "afiqu-ya-shabab.a8b9b11c4d.json",
+   "chunks": [
+    "e8dbd1bc95"
+   ],
+   "bytes": 44928,
+   "title": "بأي عقل ودين يكون التفجير والتدمير جهادا؟! ويحكم ... أفيقوا يا شباب!!",
+   "edition": "الكتاب: بأي عقل ودين يكون التفجير والتدمير جهادا؟! ويحكم … أفيقوا يا شباب!!\nالمؤلف: عبد المحسن بن حمد بن عبد المحسن بن عبد الله بن حمد العباد البدر\nالناشر: مطبعة سفير، الرياض، المملكة العربية السعودية\nالطبعة: الأولى، ١٤٢٤هـ/٢٠٠٣م\nعدد الصفحات: ٣٧",
+   "turath": 11066,
+   "url": "https://app.turath.io/book/11066",
+   "pages": 1
+  },
+  {
+   "id": "munasaha-wahb",
+   "group": "shabab",
+   "author": "ibn-burjis",
+   "died": 1425,
+   "by": "وهب بن منبه؛ اعتنى بنشرها عبد السلام بن برجس آل عبد الكريم",
+   "byEn": "Wahb ibn Munabbih; published by ʿAbd as-Salam ibn Burjis Al ʿAbd al-Karim",
+   "ar": "مناصحة الإمام وهب بن منبه لرجل تأثر بمذهب الخوارج",
+   "en": "Imam Wahb ibn Munabbih's Advice to a Man Influenced by the Khawarij",
+   "about": "نصيحة التابعي وهب بن منبه لشاب كاد يدخل في رأي الخوارج، فرجع عنه؛ رواها علي بن المديني بإسناده.",
+   "aboutEn": "The advice of the Follower Wahb ibn Munabbih to a young man who had almost adopted the view of the Khawarij, and who then gave it up; narrated by ʿAli ibn al-Madini with its chain.",
+   "file": "munasaha-wahb.4d1a9356c1.json",
+   "chunks": [
+    "67d9f01d6f"
+   ],
+   "bytes": 15931,
+   "title": "مناصحة الإمام وهب بن منبه لرجل تأثر بالخوارج",
+   "edition": "الكتاب: مناصحة الإمام وهب بن منبه لرجل تأثر بمذهب الخوارج\nالمؤلف: عبد السلام بن برجس بن ناصر آل عبد الكريم (ت ١٤٢٥هـ)\nالناشر: مكتبة ابن قتيبة - دار السلف - السعودية\nالطبعة: الأولى، ١٤١٩هـ\nعدد الصفحات: ٢٦",
+   "turath": 6556,
+   "url": "https://app.turath.io/book/6556",
+   "pages": 1
+  },
+  {
+   "id": "qadiyyat-takfir",
+   "group": "shabab",
+   "author": "qahtani",
+   "died": 1440,
+   "by": "د. سعيد بن علي بن وهف القحطاني",
+   "byEn": "Dr. Saʿid ibn ʿAli ibn Wahf al-Qahtani",
+   "ar": "قضية التكفير بين أهل السنة وفرق الضلال",
+   "en": "The Question of Takfir between Ahl as-Sunnah and the Deviant Sects",
+   "about": "لمؤلف حصن المسلم: تحريم الخروج على أئمة المسلمين، وأصول التكفير وضوابطه وموانعه عند أهل السنة، ثم مواقف الفرق من التكفير ومناقشتها بالأدلة.",
+   "aboutEn": "By the author of Hisn al-Muslim: the prohibition of rebelling against the Muslims' rulers; the principles, conditions and impediments of takfir with Ahl as-Sunnah; then the positions of the sects on takfir, discussed with the proofs.",
+   "file": "qadiyyat-takfir.cfebdd099f.json",
+   "chunks": [
+    "309b93c546",
+    "0f45f9fbd9"
+   ],
+   "bytes": 274172,
+   "title": "قضية التكفير بين أهل السنة وفرق الضلال في ضوء الكتاب والسنة",
+   "edition": "الكتاب: قضية التكفير بين أهل السنة وفرق الضلال في ضوء الكتاب والسُّنَّة\nالمؤلف: د. سعيد بن علي بن وهف القحطاني\nالناشر: مطبعة سفير، الرياض\nتوزيع: مؤسسة الجريسي للتوزيع والإعلان، الرياض\nعدد الصفحات: ١٢٨",
+   "turath": 96514,
+   "url": "https://app.turath.io/book/96514",
+   "pages": 6
+  },
+  {
+   "id": "dhamm-furqa",
+   "group": "shabab",
+   "author": "ghunayman",
+   "died": 0,
+   "by": "الشيخ عبد الله بن محمد الغنيمان",
+   "byEn": "Shaykh ʿAbdullah ibn Muhammad al-Ghunayman",
+   "ar": "ذم الفرقة والاختلاف في الكتاب والسنة",
+   "en": "The Censure of Division and Disagreement in the Quran and the Sunnah",
+   "about": "الآيات والأحاديث في الأمر بالجماعة والائتلاف، وذم التفرق والاختلاف في الدين وبيان أسبابه. نُشرت في مجلة الجامعة الإسلامية بالمدينة المنورة.",
+   "aboutEn": "The verses and hadith that command unity and harmony and censure division and disagreement in religion, with its causes. Published in the journal of the Islamic University of Madinah.",
+   "file": "dhamm-furqa.7e4db31c35.json",
+   "chunks": [
+    "ac59f3eb9b"
+   ],
+   "bytes": 92234,
+   "title": "ذم الفرقة والاختلاف في الكتاب والسنة",
+   "edition": "الكتاب: ذم الفرقة والاختلاف في الكتاب والسنة\nالمؤلف: عبد الله بن محمد الغنيمان\nالناشر: الجامعة الأسلامية بالمدينة المنورة\nالطبعة: السنة السابعه عشرة (العدد الخامس والستون، السادس والستون) محرم - جماد الأخرة ١٤٠٥هـ/١٩٨٥م\nعدد الصفحات: ٣٤",
+   "turath": 10252,
+   "url": "https://app.turath.io/book/10252",
+   "pages": 1
+  },
+  {
+   "id": "hathth-sunnah",
+   "group": "shabab",
+   "author": "abbad",
+   "died": 0,
+   "by": "الشيخ عبد المحسن بن حمد العباد البدر",
+   "byEn": "Shaykh ʿAbd al-Muhsin ibn Hamad al-ʿAbbad al-Badr",
+   "ar": "الحث على اتباع السنة والتحذير من البدع وبيان خطرها",
+   "en": "Urging Adherence to the Sunnah and Warning against Innovations",
+   "about": "كمال الشريعة، والآيات والأحاديث والآثار في اتباع السنة والتحذير من البدع، وأن البدع كلها ضلال، وخطرها، ثم التحذير من فتنة التجريح والتبديع بين أهل السنة.",
+   "aboutEn": "The perfection of the Shariʿah; verses, hadith and reports on following the Sunnah and warning against innovations; that every innovation is misguidance, and its danger; then a warning against the trial of discrediting and declaring one another innovators among Ahl as-Sunnah.",
+   "file": "hathth-sunnah.1704194ea2.json",
+   "chunks": [
+    "aea216cc69"
+   ],
+   "bytes": 85957,
+   "title": "الحث على اتباع السنة والتحذير من البدع وبيان خطرها",
+   "edition": "الكتاب: الحث على اتباع السنة والتحذير من البدع وبيان خطرها\nالمؤلف: عبد المحسن بن حمد بن عبد المحسن بن عبد الله بن حمد العباد البدر\nالناشر: مطبعة سفير\nالطبعة: الأولى، ١٤٢٥هـ\nعدد الصفحات: ٧١",
+   "turath": 7605,
+   "url": "https://app.turath.io/book/7605",
+   "pages": 13
+  },
+  {
+   "id": "nur-sunnah",
+   "group": "shabab",
+   "author": "qahtani",
+   "died": 1440,
+   "by": "د. سعيد بن علي بن وهف القحطاني",
+   "byEn": "Dr. Saʿid ibn ʿAli ibn Wahf al-Qahtani",
+   "ar": "نور السنة وظلمات البدعة",
+   "en": "The Light of the Sunnah and the Darkness of Innovation",
+   "about": "لمؤلف حصن المسلم: مفهوم السنة وأسماء أهلها وصفاتهم (أهل السنة والجماعة، الفرقة الناجية، الطائفة المنصورة)، ثم البدعة: مفهومها وأسبابها وأنواعها وآثارها، بالأدلة.",
+   "aboutEn": "By the author of Hisn al-Muslim: what the Sunnah is and the names and marks of its people (Ahl as-Sunnah wal-Jamaʿah, the saved group, the victorious party); then innovation: its meaning, causes, kinds and effects, with the proofs.",
+   "file": "nur-sunnah.020e88f4a9.json",
+   "chunks": [
+    "57fc65688b"
+   ],
+   "bytes": 197830,
+   "title": "نور السنة وظلمات البدعة في ضوء الكتاب والسنة",
+   "edition": "الكتاب: نور السنة وظلمات البدعة في ضوء الكتاب والسُّنَّة\nالمؤلف: د. سعيد بن علي بن وهف القحطاني\nالناشر: مطبعة سفير، الرياض\nتوزيع: مؤسسة الجريسي للتوزيع والإعلان، الرياض\nعدد الصفحات: ٩٠",
+   "turath": 96539,
+   "url": "https://app.turath.io/book/96539",
+   "pages": 12
   }
  ]
 }
