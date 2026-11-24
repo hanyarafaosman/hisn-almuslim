@@ -4,8 +4,8 @@
 // Recitations and reciter radios: mp3quran.net API. Live and one-subject stations: data/radios.json (verified list).
 // Audio lesson series on the radio page: data/lessons.json (IslamHouse.com, scripts/build-series.js).
 
-import * as off from "./offline.js?v=1.47.0";
-import { mirrorOf } from "./mirror.js?v=1.47.0";
+import * as off from "./offline.js?v=1.47.1";
+import { mirrorOf } from "./mirror.js?v=1.47.1";
 
 const API = "https://www.mp3quran.net/api/v3";
 const QE = "https://quranenc.com/api/v1";
@@ -244,7 +244,7 @@ export function setupQuran(ctx) {
     let q = null, jumping = false, aya = 0; const listeners = new Set(); // aya: the verse being recited, when known
     // What is playing and where: { server, surah, rid, time, paused, jumping } for a surah, null otherwise.
     // jumping: started at a verse and still silent, before the jump to it (its time means nothing yet).
-    const now = () => q?.type === "surahs" ? { server: q.server, surah: q.list[q.idx], rid: q.rid || "", time: a.currentTime, paused: a.paused, jumping } : null;
+    const now = () => q?.type === "surahs" ? { server: q.server, surah: q.list[q.idx], rid: q.rid || "", time: a.getAttribute("src") ? a.currentTime : lastT, paused: a.paused, jumping } : null;
     const tell = () => { const n = now(); listeners.forEach(f => f(n)); };
     const pad = n => String(n).padStart(3, "0");
     // q.type: "surahs" (a reciter's surahs in order), "tracks" (the lessons of an audio series in order) or "radio" (a live stream).
@@ -260,7 +260,7 @@ export function setupQuran(ctx) {
     let L = null, loopTimer = 0; const loopListeners = new Set();
     const loopState = () => q?.loop && L ? { ...L, from: q.loop.from, to: q.loop.to, reps: q.loop.reps, rounds: q.loop.rounds, timed: !!q.loop.starts } : null;
     const tellLoop = () => { const s = loopState(); loopListeners.forEach(f => f(s)); };
-    const playing = () => q?.loop && L?.phase === "gap" ? !!sil && !sil.paused : !a.paused;
+    const playing = () => q?.loop && L?.phase === "gap" ? !!sil && !sil.paused : !a.paused || !!retryTimer; // retryTimer: about to go on by itself
     const verseEnd = () => { const e = q.loop.starts?.[L.a + 1]; return typeof e === "number" ? e - 0.1 : Infinity; };
     const verseLen = () => { const s = q.loop.starts, b = s[L.a], e = typeof s[L.a + 1] === "number" ? s[L.a + 1] : a.duration; return Number.isFinite(e) && e > b ? e - b : 5; };
     const loopLabel = () => q.loop.starts ? `${t("player.aya", { n: L.a })}${sep()}${num(L.k)}/${num(q.loop.reps)}${sep()}${t("hifz.round", { n: L.round, total: q.loop.rounds })}` : t("hifz.round", { n: L.round, total: q.loop.rounds });
@@ -346,63 +346,157 @@ export function setupQuran(ctx) {
       }
     }
     const failMsg = () => t(q.type === "radio" ? "radio.playFailed" : q.type === "tracks" ? "lessons.playFailed" : "listen.playFailed");
+    const lostMsg = () => t(q.type === "radio" ? "radio.playFailed" : q.type === "tracks" ? "lessons.loadFailed" : "listen.loadFailed");
+
+    // ---- staying on the air: a recording or a station that was cut off goes on by itself ----
+    // A connection that drops (a phone changing networks, a server closing a long download, a live stream cut off)
+    // leaves the element in error, ended, or waiting for ever. While the listener still wants the sound (want: the last
+    // word was a play, not a pause, whether theirs, another player's or the phone's), the source is loaded again: a
+    // recording goes on from the second it had reached (lastT), a station joins its live stream again. The attempts
+    // come further and further apart and end after ten minutes (a few seconds for a source that never played); the
+    // play button then goes on from the same place. goal: where a recording was asked to start and has not reached
+    // yet. The memorisation loop is left out: it keeps its own single retry (see "error" below).
+    let want = false, live = false, lastT = 0, goal = null, dropped = false, tries = 0, dropAt = 0, okAt = 0, retryTimer = 0, stallTimer = 0;
+    const RETRY = [1, 2, 4, 8, 15, 30], STALL = 12000, STALL_NEW = 20000, GIVE_UP = 600000, GIVE_UP_NEW = 3000;
+    const mending = () => !!q && !(q.loop && L);
+    // No sound for a while though nothing failed: a dead connection counts as a drop, a slow one does not (what has been
+    // received still grows). Until the browser knows the file it shows nothing of what it receives (a source on another
+    // site), so the wait is longer then.
+    const got = () => { const b = a.buffered; return b.length ? b.end(b.length - 1) : 0; };
+    function watch(on) {
+      clearTimeout(stallTimer); stallTimer = 0; if (!on || !want || !mending()) return;
+      const had = got(), was = a.currentTime, known = a.readyState > 0;
+      stallTimer = setTimeout(() => {
+        stallTimer = 0; if (!want || !mending() || a.paused) return;
+        if (a.currentTime !== was || got() > had || (!known && a.readyState > 0)) watch(true); else drop();
+      }, known ? STALL : STALL_NEW);
+    }
+    function drop() {
+      watch(false); clearTimeout(retryTimer); retryTimer = 0;
+      if (!want || !mending()) return;
+      const time = Date.now(); dropAt ||= time;
+      if (time - dropAt > (live ? GIVE_UP : GIVE_UP_NEW) || (!live && navigator.onLine === false)) return giveUp();
+      el.classList.add("loading");
+      retryTimer = setTimeout(mend, RETRY[Math.min(tries++, RETRY.length - 1)] * 1000); render();
+    }
+    // A pause is somebody's wish (the listener's, another player's, the phone's): nothing goes on by itself after it.
+    // Every pause() asked of the element counts, also from the app's other players and while it waits to try again
+    // (a station whose stream ended is paused already, and a second pause would say nothing).
+    function hold() { want = false; watch(false); if (retryTimer) { clearTimeout(retryTimer); retryTimer = 0; el.classList.remove("loading"); render(); } }
+    const pauseNow = a.pause.bind(a); a.pause = () => { hold(); pauseNow(); };
+    function giveUp() {
+      tries = 0; dropAt = 0; dropped = true; want = false; el.classList.remove("loading");
+      if (!a.paused) a.pause();
+      toast(lostMsg()); render(); tell();
+    }
+    // Loads the source again and goes on from the place reached.
+    function mend() {
+      clearTimeout(retryTimer); retryTimer = 0; if (!q) return;
+      if (q.type !== "radio") q.at = goal ?? (lastT > 1 ? lastT : null);
+      start(true);
+    }
+    const hurry = () => { if (retryTimer && want && mending()) mend(); }; // the connection is back, or the app is: no need to wait
+
     let tok = 0;
-    function start() {
+    // again: the same source loaded again after a drop (mend), not a new one.
+    function start(again = false) {
       document.getElementById("audio")?.pause();
-      const mine = ++tok; const at = q.at; q.at = null;
-      el.classList.add("loading"); a.muted = false; jumping = !!at; aya = 0;
+      if (!again) { live = false; lastT = 0; tries = 0; dropAt = 0; aya = 0; }
+      clearTimeout(retryTimer); retryTimer = 0; dropped = false; okAt = 0; want = true;
+      const mine = ++tok; const at = q.at; q.at = null; goal = at || null;
+      el.classList.add("loading"); a.muted = false; jumping = !!at;
       a.defaultPlaybackRate = a.playbackRate = q.loop?.rate || 1;
       if (at) {
-        // Start at a verse. Playback begins right away (inside the tap, as phones require) but silent;
-        // once the verse's time is known and the file can seek, it jumps there and the sound comes on.
+        // Start at a verse (or at the minute reached). Playback begins right away (inside the tap, as phones require)
+        // but silent; once the time is known and the file can seek, it jumps there and the sound comes on. A verse's
+        // time that does not come within 8 s (a slow service) is given up: the surah plays from its beginning.
         a.muted = true;
         const ready = new Promise(r => a.addEventListener("loadedmetadata", r, { once: true }));
-        const waitMax = new Promise(r => setTimeout(() => r(null), 8000));
-        Promise.race([Promise.all([at, ready]).then(([sec]) => sec), waitMax]).catch(() => null).then(sec => {
+        const when = typeof at === "number" ? at : Promise.race([at, new Promise(r => setTimeout(() => r(null), 8000))]).catch(() => null);
+        Promise.all([when, ready]).then(([sec]) => {
           if (mine !== tok) return;
-          if (a.readyState > 0) a.currentTime = Number.isFinite(sec) && sec > 0 ? sec : 0; // no verse time: from the beginning
-          a.muted = false; jumping = false; tell();
+          sec = Number.isFinite(sec) && sec > 0 ? sec : 0; // no verse time: from the beginning
+          if (a.readyState > 0) a.currentTime = sec;
+          goal = null; lastT = sec; a.muted = false; jumping = false; tell();
           if (q?.loop && L) { render(); tellLoop(); arm(); }
         });
       }
       a.src = url();
-      a.play().catch(() => { el.classList.remove("loading"); a.muted = false; jumping = false; toast(failMsg()); render(); tell(); });
+      a.play().catch(e => {
+        if (mine !== tok || dropped || e?.name === "AbortError") return; // another source took its place, or a pause came first
+        if (e?.name !== "NotAllowedError" && want && mending()) return; // the "error" event that comes with it tries again
+        if (mending()) { dropped = true; want = false; tries = 0; dropAt = 0; } // the play button goes on from the same place
+        el.classList.remove("loading"); a.muted = false; jumping = false; toast(failMsg()); render(); tell();
+      });
+      watch(true);
       if (q.type === "tracks") q.save?.(q.idx, typeof at === "number" ? at : 0);
       render(); tell();
     }
     function step(d) { if (!q || q.type === "radio") return; if (q.loop && L) return stepVerse(d); const i = q.idx + d; if (i < 0 || i >= q.list.length) return; q.idx = i; start(); }
     const key = () => !q ? "" : q.type === "radio" ? "radio:" + q.id : q.type === "tracks" ? `track:${q.id}:${q.idx}` : `surah:${q.server}:${q.list[q.idx]}`;
-    a.addEventListener("playing", () => { el.classList.remove("loading"); if (q?.loop) { a.playbackRate = q.loop.rate || 1; if (L) L.retried = false; } render(); arm(); });
-    a.addEventListener("waiting", () => el.classList.add("loading"));
-    a.addEventListener("pause", () => { clearTimeout(loopTimer); render(); tell(); });
+    a.addEventListener("play", () => { if (q) want = true; });
+    a.addEventListener("playing", () => { live = true; watch(false); el.classList.remove("loading"); if (q?.loop) { a.playbackRate = q.loop.rate || 1; if (L) L.retried = false; } render(); arm(); });
+    a.addEventListener("waiting", () => { el.classList.add("loading"); watch(true); });
+    a.addEventListener("stalled", () => { if (!stallTimer && !a.paused) watch(true); });
+    a.addEventListener("loadedmetadata", () => { if (stallTimer) watch(true); }); // the file is known: the shorter wait from here
+    a.addEventListener("pause", () => {
+      clearTimeout(loopTimer);
+      // The phone or the browser paused it. Not the pause at the end of a recording, nor the one Chrome adds to a load
+      // that failed (the element is in error then).
+      if (!a.ended && !a.error) hold();
+      render(); tell();
+    });
     a.addEventListener("ended", () => {
       if (q?.loop && L) { if (L.phase === "verse" && !L.done) verseDone(); return; } // a loop never goes on to the next surah
-      if (q && q.type !== "radio" && q.idx < q.list.length - 1) step(1); else render();
+      if (q?.type === "radio") { if (want) drop(); else render(); return; } // a live stream has no end: it was cut off
+      if (q && q.idx < q.list.length - 1) step(1); else { want = false; render(); }
     });
     a.addEventListener("error", () => {
       if (!q || !a.getAttribute("src")) return;
-      // A loop coming back after a long time in the background: load the file again and go on from its verse, once.
-      if (q.loop && L && !L.retried) { L.retried = true; const at = q.loop.starts ? q.loop.starts[L.a] || 0 : 0; a.src = url(); a.addEventListener("loadedmetadata", () => { if (a.readyState > 0) a.currentTime = at; a.play().catch(() => {}); }, { once: true }); a.load(); return; }
-      el.classList.remove("loading"); toast(t(q.type === "radio" ? "radio.playFailed" : q.type === "tracks" ? "lessons.loadFailed" : "listen.loadFailed")); render();
+      if (q.loop && L) {
+        // A loop coming back after a long time in the background: load the file again and go on from its verse, once.
+        if (!L.retried) { L.retried = true; const at = q.loop.starts ? q.loop.starts[L.a] || 0 : 0; a.src = url(); a.addEventListener("loadedmetadata", () => { if (a.readyState > 0) a.currentTime = at; a.play().catch(() => {}); }, { once: true }); a.load(); return; }
+        el.classList.remove("loading"); toast(lostMsg()); render(); return;
+      }
+      if (want) { drop(); return; }
+      el.classList.remove("loading"); render(); // paused: the play button loads it again
     });
-    a.addEventListener("timeupdate", () => { tell(); if (q?.loop && L?.phase === "verse" && !L.done && !jumping && a.currentTime >= verseEnd()) verseDone(); });
+    a.addEventListener("timeupdate", () => {
+      const time = a.currentTime;
+      if (!jumping && !a.seeking && time > 0 && time !== lastT) {
+        lastT = time; if (stallTimer) watch(false);
+        // Ten seconds of sound after a drop: the connection holds again, and a later drop is counted anew.
+        if (dropAt) { okAt ||= Date.now(); if (Date.now() - okAt > 10000) { tries = 0; dropAt = 0; okAt = 0; } }
+      }
+      tell(); if (q?.loop && L?.phase === "verse" && !L.done && !jumping && a.currentTime >= verseEnd()) verseDone();
+    });
     a.addEventListener("seeked", () => { tell(); arm(); });
-    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") arm(); }); // timers slow down in the background
+    document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") { arm(); hurry(); } }); // timers slow down in the background
+    window.addEventListener("online", hurry);
     // Another player starting (the adhkar clips) ends a loop: its gap would otherwise start the recitation again.
     document.getElementById("audio")?.addEventListener("play", () => { if (q?.loop) loopEnd(); });
     // An audio series remembers the lesson and the minute reached (every few seconds while it plays).
     let savedAt = 0;
     a.addEventListener("timeupdate", () => { if (q?.type === "tracks" && !jumping && Date.now() - savedAt > 5000) { savedAt = Date.now(); q.save?.(q.idx, a.currentTime); } });
-    btn.onclick = () => {
+    function toggle() {
       if (!q) return;
       if (q.loop && L) {
         if (L.done) return seekPlay();
         if (L.phase === "gap") { if (sil && !sil.paused) { sil.pause(); clearTimeout(loopTimer); } else silence(true); render(); return; }
       }
-      if (a.paused) { if (q.type === "radio") start(); else a.play().catch(() => {}); } else a.pause();
-    };
+      if (playing()) { a.pause(); return; }
+      if (q.type === "radio") start();
+      // After a drop that was given up, an error while paused, or the app's own reload: the same place, loaded again.
+      else if (mending() && (dropped || a.error || !a.getAttribute("src"))) { live = false; tries = 0; dropAt = 0; mend(); }
+      else a.play().catch(() => {});
+    }
+    btn.onclick = toggle;
     prev.onclick = () => step(-1); next.onclick = () => step(1);
-    $("#pl-close", el).onclick = () => { loopEnd(); a.pause(); a.removeAttribute("src"); a.load(); q = null; jumping = false; aya = 0; render(); tell(); };
+    $("#pl-close", el).onclick = () => {
+      loopEnd(); tok++; want = false; dropped = false; clearTimeout(retryTimer); retryTimer = 0; watch(false);
+      a.pause(); a.removeAttribute("src"); a.load(); q = null; jumping = false; aya = 0; lastT = 0; goal = null;
+      el.classList.remove("loading"); render(); tell();
+    };
     if ("mediaSession" in navigator) {
       navigator.mediaSession.setActionHandler("play", () => btn.click());
       navigator.mediaSession.setActionHandler("pause", () => { if (playing()) btn.click(); });
@@ -438,10 +532,10 @@ export function setupQuran(ctx) {
         if (rate != null) { q.loop.rate = +rate || 1; a.defaultPlaybackRate = a.playbackRate = q.loop.rate; arm(); }
         render(); tellLoop(); return true;
       },
-      radio({ id, url: u, name, sub }) { if (q?.type === "radio" && q.id === id && !a.paused) { a.pause(); return; } loopEnd(); q = { type: "radio", id, url: u, name, sub }; start(); },
+      radio({ id, url: u, name, sub }) { if (q?.type === "radio" && q.id === id && playing()) { a.pause(); return; } loopEnd(); q = { type: "radio", id, url: u, name, sub }; start(); },
       // list: [[mp3 url, description], …]; at: the second lesson `start` begins at; save(idx, seconds) is told the place reached.
       tracks({ id, list, start: i = 0, at = null, name, sub, save }) {
-        if (q?.type === "tracks" && q.id === id && q.idx === i && a.getAttribute("src")) { if (a.paused) a.play().catch(() => {}); else a.pause(); return; }
+        if (q?.type === "tracks" && q.id === id && q.idx === i && a.getAttribute("src")) { toggle(); return; }
         loopEnd(); q = { type: "tracks", id, list, idx: i, name, sub, save, at: at > 0 ? at : null }; start();
       },
       pause() { if (q?.loop && L?.phase === "gap") { if (sil && !sil.paused) sil.pause(); clearTimeout(loopTimer); render(); } else a.pause(); },
@@ -453,6 +547,25 @@ export function setupQuran(ctx) {
       // called whenever it moves, whether it is playing, and its end (the recitation stays loaded, paused).
       loopState, onLoop(f) { loopListeners.add(f); return () => loopListeners.delete(f); }, loopPlaying: () => !!(q?.loop && L && !L.done && playing()),
       stopLoop() { if (!q?.loop) return; loopEnd(); a.pause(); render(); },
+      // The app reloads itself for an update (js/app.js) only while nothing sounds or is about to (busy: also between
+      // two attempts after a drop); what was paused in the player is written down first (keep) and comes back after the
+      // reload (restore): the bar as it was, paused, and the play button goes on from the same second. A memorisation
+      // loop is not kept: its page starts it again.
+      busy: () => !!q && (want || playing()),
+      keep() {
+        if (!q || (q.loop && L)) return;
+        const at = q.type === "radio" ? 0 : typeof goal === "number" ? goal : lastT;
+        try { sessionStorage.setItem("player", JSON.stringify({ q: { ...q, at: null, loop: null }, at, time: Date.now() })); } catch { /* no storage */ }
+      },
+      async restore() {
+        let k = null; try { k = JSON.parse(sessionStorage.getItem("player") || "null"); sessionStorage.removeItem("player"); } catch { /* no storage */ }
+        if (q || !k?.q || (k.q.type !== "radio" && !Array.isArray(k.q.list)) || Date.now() - k.time > 60000) return;
+        if (k.q.type === "surahs") await loadIndex().catch(() => {});
+        if (q) return; // something was started meanwhile
+        if (k.q.type === "tracks" && String(k.q.id).startsWith("les:")) { const id = k.q.id.slice(4); k.q.save = (i, sec) => saveLesson(id, i, sec); }
+        q = k.q; lastT = +k.at || 0; dropped = true;
+        render(); tell();
+      },
     };
   })();
 
