@@ -1,29 +1,29 @@
 /* ===== حصن ونور — application logic (vanilla ES module, no dependencies) ===== */
-import { setupQuran } from "./quran.js?v=1.47.0";
-import { setupHadith } from "./hadith.js?v=1.47.0";
-import { setupTafsir } from "./tafsir.js?v=1.47.0";
-import { setupAsma } from "./asma.js?v=1.47.0";
-import { setupDua } from "./dua.js?v=1.47.0";
-import { setupKutub } from "./kutub.js?v=1.47.0";
-import { setupFaqih } from "./faqih.js?v=1.47.0";
-import { setupPrayer } from "./prayer.js?v=1.47.0";
-import { setupVideos } from "./videos.js?v=1.47.0";
-import { setupInstall } from "./install.js?v=1.47.0";
-import { setupTajweed } from "./tajweed.js?v=1.47.0";
-import { setupMutun } from "./mutun.js?v=1.47.0";
-import { setupQiraat } from "./qiraat.js?v=1.47.0";
-import { setupQaida } from "./qaida.js?v=1.47.0";
-import { setupArabic } from "./arabic.js?v=1.47.0";
-import { setupHijri } from "./hijri.js?v=1.47.0";
-import { setupMawasim } from "./mawasim.js?v=1.47.0";
-import { setupShabab } from "./shabab.js?v=1.47.0";
-import { setupQibla } from "./qibla.js?v=1.47.0";
-import { setupHifz } from "./hifz.js?v=1.47.0";
-import { setupGuide } from "./guide.js?v=1.47.0";
-import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.47.0";
-import { mirrorOf } from "./mirror.js?v=1.47.0";
+import { setupQuran } from "./quran.js?v=1.47.1";
+import { setupHadith } from "./hadith.js?v=1.47.1";
+import { setupTafsir } from "./tafsir.js?v=1.47.1";
+import { setupAsma } from "./asma.js?v=1.47.1";
+import { setupDua } from "./dua.js?v=1.47.1";
+import { setupKutub } from "./kutub.js?v=1.47.1";
+import { setupFaqih } from "./faqih.js?v=1.47.1";
+import { setupPrayer } from "./prayer.js?v=1.47.1";
+import { setupVideos } from "./videos.js?v=1.47.1";
+import { setupInstall } from "./install.js?v=1.47.1";
+import { setupTajweed } from "./tajweed.js?v=1.47.1";
+import { setupMutun } from "./mutun.js?v=1.47.1";
+import { setupQiraat } from "./qiraat.js?v=1.47.1";
+import { setupQaida } from "./qaida.js?v=1.47.1";
+import { setupArabic } from "./arabic.js?v=1.47.1";
+import { setupHijri } from "./hijri.js?v=1.47.1";
+import { setupMawasim } from "./mawasim.js?v=1.47.1";
+import { setupShabab } from "./shabab.js?v=1.47.1";
+import { setupQibla } from "./qibla.js?v=1.47.1";
+import { setupHifz } from "./hifz.js?v=1.47.1";
+import { setupGuide } from "./guide.js?v=1.47.1";
+import { LANGS, setLang, getLang, detect, browserLang, t, th, num, sep, collator, regionName, languageName } from "./i18n.js?v=1.47.1";
+import { mirrorOf } from "./mirror.js?v=1.47.1";
 
-const VERSION = "1.47.0";
+const VERSION = "1.47.1";
 const COPYRIGHT_YEARS = (y => y > 2026 ? `2026–${y}` : "2026")(new Date().getFullYear());
 // Public address of the website: shared links point here (scripts/build-site.js reads it too).
 const SITE = "https://hanyarafaosman.github.io/hisn-almuslim/";
@@ -893,15 +893,25 @@ function registerSW() {
   }
   // Updates apply by themselves: the new worker activates right away and the page reloads once.
   // Only reload when an older version was in control, so a first visit never reloads.
+  // Never while something sounds (a recitation, a station, a lesson, the adhan, a video): a reload would cut it off and
+  // could not start it again. The update waits for the sound to stop, and what was in the player comes back paused at
+  // the same place (Q.player.keep / restore).
+  const sounding = () => Q.player.busy() || PR.sounding() || [...document.querySelectorAll("audio, video")].some(m => !m.paused && !m.ended);
   const hadController = !!navigator.serviceWorker.controller;
   let refreshing = false;
+  function refresh() {
+    if (sounding()) { setTimeout(refresh, 5000); return; }
+    toast(t("common.updateAvailable"));
+    setTimeout(() => { if (sounding()) return refresh(); Q.player.keep(); location.reload(); }, 300);
+  }
   navigator.serviceWorker.addEventListener("controllerchange", () => {
     if (!hadController || refreshing) return;
-    refreshing = true; toast(t("common.updateAvailable")); setTimeout(() => location.reload(), 300);
+    refreshing = true; refresh();
   });
   navigator.serviceWorker.register("sw.js").then(reg => {
-    // An installed app on a phone can stay open for days: look for a new version whenever it comes back to the screen.
-    const check = () => reg.update().catch(() => {});
+    // An installed app on a phone can stay open for days: look for a new version whenever it comes back to the screen
+    // (not while something sounds: the page would then run on with the new version's files until the sound stops).
+    const check = () => { if (!sounding()) reg.update().catch(() => {}); };
     document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") check(); });
     setInterval(check, 60 * 60 * 1000);
     // A version from before 1.2.1 may be installed and waiting: activate it now.
@@ -925,5 +935,5 @@ applyTheme();
 const startLang = detect(settings.lang, RETURNING, PAGE_LANG);
 if (new URLSearchParams(location.search).get("lang") === startLang) { settings.lang = startLang; saveSettings(); }
 Promise.all([setLang(startLang, VERSION).catch(() => setLang("ar", VERSION)), loadData()])
-  .then(async () => { if (showAdhkarTr() || getLang() !== "ar") await loadEN().catch(() => {}); applyStatic(); route(); registerSW(); offerDeviceLang(); PR.start(); IN.start(); })
+  .then(async () => { if (showAdhkarTr() || getLang() !== "ar") await loadEN().catch(() => {}); applyStatic(); route(); registerSW(); offerDeviceLang(); PR.start(); IN.start(); Q.player.restore(); })
   .catch(err => { view.innerHTML = `<div class="empty">Could not load the data · تعذّر تحميل البيانات<br><small>${esc(err.message)}</small><br><br><button class="btn" onclick="location.reload()">↻</button></div>`; });
